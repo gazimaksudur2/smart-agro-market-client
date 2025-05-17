@@ -107,14 +107,14 @@ export default function Register() {
 				data.email,
 				data.password,
 				{
-			    first_name: data.first_name,
-			    last_name: data.last_name
-			  },
+					first_name: data.first_name,
+					last_name: data.last_name,
+				},
 				profileImageUrl,
 				address
 			);
 			toast.success("Registration successful! Please complete your profile.");
-			navigate("/dashboard/profile", {
+			navigate("/dashboard", {
 				state: { newUser: true, role: selectedRole },
 			});
 		} catch (error) {
@@ -130,7 +130,7 @@ export default function Register() {
 		try {
 			await loginWithGoogle();
 			toast.success("Registration successful! Please complete your profile.");
-			navigate("/dashboard/profile", {
+			navigate("/dashboard", {
 				state: { newUser: true, role: selectedRole },
 			});
 		} catch (error) {
@@ -148,7 +148,7 @@ export default function Register() {
 		try {
 			await loginWithFacebook();
 			toast.success("Registration successful! Please complete your profile.");
-			navigate("/dashboard/profile", {
+			navigate("/dashboard", {
 				state: { newUser: true, role: selectedRole },
 			});
 		} catch (error) {

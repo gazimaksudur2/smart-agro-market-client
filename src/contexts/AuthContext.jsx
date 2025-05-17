@@ -32,13 +32,7 @@ export default function AuthProvider({ children }) {
 	// Configure axios to include credentials in requests - removed as it's set globally in axiosConfig.js
 
 	// Register with email and password
-	const registerWithEmail = async (
-		email,
-		password,
-		name,
-		profileImage,
-		address
-	) => {
+	const registerWithEmail = async (email, password, name, profileImage, address ) => {
 		try {
 			const userCredential = await createUserWithEmailAndPassword(
 				auth,
@@ -89,8 +83,14 @@ export default function AuthProvider({ children }) {
 			const result = await signInWithPopup(auth, provider);
 			const user = result.user;
 
-			// Check if user exists in database, if not create a new user
-			await createUserInDatabase(user, null, "consumer");
+			// Check if user exists in database
+			const {data: userInDatabase} = await axios.get(
+				`${apiBaseUrl}/users/verifyUser?email=${user?.email}`
+			);
+
+			// If user doesn't exist in the database, create a new user
+			// if (!userInDatabase) await createUserInDatabase(user, null);
+			userInDatabase?.success || await createUserInDatabase(user, null);
 
 			return user;
 		} catch (error) {
@@ -107,7 +107,7 @@ export default function AuthProvider({ children }) {
 			const user = result.user;
 
 			// Check if user exists in database, if not create a new user
-			await createUserInDatabase(user, null, "consumer");
+			await createUserInDatabase(user, null);
 
 			return user;
 		} catch (error) {
@@ -152,6 +152,7 @@ export default function AuthProvider({ children }) {
 			});
 			return data;
 		} catch (error) {
+			logout();
 			console.error("Error creating user in database:", error);
 			throw error;
 		}
