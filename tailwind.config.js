@@ -27,5 +27,10 @@ export default {
 			},
 		},
 	},
-	plugins: [],
+	plugins: [require("daisyui")],
+	daisyui: {
+		themes: ["light", "dark"],
+		prefix: "daisy-", // This will prefix all daisyUI classes with "daisy-"
+		logs: false,
+	},
 };
