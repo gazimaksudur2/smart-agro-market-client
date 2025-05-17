@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import { FaLeaf, FaHandshake, FaTruck, FaShieldAlt } from 'react-icons/fa';
 
 export default function About() {
+  console.log("About page");
   return (
     <div className="bg-gray-50">
       {/* Hero section */}

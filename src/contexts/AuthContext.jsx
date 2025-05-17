@@ -26,10 +26,19 @@ export default function AuthProvider({ children }) {
 	const [accessToken, setAccessToken] = useState("");
 
 	// Create API base URL
-	const apiBaseUrl = import.meta.env.VITE_API_URL || "http://localhost:5000";
+	const apiBaseUrl =
+		import.meta.env.VITE_SERVER_API_URL || "http://localhost:5000";
+
+	// Configure axios to include credentials in requests - removed as it's set globally in axiosConfig.js
 
 	// Register with email and password
-	const registerWithEmail = async (email, password, name) => {
+	const registerWithEmail = async (
+		email,
+		password,
+		name,
+		profileImage,
+		address
+	) => {
 		try {
 			const userCredential = await createUserWithEmailAndPassword(
 				auth,
@@ -38,11 +47,17 @@ export default function AuthProvider({ children }) {
 			);
 			const user = userCredential.user;
 
-			// Update profile with name
-			await updateProfile(user, { displayName: name });
+			// Use provided profile image or default
+			const photoURL = profileImage || "https://i.ibb.co/MBtjqXQ/no-avatar.gif";
 
-			// Create user in the backend
-			await createUserInDatabase(user, "consumer");
+			// Update profile with name and photo
+			await updateProfile(user, {
+				displayName: name?.first_name + " " + name?.last_name,
+				photoURL,
+			});
+
+			// Create user in the backend with address
+			await createUserInDatabase(user, password, "consumer", address);
 
 			// Return user info
 			return user;
@@ -75,7 +90,7 @@ export default function AuthProvider({ children }) {
 			const user = result.user;
 
 			// Check if user exists in database, if not create a new user
-			await createUserInDatabase(user, "consumer");
+			await createUserInDatabase(user, null, "consumer");
 
 			return user;
 		} catch (error) {
@@ -92,7 +107,7 @@ export default function AuthProvider({ children }) {
 			const user = result.user;
 
 			// Check if user exists in database, if not create a new user
-			await createUserInDatabase(user, "consumer");
+			await createUserInDatabase(user, null, "consumer");
 
 			return user;
 		} catch (error) {
@@ -106,7 +121,10 @@ export default function AuthProvider({ children }) {
 		try {
 			await signOut(auth);
 			setAccessToken("");
-			localStorage.removeItem("access_token");
+			// No need to manually remove local storage token as we're using cookies
+			// Backend will handle clearing the cookie on logout
+			await axios.post(`${apiBaseUrl}/jwt/clear`);
+			toast.success("User logged out successfully");
 		} catch (error) {
 			toast.error(error.message);
 			throw error;
@@ -114,12 +132,20 @@ export default function AuthProvider({ children }) {
 	};
 
 	// Create a new user in the database
-	const createUserInDatabase = async (user, role) => {
+	const createUserInDatabase = async (
+		user,
+		password,
+		role = "consumer",
+		address = null
+	) => {
 		try {
-			const { data } = await axios.post(`${apiBaseUrl}/users`, {
+			const { data } = await axios.post(`${apiBaseUrl}/users/register`, {
 				name: user.displayName,
 				email: user.email,
-				role: role,
+				password,
+				role,
+				phoneNumber: "",
+				address: address || "",
 				firebaseUID: user.uid,
 				profilePicture:
 					user.photoURL || "https://i.ibb.co/MBtjqXQ/no-avatar.gif",
@@ -132,17 +158,17 @@ export default function AuthProvider({ children }) {
 	};
 
 	// Get JWT token from API
-	const getJWTToken = async (user) => {
+	const getJWTToken = async (user, role) => {
 		try {
-			const { data } = await axios.post(`${apiBaseUrl}/jwt`, {
-				email: user.email,
+			// The token will now be set as a cookie by the server
+			await axios.post(`${apiBaseUrl}/jwt/token`, {
 				uid: user.uid,
+				email: user.email,
+				role,
 			});
-
-			const token = data.token;
-			setAccessToken(token);
-			localStorage.setItem("access_token", token);
-			return token;
+			// No need to store in local storage as it's now in cookies
+			// The cookie will be automatically sent with subsequent requests
+			return true;
 		} catch (error) {
 			console.error("Error getting JWT token:", error);
 			throw error;
@@ -152,12 +178,8 @@ export default function AuthProvider({ children }) {
 	// Get user role from API
 	const getUserRole = async (email) => {
 		try {
-			const token = localStorage.getItem("access_token");
-			const { data } = await axios.get(`${apiBaseUrl}/users/${email}`, {
-				headers: {
-					Authorization: `Bearer ${token}`,
-				},
-			});
+			// No need to manually add Authorization header as cookies are sent automatically
+			const { data } = await axios.get(`${apiBaseUrl}/users/${email}`);
 
 			if (data.role) {
 				setUserRole(data.role);
