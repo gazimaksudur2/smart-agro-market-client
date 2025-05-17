@@ -1,4 +1,4 @@
-import { Link, NavLink } from 'react-router-dom';
+import { Link, NavLink, useNavigate } from 'react-router-dom';
 import { useState } from 'react';
 import { FiMenu, FiX } from 'react-icons/fi';
 import { IoLogOutOutline } from 'react-icons/io5';
@@ -7,11 +7,13 @@ import { useAuth } from '../../contexts/AuthContext';
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
   const { currentUser, logout, isAdmin, isAgent, isSeller } = useAuth();
+  const navigate = useNavigate();
 
   // Handle user logout
   const handleLogout = async () => {
     try {
       await logout();
+      navigate('/login');
     } catch (error) {
       console.error('Failed to log out', error);
     }
@@ -79,7 +81,7 @@ export default function Navbar() {
                     isAdmin() ? '/dashboard/admin' : 
                     isAgent() ? '/dashboard/agent' :
                     isSeller() ? '/dashboard/my-products' :
-                    '/dashboard/my-orders'
+                    '/dashboard'
                   }
                   className="btn btn-outline py-1.5"
                 >

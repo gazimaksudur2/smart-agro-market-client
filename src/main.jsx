@@ -6,6 +6,8 @@ import Router from "./routes/Router";
 import { QueryClient, QueryClientProvider } from "react-query";
 import AuthProvider from "./contexts/AuthContext";
 import { Toaster } from "react-hot-toast";
+// Import axios config to ensure all requests include credentials
+import "./utils/axiosConfig";
 
 const queryClient = new QueryClient();
 
