@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { FaFacebook, FaLock } from "react-icons/fa";
@@ -17,6 +17,7 @@ export default function Login() {
 
 	const navigate = useNavigate();
 	const location = useLocation();
+	const formRef = useRef(null);
 
 	// Redirect to the page the user was trying to access, or to dashboard
 	const from = location.state?.from?.pathname || "/dashboard";
@@ -63,14 +64,59 @@ export default function Login() {
 		}
 	};
 
+	useEffect(() => {
+		const handleFormKeyPress = (e) => {
+			if (
+				e.key === "Enter" &&
+				e.target.tagName !== "TEXTAREA" &&
+				e.target.type !== "submit"
+			) {
+				e.preventDefault();
+
+				const form = formRef.current;
+				if (!form) return;
+
+				const focusableElements = Array.from(
+					form.querySelectorAll("input, select, button, textarea")
+				).filter((el) => !el.disabled && el.type !== "hidden");
+
+				const index = focusableElements.indexOf(e.target);
+				if (index > -1 && index < focusableElements.length - 1) {
+					focusableElements[index + 1].focus();
+				}
+			}
+		};
+
+		// Add event listener to the form
+		const form = formRef.current;
+		if (form) {
+			form.addEventListener("keydown", handleFormKeyPress);
+		}
+
+		// Clean up
+		return () => {
+			if (form) {
+				form.removeEventListener("keydown", handleFormKeyPress);
+			}
+		};
+	}, []); // Empty dependency array ensures this runs once when component mounts
+
+	// Simplified handleKeyDown for individual fields
+	const handleKeyDown = (e) => {
+		if (e.key === "Enter") {
+			e.preventDefault();
+			// Let the form event listener handle the navigation
+		}
+	};
+
 	return (
 		<div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
 			<div className="sm:mx-auto sm:w-full sm:max-w-md relative">
 				<div className="text-center">
-					<h2 className="mt-2 text-center text-3xl font-extrabold text-gray-900">
+					<h2 className="mt-2 text-center text-xl sm:text-2xl md:text-3xl font-extrabold text-gray-900">
 						Sign in to your account
 					</h2>
-					<p className="mt-2 text-center text-sm text-gray-600">
+					<p className="mt-2 text-center text-xs md:text-sm text-gray-600">
 						Or{" "}
 						<Link
 							to="/register"
@@ -82,20 +128,20 @@ export default function Login() {
 				</div>
 			</div>
 
-			<div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md md:max-w-lg">
-				<div className="bg-white py-8 px-4 shadow-lg sm:rounded-lg sm:px-10 border border-gray-200 daisy-card">
+			<div className="px-4 mt-8 sm:mx-auto sm:w-full sm:max-w-md md:max-w-lg">
+				<div className="bg-white py-8 px-4 shadow-lg sm:rounded-lg sm:px-10 border border-gray-200 daisy-card rounded-lg">
 					<div className="pb-10 flex justify-center">
-						<Link to="/" className="flex items-center">
-							<span className="text-3xl font-display font-bold text-primary-600">
+						<Link to="/" className="flex items-center text-xl sm:text-3xl">
+							<span className="font-display font-bold text-primary-600">
 								SmartAgro
 							</span>
-							<span className="ml-1 text-3xl font-display font-bold text-gray-700">
+							<span className="ml-1 font-display font-bold text-gray-700">
 								Connect
 							</span>
 						</Link>
 					</div>
 					{/* Email/Password login form */}
-					<form className="space-y-5" onSubmit={handleSubmit(onSubmit)}>
+					<form className="space-y-5 md:px-2" ref={formRef} onSubmit={handleSubmit(onSubmit)}>
 						{/* Email field */}
 						<div className="">
 							<fieldset className="fieldset">
@@ -107,6 +153,7 @@ export default function Login() {
 									autoComplete="email"
 									required
 									placeholder="mail@site.com"
+									onKeyDown={handleKeyDown}
 									{...register("email", {
 										required: "Email is required",
 										pattern: {
@@ -131,6 +178,7 @@ export default function Login() {
 										{...register("password", {
 											required: "Password is required",
 										})}
+										onKeyDown={handleKeyDown}
 									/>
 									{errors.password && (
 										<p className="form-error daisy-text-error">
@@ -148,17 +196,18 @@ export default function Login() {
 									id="remember-me"
 									name="remember-me"
 									type="checkbox"
-									className="checkbox checkbox-success"
+									className="checkbox checkbox-success checkbox-sm sm:checkbox-lg"
+									onKeyDown={handleKeyDown}
 								/>
 								<label
 									htmlFor="remember-me"
-									className="ml-2 block text-sm text-gray-900"
+									className="ml-2 block text-xs sm:text-sm text-gray-900"
 								>
 									Remember me
 								</label>
 							</div>
 
-							<div className="text-sm">
+							<div className="text-xs sm:text-sm">
 								<a
 									href="#"
 									className="font-medium text-primary-600 hover:text-primary-500 daisy-link daisy-link-hover"
@@ -224,7 +273,7 @@ export default function Login() {
 								className="w-full flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm bg-white text-sm font-medium text-gray-700 hover:bg-gray-50"
 							>
 								<FcGoogle className="h-5 w-5 text-red-600" />
-								<span className="ml-2">Google</span>
+								<span className="ml-2 hidden sm:inline">Google</span>
 							</button>
 							<button
 								onClick={handleFacebookLogin}
@@ -232,7 +281,7 @@ export default function Login() {
 								className="w-full flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm bg-white text-sm font-medium text-gray-700 hover:bg-gray-50"
 							>
 								<FaFacebook className="h-5 w-5 text-blue-600" />
-								<span className="ml-2">Facebook</span>
+								<span className="ml-2 hidden sm:inline">Facebook</span>
 							</button>
 						</div>
 					</div>
