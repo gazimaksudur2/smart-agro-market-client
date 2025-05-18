@@ -74,7 +74,7 @@ export default function AuthProvider({ children }) {
 			});
 
 			// Create user in the backend with address
-			await createUserInDatabase(user, password, "consumer", address);
+			await createUserInDatabase(user, password, "email-pass", "consumer", address);
 
 			// Return user info
 			return user;
@@ -129,7 +129,7 @@ export default function AuthProvider({ children }) {
 
 			// If user doesn't exist in the database, create a new user
 			if (!userInDatabase?.success) {
-				await createUserInDatabase(user, null);
+				await createUserInDatabase(user, null, 'google');
 			}
 
 			// After successful login, get JWT token
@@ -155,11 +155,11 @@ export default function AuthProvider({ children }) {
 
 			// If user doesn't exist in the database, create a new user
 			if (!userInDatabase?.success) {
-				await createUserInDatabase(user, null);
+				await createUserInDatabase(user, null, 'facebook');
 			}
 
 			// After successful login, get JWT token
-			await getJWTToken(user);
+			// await getJWTToken(user);
 
 			return user;
 		} catch (error) {
@@ -200,6 +200,7 @@ export default function AuthProvider({ children }) {
 	const createUserInDatabase = async (
 		user,
 		password,
+		provider,
 		role = "consumer",
 		address = null
 	) => {
@@ -208,9 +209,10 @@ export default function AuthProvider({ children }) {
 				name: user.displayName,
 				email: user.email,
 				password,
+				provider,
 				role,
 				phoneNumber: "",
-				address: address || "",
+				address: address,
 				firebaseUID: user.uid,
 				profilePicture:
 					user.photoURL || "https://i.ibb.co/MBtjqXQ/no-avatar.gif",
