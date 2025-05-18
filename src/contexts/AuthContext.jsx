@@ -12,6 +12,12 @@ import {
 import { auth } from "../firebase/firebase.config";
 import axios from "axios";
 import toast from "react-hot-toast";
+import {
+	getCookie,
+	setCookie,
+	removeCookie,
+	areCookiesEnabled,
+} from "../utils/cookieUtils";
 
 export const AuthContext = createContext();
 
@@ -24,15 +30,32 @@ export default function AuthProvider({ children }) {
 	const [userRole, setUserRole] = useState("consumer");
 	const [loading, setLoading] = useState(true);
 	const [accessToken, setAccessToken] = useState("");
+	const [usingCookies, setUsingCookies] = useState(true);
 
 	// Create API base URL
 	const apiBaseUrl =
 		import.meta.env.VITE_SERVER_API_URL || "http://localhost:5000";
 
-	// Configure axios to include credentials in requests - removed as it's set globally in axiosConfig.js
+	// Check if cookies are enabled
+	useEffect(() => {
+		const cookiesEnabled = areCookiesEnabled();
+		setUsingCookies(cookiesEnabled);
+		console.log("Cookies enabled:", cookiesEnabled);
+
+		// If in production and cookies aren't working, show a warning
+		if (!cookiesEnabled && process.env.NODE_ENV === "production") {
+			toast.error("Please enable cookies for full functionality");
+		}
+	}, []);
 
 	// Register with email and password
-	const registerWithEmail = async (email, password, name, profileImage, address ) => {
+	const registerWithEmail = async (
+		email,
+		password,
+		name,
+		profileImage,
+		address
+	) => {
 		try {
 			const userCredential = await createUserWithEmailAndPassword(
 				auth,
@@ -64,6 +87,22 @@ export default function AuthProvider({ children }) {
 	// Login with email and password
 	const loginWithEmail = async (email, password) => {
 		try {
+			try {
+				const response = await axios.post(`${apiBaseUrl}/users/login`, {
+					email: email,
+					password: password,
+				});
+
+				// If server response includes a token but cookies aren't working, store it manually
+				if (response.data.token && !usingCookies) {
+					setAccessToken(response.data.token);
+					localStorage.setItem("jwt_token", response.data.token);
+				}
+			} catch (error) {
+				console.log(error);
+				throw error?.response?.data || error;
+			}
+
 			const userCredential = await signInWithEmailAndPassword(
 				auth,
 				email,
@@ -71,7 +110,7 @@ export default function AuthProvider({ children }) {
 			);
 			return userCredential.user;
 		} catch (error) {
-			toast.error(error.message);
+			clearCookies();
 			throw error;
 		}
 	};
@@ -84,17 +123,20 @@ export default function AuthProvider({ children }) {
 			const user = result.user;
 
 			// Check if user exists in database
-			const {data: userInDatabase} = await axios.get(
+			const { data: userInDatabase } = await axios.get(
 				`${apiBaseUrl}/users/verifyUser?email=${user?.email}`
 			);
 
 			// If user doesn't exist in the database, create a new user
-			// if (!userInDatabase) await createUserInDatabase(user, null);
-			userInDatabase?.success || await createUserInDatabase(user, null);
+			if (!userInDatabase?.success) {
+				await createUserInDatabase(user, null);
+			}
+
+			// After successful login, get JWT token
+			await getJWTToken(user);
 
 			return user;
 		} catch (error) {
-			toast.error(error.message);
 			throw error;
 		}
 	};
@@ -106,12 +148,21 @@ export default function AuthProvider({ children }) {
 			const result = await signInWithPopup(auth, provider);
 			const user = result.user;
 
-			// Check if user exists in database, if not create a new user
-			await createUserInDatabase(user, null);
+			// Check if user exists in database
+			const { data: userInDatabase } = await axios.get(
+				`${apiBaseUrl}/users/verifyUser?email=${user?.email}`
+			);
+
+			// If user doesn't exist in the database, create a new user
+			if (!userInDatabase?.success) {
+				await createUserInDatabase(user, null);
+			}
+
+			// After successful login, get JWT token
+			await getJWTToken(user);
 
 			return user;
 		} catch (error) {
-			toast.error(error.message);
 			throw error;
 		}
 	};
@@ -120,14 +171,28 @@ export default function AuthProvider({ children }) {
 	const logout = async () => {
 		try {
 			await signOut(auth);
+
+			// Clear both cookie and local storage
+			clearCookies();
+			localStorage.removeItem("jwt_token");
 			setAccessToken("");
-			// No need to manually remove local storage token as we're using cookies
-			// Backend will handle clearing the cookie on logout
-			await axios.post(`${apiBaseUrl}/jwt/clear`);
+
 			toast.success("User logged out successfully");
 		} catch (error) {
 			toast.error(error.message);
 			throw error;
+		}
+	};
+
+	// clear cookies
+	const clearCookies = async () => {
+		try {
+			await axios.post(`${apiBaseUrl}/jwt/clear`);
+			// Also manually remove the cookie just in case
+			removeCookie("jwt");
+			setAccessToken("");
+		} catch (error) {
+			console.error("Error clearing cookies:", error);
 		}
 	};
 
@@ -152,8 +217,7 @@ export default function AuthProvider({ children }) {
 			});
 			return data;
 		} catch (error) {
-			logout();
-			console.error("Error creating user in database:", error);
+			currentUser && logout();
 			throw error;
 		}
 	};
@@ -161,14 +225,19 @@ export default function AuthProvider({ children }) {
 	// Get JWT token from API
 	const getJWTToken = async (user, role) => {
 		try {
-			// The token will now be set as a cookie by the server
-			await axios.post(`${apiBaseUrl}/jwt/token`, {
+			// Try to get token from the server
+			const response = await axios.post(`${apiBaseUrl}/jwt/token`, {
 				uid: user.uid,
 				email: user.email,
 				role,
 			});
-			// No need to store in local storage as it's now in cookies
-			// The cookie will be automatically sent with subsequent requests
+
+			// If server response includes a token but cookies aren't working, store it manually
+			if (response.data.token && !usingCookies) {
+				setAccessToken(response.data.token);
+				localStorage.setItem("jwt_token", response.data.token);
+			}
+
 			return true;
 		} catch (error) {
 			console.error("Error getting JWT token:", error);
@@ -176,10 +245,21 @@ export default function AuthProvider({ children }) {
 		}
 	};
 
+	// Add token to requests if cookies aren't working
+	useEffect(() => {
+		// If cookies aren't working and we have a token, add it to all requests
+		if (!usingCookies && (accessToken || localStorage.getItem("jwt_token"))) {
+			const token = accessToken || localStorage.getItem("jwt_token");
+			axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
+		} else if (!usingCookies) {
+			// No token available, clear authorization header
+			delete axios.defaults.headers.common["Authorization"];
+		}
+	}, [usingCookies, accessToken]);
+
 	// Get user role from API
 	const getUserRole = async (email) => {
 		try {
-			// No need to manually add Authorization header as cookies are sent automatically
 			const { data } = await axios.get(`${apiBaseUrl}/users/${email}`);
 
 			if (data.role) {
@@ -215,6 +295,7 @@ export default function AuthProvider({ children }) {
 			} else {
 				setCurrentUser(null);
 				setUserRole("consumer");
+				setAccessToken("");
 			}
 			setLoading(false);
 		});
@@ -228,6 +309,7 @@ export default function AuthProvider({ children }) {
 		userRole,
 		loading,
 		accessToken,
+		usingCookies,
 		registerWithEmail,
 		loginWithEmail,
 		loginWithGoogle,

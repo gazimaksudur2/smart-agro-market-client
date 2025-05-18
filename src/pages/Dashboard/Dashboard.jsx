@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
 import { useQuery } from "react-query";
-import axios from "axios";
 import {
 	FaBoxOpen,
 	FaShoppingCart,
@@ -11,6 +10,7 @@ import {
 	FaMoneyBillWave,
 	FaTruck,
 } from "react-icons/fa";
+import useAPI from "../../hooks/useAPI";
 
 // Dashboard statistics card
 const StatCard = ({ title, value, icon, color }) => (
@@ -26,11 +26,10 @@ const StatCard = ({ title, value, icon, color }) => (
 );
 
 export default function Dashboard() {
-	const { userRole, currentUser, accessToken } = useAuth();
+	const { userRole, currentUser } = useAuth();
 	const navigate = useNavigate();
 	const [stats, setStats] = useState({});
-	const apiBaseUrl =
-		import.meta.env.VITE_SERVER_API_URL || "http://localhost:5000";
+	const { apiCall, loading: apiLoading } = useAPI();
 
 	// Fetch dashboard stats based on user role
 	const { data, isLoading, error } = useQuery(
@@ -39,8 +38,8 @@ export default function Dashboard() {
 			if (!currentUser) return null;
 
 			try {
-				const { data } = await axios.get(`${apiBaseUrl}/dashboard/stats`);
-				return data;
+				// Use our custom API hook instead of direct axios call
+				return await apiCall("/dashboard/stats");
 			} catch (error) {
 				console.error("Error fetching dashboard stats:", error);
 				return null;
@@ -152,7 +151,7 @@ export default function Dashboard() {
 				<div className="mt-8">
 					<h2 className="text-lg font-medium text-gray-900">Recent Activity</h2>
 					<div className="mt-3 bg-white shadow overflow-hidden rounded-lg">
-						{isLoading ? (
+						{isLoading || apiLoading ? (
 							<div className="p-10 flex justify-center">
 								<div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-primary-600"></div>
 							</div>
@@ -245,26 +244,6 @@ export default function Dashboard() {
 												</div>
 												<div className="ml-auto">
 													<p className="text-sm text-gray-400">Yesterday</p>
-												</div>
-											</div>
-										</div>
-										<div className="p-4 hover:bg-gray-50">
-											<div className="flex items-center">
-												<div className="flex-shrink-0">
-													<div className="p-2 rounded-full bg-primary-100">
-														<FaChartLine className="h-5 w-5 text-primary-600" />
-													</div>
-												</div>
-												<div className="ml-4">
-													<p className="text-sm font-medium text-gray-900">
-														Monthly summary available
-													</p>
-													<p className="text-sm text-gray-500">
-														Your April 2023 sales summary is now available
-													</p>
-												</div>
-												<div className="ml-auto">
-													<p className="text-sm text-gray-400">3 days ago</p>
 												</div>
 											</div>
 										</div>
