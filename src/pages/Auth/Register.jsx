@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { FaFacebook, FaUpload, FaCamera } from "react-icons/fa";
@@ -21,6 +21,7 @@ export default function Register() {
 	const [selectedImage, setSelectedImage] = useState(null);
 	const [previewUrl, setPreviewUrl] = useState("");
 	const fileInputRef = useRef(null);
+	const formRef = useRef(null);
 
 	const navigate = useNavigate();
 	const password = watch("password");
@@ -107,14 +108,14 @@ export default function Register() {
 				data.email,
 				data.password,
 				{
-			    first_name: data.first_name,
-			    last_name: data.last_name
-			  },
+					first_name: data.first_name,
+					last_name: data.last_name,
+				},
 				profileImageUrl,
 				address
 			);
 			toast.success("Registration successful! Please complete your profile.");
-			navigate("/dashboard/profile", {
+			navigate("/dashboard", {
 				state: { newUser: true, role: selectedRole },
 			});
 		} catch (error) {
@@ -130,7 +131,7 @@ export default function Register() {
 		try {
 			await loginWithGoogle();
 			toast.success("Registration successful! Please complete your profile.");
-			navigate("/dashboard/profile", {
+			navigate("/dashboard", {
 				state: { newUser: true, role: selectedRole },
 			});
 		} catch (error) {
@@ -148,7 +149,7 @@ export default function Register() {
 		try {
 			await loginWithFacebook();
 			toast.success("Registration successful! Please complete your profile.");
-			navigate("/dashboard/profile", {
+			navigate("/dashboard", {
 				state: { newUser: true, role: selectedRole },
 			});
 		} catch (error) {
@@ -157,6 +158,52 @@ export default function Register() {
 			);
 		} finally {
 			setLoading(false);
+		}
+	};
+
+	// Use useEffect to apply keyboard navigation enhancement
+	useEffect(() => {
+		const handleFormKeyPress = (e) => {
+			if (
+				e.key === "Enter" &&
+				e.target.tagName !== "TEXTAREA" &&
+				e.target.type !== "submit"
+			) {
+				e.preventDefault();
+
+				const form = formRef.current;
+				if (!form) return;
+
+				const focusableElements = Array.from(
+					form.querySelectorAll("input, select, button, textarea")
+				).filter((el) => !el.disabled && el.type !== "hidden");
+
+				const index = focusableElements.indexOf(e.target);
+				if (index > -1 && index < focusableElements.length - 1) {
+					focusableElements[index + 1].focus();
+				}
+			}
+		};
+
+		// Add event listener to the form
+		const form = formRef.current;
+		if (form) {
+			form.addEventListener("keydown", handleFormKeyPress);
+		}
+
+		// Clean up
+		return () => {
+			if (form) {
+				form.removeEventListener("keydown", handleFormKeyPress);
+			}
+		};
+	}, []); // Empty dependency array ensures this runs once when component mounts
+
+	// Simplified handleKeyDown for individual fields
+	const handleKeyDown = (e) => {
+		if (e.key === "Enter") {
+			e.preventDefault();
+			// Let the form event listener handle the navigation
 		}
 	};
 
@@ -222,7 +269,11 @@ export default function Register() {
 					</div>
 
 					{/* Registration form */}
-					<form className="space-y-5" onSubmit={handleSubmit(onSubmit)}>
+					<form
+						ref={formRef}
+						className="space-y-5"
+						onSubmit={handleSubmit(onSubmit)}
+					>
 						{/* Name field */}
 						<div className="grid grid-cols-2 gap-4">
 							<fieldset className="fieldset">
@@ -240,6 +291,7 @@ export default function Register() {
 									})}
 									className="input"
 									placeholder="Muhammad"
+									onKeyDown={handleKeyDown}
 								/>
 								{errors.name && (
 									<p className="form-error text-xs text-red-400">
@@ -262,6 +314,7 @@ export default function Register() {
 									})}
 									className="input"
 									placeholder="Abdullah"
+									onKeyDown={handleKeyDown}
 								/>
 								{errors.name && (
 									<p className="form-error text-xs text-red-400">
@@ -289,6 +342,7 @@ export default function Register() {
 											message: "Invalid email address",
 										},
 									})}
+									onKeyDown={handleKeyDown}
 								/>
 							</fieldset>
 						</div>
@@ -308,6 +362,7 @@ export default function Register() {
 										{...register("street", {
 											required: "Street address is required",
 										})}
+										onKeyDown={handleKeyDown}
 									/>
 									{errors.street && (
 										<p className="form-error text-xs text-red-400">
@@ -330,6 +385,7 @@ export default function Register() {
 										{...register("city", {
 											required: "City is required",
 										})}
+										onKeyDown={handleKeyDown}
 									/>
 									{errors.city && (
 										<p className="form-error text-xs text-red-400">
@@ -352,6 +408,7 @@ export default function Register() {
 										{...register("state", {
 											required: "State is required",
 										})}
+										onKeyDown={handleKeyDown}
 									/>
 									{errors.state && (
 										<p className="form-error text-xs text-red-400">
@@ -374,6 +431,7 @@ export default function Register() {
 										{...register("zip", {
 											required: "Zip code is required",
 										})}
+										onKeyDown={handleKeyDown}
 									/>
 									{errors.zip && (
 										<p className="form-error text-xs text-red-400">
@@ -395,6 +453,7 @@ export default function Register() {
 										placeholder="Bangladesh"
 										// defaultValue="Bangladesh"
 										{...register("country")}
+										onKeyDown={handleKeyDown}
 									/>
 									{errors.country && (
 										<p className="form-error text-xs text-red-400">
@@ -422,6 +481,7 @@ export default function Register() {
 												message: "Password must be at least 6 characters",
 											},
 										})}
+										onKeyDown={handleKeyDown}
 									/>
 									{errors.password && (
 										<p className="form-error text-xs text-red-400">
@@ -446,6 +506,7 @@ export default function Register() {
 											validate: (value) =>
 												value === password || "Passwords do not match",
 										})}
+										onKeyDown={handleKeyDown}
 									/>
 									{errors.confirmPassword && (
 										<p className="form-error text-xs text-red-400">
@@ -466,6 +527,7 @@ export default function Register() {
 								{...register("terms", {
 									required: "You must agree to the terms and conditions",
 								})}
+								onKeyDown={handleKeyDown}
 							/>
 							<label
 								htmlFor="terms"
