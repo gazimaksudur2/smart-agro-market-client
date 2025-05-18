@@ -29,13 +29,13 @@ export default function Products() {
 	// Fetch regions for filter
 	const { data: regions } = useQuery("regions", async () => {
 		const { data } = await axios.get(`${apiBaseUrl}/regions`);
-		return data;
+		return data.data;
 	});
 
 	// Fetch all available crop types
 	const { data: cropTypes } = useQuery("cropTypes", async () => {
 		const { data } = await axios.get(`${apiBaseUrl}/products/crop-types`);
-		return data;
+		return data.data;
 	});
 
 	// Filter options for select components
@@ -136,7 +136,7 @@ export default function Products() {
 					</h1>
 
 					{/* Search bar */}
-					<div className="w-full md:w-auto flex items-center">
+					<div className="w-full md:w-auto flex items-center gap-4">
 						<div className="relative flex-grow mr-2">
 							<input
 								type="text"
@@ -150,7 +150,7 @@ export default function Products() {
 							</div>
 						</div>
 						<button
-							className="md:hidden btn-outline flex items-center"
+							className="md:hidden btn flex items-center p-[6px] rounded-lg text-gray-700 hover:bg-gray-100"
 							onClick={() => setShowFilters(!showFilters)}
 						>
 							<FaFilter className="h-5 w-5 mr-1" />
@@ -256,11 +256,21 @@ export default function Products() {
 								<label className="block text-sm font-medium text-gray-700 mb-1">
 									Price Range (৳)
 								</label>
+								<div className="flex justify-between my-2">
+									<span className="text-sm text-gray-500 btn btn-xs">
+										{filters.minPrice}
+									</span>
+									<span className="text-sm text-gray-500 btn btn-xs">
+										{filters.maxPrice}
+									</span>
+								</div>
+								<input type="range" min={0} max="100" value={0} className="range range-success range-xs mb-4" />
 								<div className="flex space-x-2">
 									<input
 										type="number"
 										className="form-input py-1 px-2 text-sm w-full"
 										placeholder="Min"
+										defaultValue={10}
 										value={filters.minPrice}
 										onChange={(e) =>
 											setFilters({ ...filters, minPrice: e.target.value })
@@ -271,6 +281,7 @@ export default function Products() {
 										type="number"
 										className="form-input py-1 px-2 text-sm w-full"
 										placeholder="Max"
+										defaultValue={1000}
 										value={filters.maxPrice}
 										onChange={(e) =>
 											setFilters({ ...filters, maxPrice: e.target.value })
