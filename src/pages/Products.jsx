@@ -9,6 +9,7 @@ import {
 	FaSortAmountUpAlt,
 } from "react-icons/fa";
 import Select from "react-select";
+import { ConfigProvider, InputNumber, Slider } from "antd";
 
 export default function Products() {
 	const [filters, setFilters] = useState({
@@ -22,6 +23,7 @@ export default function Products() {
 	const [showFilters, setShowFilters] = useState(false);
 	const [districts, setDistricts] = useState([]);
 	const [searchTerm, setSearchTerm] = useState("");
+	const [curMaxMin, setCurMaxMin] = useState({max: 0, min: 0});
 
 	const apiBaseUrl =
 		import.meta.env.VITE_SERVER_API_URL || "http://localhost:5000";
@@ -29,13 +31,13 @@ export default function Products() {
 	// Fetch regions for filter
 	const { data: regions } = useQuery("regions", async () => {
 		const { data } = await axios.get(`${apiBaseUrl}/regions`);
-		return data;
+		return data.data;
 	});
 
 	// Fetch all available crop types
 	const { data: cropTypes } = useQuery("cropTypes", async () => {
 		const { data } = await axios.get(`${apiBaseUrl}/products/crop-types`);
-		return data;
+		return data.data;
 	});
 
 	// Filter options for select components
@@ -88,13 +90,15 @@ export default function Products() {
 			}
 
 			const { data } = await axios.get(`${apiBaseUrl}/products`, { params });
-			return data;
+			return data.products;
 		},
 		{
 			// Don't refetch on window focus
 			refetchOnWindowFocus: false,
 		}
 	);
+
+	console.log(products);
 
 	// Apply filters
 	const handleFilterApply = () => {
@@ -127,6 +131,20 @@ export default function Products() {
 		setSortBy(value);
 	};
 
+	useEffect(() => {
+		if (products && products.length > 0) {
+			const prices = products.map((product) => product.price);
+			const maxPrice = Math.max(...prices);
+			const minPrice = Math.min(...prices);
+			setCurMaxMin({ max: maxPrice, min: minPrice });
+			setFilters((prevFilters) => ({
+				...prevFilters,
+				maxPrice: maxPrice,
+				minPrice: minPrice,
+			}));
+		}
+	}, [products]);
+
 	return (
 		<div className="bg-gray-50 min-h-screen">
 			<div className="container mx-auto px-4 py-8">
@@ -136,7 +154,7 @@ export default function Products() {
 					</h1>
 
 					{/* Search bar */}
-					<div className="w-full md:w-auto flex items-center">
+					<div className="w-full md:w-auto flex items-center gap-4">
 						<div className="relative flex-grow mr-2">
 							<input
 								type="text"
@@ -150,7 +168,7 @@ export default function Products() {
 							</div>
 						</div>
 						<button
-							className="md:hidden btn-outline flex items-center"
+							className="md:hidden btn flex items-center p-[6px] rounded-lg text-gray-700 hover:bg-gray-100"
 							onClick={() => setShowFilters(!showFilters)}
 						>
 							<FaFilter className="h-5 w-5 mr-1" />
@@ -252,32 +270,71 @@ export default function Products() {
 							</div>
 
 							{/* Price Range */}
-							<div className="mb-4">
-								<label className="block text-sm font-medium text-gray-700 mb-1">
-									Price Range (৳)
-								</label>
-								<div className="flex space-x-2">
-									<input
-										type="number"
-										className="form-input py-1 px-2 text-sm w-full"
-										placeholder="Min"
-										value={filters.minPrice}
-										onChange={(e) =>
-											setFilters({ ...filters, minPrice: e.target.value })
-										}
-									/>
-									<span className="self-center text-gray-500">to</span>
-									<input
-										type="number"
-										className="form-input py-1 px-2 text-sm w-full"
-										placeholder="Max"
-										value={filters.maxPrice}
-										onChange={(e) =>
-											setFilters({ ...filters, maxPrice: e.target.value })
-										}
-									/>
+							<ConfigProvider
+								theme={{
+									components: {
+										InputNumber: {
+											activeBorderColor: "#16a34a",
+											hoverBorderColor: "#16a34a",
+											controlWidth: 50,
+											handleWidth: 12,
+										},
+										Slider: {
+											handleSize: 8,
+											handleSizeHover: 7,
+											handleColor: "#22c55e",
+											handleActiveBorderColor: "#22c55e",
+											handleActiveColor: "#22c55e",
+											trackBg: "#22c55e",
+											trackHoverBg: "#22c55e",
+											dotActiveBorderColor: "#22c55e",
+											colorPrimary: "#22c55e",
+											colorPrimaryHover: "#22c55e",
+											colorPrimaryActive: "#22c55e",
+										},
+									},
+								}}
+							>
+								<div className="mb-4 space-y-4">
+									<label className="block text-sm font-medium text-gray-700 mb-1">
+										Price ( per kg ) Range (৳)
+									</label>
+									<div className="flex justify-between items-center">
+										<InputNumber
+											size="small"
+											min={1}
+											max={filters.maxPrice}
+											value={filters.minPrice}
+											onChange={(value) =>
+												setFilters({ ...filters, minPrice: value })
+											}
+										/>
+										<InputNumber
+											size="small"
+											min={filters.minPrice}
+											max={100000}
+											value={filters.maxPrice}
+											onChange={(value) =>
+												setFilters({ ...filters, maxPrice: value })
+											}
+										/>
+									</div>
+									<div className="w-full">
+										<Slider
+											range={{ draggableTrack: true }}
+											value={[filters.minPrice, filters.maxPrice]}
+											tooltip={{ open: false }}
+											onChange={(value) => {
+												setFilters({
+													...filters,
+													minPrice: value[0],
+													maxPrice: value[1],
+												});
+											}}
+										/>
+									</div>
 								</div>
-							</div>
+							</ConfigProvider>
 
 							{/* Apply button */}
 							<button
@@ -358,7 +415,7 @@ export default function Products() {
 									Sort by:
 								</span>
 								<select
-									className="form-input py-1 pl-2 pr-8 text-sm"
+									className="form-input py-1 pl-2 pr-8 text-sm rounded"
 									value={sortBy}
 									onChange={(e) => handleSortChange(e.target.value)}
 								>

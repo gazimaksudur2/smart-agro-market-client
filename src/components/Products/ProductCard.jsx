@@ -26,7 +26,7 @@ export default function ProductCard({ product }) {
         
         <div className="flex items-center text-gray-500 text-sm mb-2">
           <FaMapMarkerAlt className="mr-1" />
-          <span>{product?.region || "Region"}, {product?.district || "District"}</span>
+          <span>{product?.district || "District"}, {product?.region || "Region"}</span>
         </div>
         
         <div className="flex items-center text-gray-500 text-sm mb-3">

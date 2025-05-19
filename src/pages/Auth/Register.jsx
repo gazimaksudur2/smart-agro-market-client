@@ -211,10 +211,10 @@ export default function Register() {
 		<div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
 			<div className="sm:mx-auto sm:w-full sm:max-w-md relative">
 				<div className="text-center">
-					<h2 className="mt-2 text-center text-3xl font-extrabold text-gray-900">
+					<h2 className="mt-2 text-center text-xl sm:text-2xl lg:text-3xl font-extrabold text-gray-900">
 						Create your account
 					</h2>
-					<p className="mt-2 text-center text-sm text-gray-600">
+					<p className="mt-2 text-center text-xs sm:text-sm lg:text-md text-gray-600">
 						Or{" "}
 						<Link
 							to="/login"
@@ -227,13 +227,13 @@ export default function Register() {
 			</div>
 
 			<div className="mt-8 px-4 sm:mx-auto sm:w-full sm:max-w-lg lg:max-w-2xl">
-				<div className="bg-white py-8 px-4 shadow-lg sm:px-10 border border-gray-200 daisy-card rounded-lg">
-					<div className="pb-10 flex justify-center">
-						<Link to="/" className="flex items-center">
-							<span className="text-3xl font-display font-bold text-primary-600">
+				<div className="bg-white py-4 md:py-8 px-4 shadow-lg sm:px-10 border border-gray-200 daisy-card rounded-lg">
+					<div className="pb-4 md:pb-10 flex justify-center">
+						<Link to="/" className="flex items-center text-lg sm:text-2xl lg:text-3xl">
+							<span className="font-display font-bold text-primary-600">
 								SmartAgro
 							</span>
-							<span className="ml-1 text-3xl font-display font-bold text-gray-700">
+							<span className="ml-1 font-display font-bold text-gray-700">
 								Connect
 							</span>
 						</Link>
