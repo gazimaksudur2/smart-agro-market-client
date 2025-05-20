@@ -1,0 +1,285 @@
+[{
+  "_id": "65f1a5f5b74a576a0f1c1e70",
+  "productId": "65f1a3d3b74a576a0f1c1e30",
+  "orderId": "65f1a4e4b74a576a0f1c1e50",
+  "reviewer": {
+    "userId": "65f1a1b1b74a576a0f1c1e07",
+    "name": "Restaurant Owner",
+    "email": "resto.owner@smartagro.com",
+    "role": "consumer"
+  },
+  "rating": 5,
+  "comment": "The Premium Boro Rice quality was exceptional. All my customers have been complimenting the taste. Will definitely order again!",
+  "images": [],
+  "createdAt": "2024-01-31T10:00:00Z",
+  "isVerifiedPurchase": true,
+  "isHelpful": {
+    "count": 12,
+    "users": []
+  }
+},
+{
+  "_id": "65f1a5f5b74a576a0f1c1e71",
+  "productId": "65f1a3d3b74a576a0f1c1e33",
+  "orderId": "65f1a4e4b74a576a0f1c1e51",
+  "reviewer": {
+    "userId": "65f1a1b1b74a576a0f1c1e08",
+    "name": "Hotel Manager",
+    "email": "hotel.manager@smartagro.com",
+    "role": "consumer"
+  },
+  "rating": 4,
+  "comment": "The tomatoes were fresh and juicy, perfect for our hotel kitchen. Just a few were slightly damaged during transit, but overall great quality.",
+  "images": [
+    "https://i.ibb.co/MBtjqXQ/review-tomato.jpg"
+  ],
+  "createdAt": "2024-02-14T11:00:00Z",
+  "isVerifiedPurchase": true,
+  "isHelpful": {
+    "count": 8,
+    "users": []
+  }
+},
+{
+  "_id": "65f1a5f5b74a576a0f1c1e72",
+  "productId": "65f1a3d3b74a576a0f1c1e37",
+  "orderId": "65f1a4e4b74a576a0f1c1e52",
+  "reviewer": {
+    "userId": "65f1a1b1b74a576a0f1c1e09",
+    "name": "School Cafeteria",
+    "email": "school.cafe@smartagro.com",
+    "role": "consumer"
+  },
+  "rating": 5,
+  "comment": "The mangoes were absolutely phenomenal! Sweet, juicy, and ripened perfectly. The students loved them in their desserts and as fresh fruit.",
+  "images": [
+    "https://i.ibb.co/MBtjqXQ/review-mango1.jpg",
+    "https://i.ibb.co/MBtjqXQ/review-mango2.jpg"
+  ],
+  "createdAt": "2024-03-03T15:00:00Z",
+  "isVerifiedPurchase": true,
+  "isHelpful": {
+    "count": 15,
+    "users": []
+  }
+},
+{
+  "_id": "65f1a5f5b74a576a0f1c1e73",
+  "productId": "65f1a3d3b74a576a0f1c1e31",
+  "orderId": "65f1a4e4b74a576a0f1c1e53",
+  "reviewer": {
+    "userId": "65f1a1b1b74a576a0f1c1e10",
+    "name": "Grocery Store Owner",
+    "email": "grocery.store@smartagro.com",
+    "role": "consumer"
+  },
+  "rating": 5,
+  "comment": "The organic brown rice has been selling out quickly in our store! Customers appreciate the quality and taste. Excellent product!",
+  "images": [
+    "https://i.ibb.co/MBtjqXQ/review-brown-rice.jpg"
+  ],
+  "createdAt": "2024-03-11T16:00:00Z",
+  "isVerifiedPurchase": true,
+  "isHelpful": {
+    "count": 10,
+    "users": []
+  }
+},
+{
+  "_id": "65f1a5f5b74a576a0f1c1e74",
+  "productId": "65f1a3d3b74a576a0f1c1e34",
+  "orderId": "65f1a4e4b74a576a0f1c1e54",
+  "reviewer": {
+    "userId": "65f1a1b1b74a576a0f1c1e11",
+    "name": "Food Processor",
+    "email": "food.processor@smartagro.com",
+    "role": "consumer"
+  },
+  "rating": 4,
+  "comment": "Very good quality organic potatoes, perfect for our processing needs. Consistent size and minimal waste. Will order again.",
+  "images": [
+    "https://i.ibb.co/MBtjqXQ/review-potato.jpg"
+  ],
+  "createdAt": "2024-03-21T10:00:00Z",
+  "isVerifiedPurchase": true,
+  "isHelpful": {
+    "count": 7,
+    "users": []
+  }
+},
+{
+  "_id": "65f1a5f5b74a576a0f1c1e75",
+  "productId": "65f1a3d3b74a576a0f1c1e38",
+  "orderId": "65f1a4e4b74a576a0f1c1e55",
+  "reviewer": {
+    "userId": "65f1a1b1b74a576a0f1c1e12",
+    "name": "Bakery Owner",
+    "email": "bakery.owner@smartagro.com",
+    "role": "consumer"
+  },
+  "rating": 5,
+  "comment": "Perfect bananas for our banana bread and pastries! Just the right ripeness and great taste. My customers love the products made with these bananas.",
+  "images": [
+    "https://i.ibb.co/MBtjqXQ/review-banana1.jpg",
+    "https://i.ibb.co/MBtjqXQ/review-banana2.jpg"
+  ],
+  "createdAt": "2024-03-31T11:00:00Z",
+  "isVerifiedPurchase": true,
+  "isHelpful": {
+    "count": 14,
+    "users": []
+  }
+},
+{
+  "_id": "65f1a5f5b74a576a0f1c1e76",
+  "productId": "65f1a3d3b74a576a0f1c1e36",
+  "orderId": "65f1a4e4b74a576a0f1c1e56",
+  "reviewer": {
+    "userId": "65f1a1b1b74a576a0f1c1e13",
+    "name": "Catering Service",
+    "email": "catering.service@smartagro.com",
+    "role": "consumer"
+  },
+  "rating": 5,
+  "comment": "The green chillies were exactly what we needed for our catering business - fresh, spicy, and great quality. Perfect for Bangladeshi cuisine.",
+  "images": [
+    "https://i.ibb.co/MBtjqXQ/review-chilli.jpg"
+  ],
+  "createdAt": "2024-04-11T10:00:00Z",
+  "isVerifiedPurchase": true,
+  "isHelpful": {
+    "count": 9,
+    "users": []
+  }
+},
+{
+  "_id": "65f1a5f5b74a576a0f1c1e77",
+  "productId": "65f1a3d3b74a576a0f1c1e32",
+  "orderId": "65f1a4e4b74a576a0f1c1e57",
+  "reviewer": {
+    "userId": "65f1a1b1b74a576a0f1c1e14",
+    "name": "Wholesale Buyer",
+    "email": "wholesale.buyer@smartagro.com",
+    "role": "consumer"
+  },
+  "rating": 5,
+  "comment": "Premium Basmati rice indeed! Our customers are loving it. The aroma and grain quality are superior. Will be ordering more soon.",
+  "images": [
+    "https://i.ibb.co/MBtjqXQ/review-basmati.jpg"
+  ],
+  "createdAt": "2024-04-18T13:00:00Z",
+  "isVerifiedPurchase": true,
+  "isHelpful": {
+    "count": 11,
+    "users": []
+  }
+},
+{
+  "_id": "65f1a5f5b74a576a0f1c1e78",
+  "productId": "65f1a3d3b74a576a0f1c1e3c",
+  "orderId": "65f1a4e4b74a576a0f1c1e58",
+  "reviewer": {
+    "userId": "65f1a1b1b74a576a0f1c1e15",
+    "name": "Export Company",
+    "email": "export.company@smartagro.com",
+    "role": "consumer"
+  },
+  "rating": 5,
+  "comment": "These litchis are exceptional! Perfect for export markets - sweet, juicy, and maintained freshness throughout shipping. Our clients overseas are very satisfied.",
+  "images": [
+    "https://i.ibb.co/MBtjqXQ/review-litchi1.jpg",
+    "https://i.ibb.co/MBtjqXQ/review-litchi2.jpg"
+  ],
+  "createdAt": "2024-04-24T14:00:00Z",
+  "isVerifiedPurchase": true,
+  "isHelpful": {
+    "count": 13,
+    "users": []
+  }
+},
+{
+  "_id": "65f1a5f5b74a576a0f1c1e79",
+  "productId": "65f1a3d3b74a576a0f1c1e35",
+  "orderId": "65f1a4e4b74a576a0f1c1e59",
+  "reviewer": {
+    "userId": "65f1a1b1b74a576a0f1c1e07",
+    "name": "Restaurant Owner",
+    "email": "resto.owner@smartagro.com",
+    "role": "consumer"
+  },
+  "rating": 4,
+  "comment": "Good quality onions with excellent shelf life. A few were slightly soft, but overall very good for our restaurant's cooking needs.",
+  "images": [
+    "https://i.ibb.co/MBtjqXQ/review-onion.jpg"
+  ],
+  "createdAt": "2024-05-01T10:00:00Z",
+  "isVerifiedPurchase": true,
+  "isHelpful": {
+    "count": 8,
+    "users": []
+  }
+},
+{
+  "_id": "65f1a5f5b74a576a0f1c1e7a",
+  "productId": "65f1a3d3b74a576a0f1c1e30",
+  "orderId": "65f1a4e4b74a576a0f1c1e50",
+  "reviewer": {
+    "userId": "65f1a1b1b74a576a0f1c1e07",
+    "name": "Restaurant Owner",
+    "email": "resto.owner@smartagro.com",
+    "role": "consumer"
+  },
+  "rating": 5,
+  "comment": "I'm ordering Premium Boro Rice for the second time. Consistent quality and our chefs love working with it. Great value for money!",
+  "images": [],
+  "createdAt": "2024-03-15T10:00:00Z",
+  "isVerifiedPurchase": true,
+  "isHelpful": {
+    "count": 10,
+    "users": []
+  }
+},
+{
+  "_id": "65f1a5f5b74a576a0f1c1e7b",
+  "productId": "65f1a3d3b74a576a0f1c1e39",
+  "orderId": "65f1a4e4b74a576a0f1c1e51",
+  "reviewer": {
+    "userId": "65f1a1b1b74a576a0f1c1e08",
+    "name": "Hotel Manager",
+    "email": "hotel.manager@smartagro.com",
+    "role": "consumer"
+  },
+  "rating": 5,
+  "comment": "The pineapples were a hit at our hotel breakfast buffet! Sweet, juicy, and perfect ripeness. Guests were asking where we sourced them from.",
+  "images": [
+    "https://i.ibb.co/MBtjqXQ/review-pineapple.jpg"
+  ],
+  "createdAt": "2024-03-20T11:00:00Z",
+  "isVerifiedPurchase": true,
+  "isHelpful": {
+    "count": 12,
+    "users": []
+  }
+},
+{
+  "_id": "65f1a5f5b74a576a0f1c1e7c",
+  "productId": "65f1a3d3b74a576a0f1c1e3e",
+  "orderId": "65f1a4e4b74a576a0f1c1e52",
+  "reviewer": {
+    "userId": "65f1a1b1b74a576a0f1c1e09",
+    "name": "School Cafeteria",
+    "email": "school.cafe@smartagro.com",
+    "role": "consumer"
+  },
+  "rating": 5,
+  "comment": "These watermelons were perfect for our school's summer fest! Sweet, refreshing, and the kids absolutely loved them. Great quality!",
+  "images": [
+    "https://i.ibb.co/MBtjqXQ/review-watermelon.jpg"
+  ],
+  "createdAt": "2024-03-30T15:00:00Z",
+  "isVerifiedPurchase": true,
+  "isHelpful": {
+    "count": 14,
+    "users": []
+  }
+}]

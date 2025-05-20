@@ -1,0 +1,88 @@
+[{
+  "_id": "65f1a2c2b74a576a0f1c1e20",
+  "userId": "65f1a1b1b74a576a0f1c1e02",
+  "name": "Dhaka Agent",
+  "email": "dhaka.agent@smartagro.com",
+  "phoneNumber": "+8801722222222",
+  "warehouseAddress": {
+    "street": "78 Warehouse Lane",
+    "district": "Dhaka",
+    "region": "Dhaka",
+    "postalCode": "1000",
+    "gpsCoordinates": {
+      "latitude": 23.8103,
+      "longitude": 90.4125
+    }
+  },
+  "identificationDocument": {
+    "documentType": "national_id",
+    "documentNumber": "1234567890",
+    "documentImage": "https://i.ibb.co/MBtjqXQ/id-card.jpg"
+  },
+  "warehouseCapacity": 5000,
+  "warehouseImages": [
+    "https://i.ibb.co/MBtjqXQ/warehouse1.jpg",
+    "https://i.ibb.co/MBtjqXQ/warehouse2.jpg"
+  ],
+  "status": "approved",
+  "membershipFee": {
+    "amount": 10000,
+    "paid": true,
+    "paymentDate": "2023-10-06T10:00:00Z",
+    "transactionId": "TX12345678"
+  },
+  "sellerCount": 12,
+  "reviewCount": 24,
+  "averageRating": 4.5,
+  "applicationDate": "2023-10-05T11:00:00Z",
+  "approvedBy": {
+    "adminId": "65f1a1b1b74a576a0f1c1e01",
+    "approvedAt": "2023-10-06T09:00:00Z",
+    "notes": "All documents verified"
+  },
+  "isActive": true
+},
+{
+  "_id": "65f1a2c2b74a576a0f1c1e21",
+  "userId": "65f1a1b1b74a576a0f1c1e03",
+  "name": "Chittagong Agent",
+  "email": "chittagong.agent@smartagro.com",
+  "phoneNumber": "+8801733333333",
+  "warehouseAddress": {
+    "street": "92 Storage Boulevard",
+    "district": "Chittagong",
+    "region": "Chittagong",
+    "postalCode": "4000",
+    "gpsCoordinates": {
+      "latitude": 22.3569,
+      "longitude": 91.7832
+    }
+  },
+  "identificationDocument": {
+    "documentType": "national_id",
+    "documentNumber": "0987654321",
+    "documentImage": "https://i.ibb.co/MBtjqXQ/id-card2.jpg"
+  },
+  "warehouseCapacity": 7500,
+  "warehouseImages": [
+    "https://i.ibb.co/MBtjqXQ/warehouse3.jpg",
+    "https://i.ibb.co/MBtjqXQ/warehouse4.jpg"
+  ],
+  "status": "approved",
+  "membershipFee": {
+    "amount": 10000,
+    "paid": true,
+    "paymentDate": "2023-10-11T10:00:00Z",
+    "transactionId": "TX98765432"
+  },
+  "sellerCount": 9,
+  "reviewCount": 18,
+  "averageRating": 4.3,
+  "applicationDate": "2023-10-10T12:00:00Z",
+  "approvedBy": {
+    "adminId": "65f1a1b1b74a576a0f1c1e01",
+    "approvedAt": "2023-10-11T09:00:00Z",
+    "notes": "All documents verified"
+  },
+  "isActive": true
+}]

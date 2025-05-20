@@ -1,0 +1,700 @@
+[{
+  "title": "Premium Boro Rice",
+  "description": "High-quality Boro rice harvested from Bogra region. Perfect for daily consumption with excellent grain quality.",
+  "cropType": "rice",
+  "images": [
+    "https://i.ibb.co/MBtjqXQ/rice1.jpg",
+    "https://i.ibb.co/MBtjqXQ/rice2.jpg"
+  ],
+  "price": 1800,
+  "unit": "quintal",
+  "minimumOrderQuantity": 5,
+  "availableStock": 200,
+  "harvestDate": "2024-01-15T00:00:00Z",
+  "sellerInfo": {
+    "sellerId": "65f1a1b1b74a576a0f1c1e04",
+    "sellerName": "Rice Farmer",
+    "sellerEmail": "rice.farmer@smartagro.com",
+    "sellerPhone": "+8801744444444"
+  },
+  "region": "Rajshahi",
+  "district": "Bogra",
+  "status": "approved",
+  "quality": "A",
+  "tags": [
+    "rice",
+    "boro",
+    "premium"
+  ],
+  "createdAt": "2024-01-20T10:00:00Z",
+  "approvedBy": {
+    "agentId": "65f1a1b1b74a576a0f1c1e02",
+    "approvedAt": "2024-01-21T11:00:00Z"
+  },
+  "averageRating": 4.7
+},
+{
+  "title": "Organic Brown Rice",
+  "description": "100% organic brown rice grown without any chemicals. Rich in nutrients and perfect for health-conscious consumers.",
+  "cropType": "rice",
+  "images": [
+    "https://i.ibb.co/MBtjqXQ/brown-rice1.jpg",
+    "https://i.ibb.co/MBtjqXQ/brown-rice2.jpg"
+  ],
+  "price": 2200,
+  "unit": "quintal",
+  "minimumOrderQuantity": 3,
+  "availableStock": 150,
+  "harvestDate": "2024-01-20T00:00:00Z",
+  "sellerInfo": {
+    "sellerId": "65f1a1b1b74a576a0f1c1e04",
+    "sellerName": "Rice Farmer",
+    "sellerEmail": "rice.farmer@smartagro.com",
+    "sellerPhone": "+8801744444444"
+  },
+  "region": "Rajshahi",
+  "district": "Bogra",
+  "status": "approved",
+  "quality": "A",
+  "tags": [
+    "rice",
+    "brown",
+    "organic"
+  ],
+  "createdAt": "2024-01-25T10:00:00Z",
+  "approvedBy": {
+    "agentId": "65f1a1b1b74a576a0f1c1e02",
+    "approvedAt": "2024-01-26T11:00:00Z"
+  },
+  "averageRating": 4.8
+},
+{
+  "title": "Premium Basmati Rice",
+  "description": "Aromatic Basmati rice with long grains. Perfect for special occasions and biryanis.",
+  "cropType": "rice",
+  "images": [
+    "https://i.ibb.co/MBtjqXQ/basmati1.jpg",
+    "https://i.ibb.co/MBtjqXQ/basmati2.jpg"
+  ],
+  "price": 3000,
+  "unit": "quintal",
+  "minimumOrderQuantity": 2,
+  "availableStock": 100,
+  "harvestDate": "2024-01-25T00:00:00Z",
+  "sellerInfo": {
+    "sellerId": "65f1a1b1b74a576a0f1c1e04",
+    "sellerName": "Rice Farmer",
+    "sellerEmail": "rice.farmer@smartagro.com",
+    "sellerPhone": "+8801744444444"
+  },
+  "region": "Rajshahi",
+  "district": "Bogra",
+  "status": "approved",
+  "quality": "A",
+  "tags": [
+    "rice",
+    "basmati",
+    "aromatic"
+  ],
+  "createdAt": "2024-01-30T10:00:00Z",
+  "approvedBy": {
+    "agentId": "65f1a1b1b74a576a0f1c1e02",
+    "approvedAt": "2024-01-31T11:00:00Z"
+  },
+  "averageRating": 4.9
+},
+{
+  "title": "Fresh Tomatoes",
+  "description": "Freshly harvested tomatoes grown with organic practices. Juicy and perfect for salads and cooking.",
+  "cropType": "vegetable",
+  "images": [
+    "https://i.ibb.co/MBtjqXQ/tomato1.jpg",
+    "https://i.ibb.co/MBtjqXQ/tomato2.jpg"
+  ],
+  "price": 35,
+  "unit": "kg",
+  "minimumOrderQuantity": 50,
+  "availableStock": 1000,
+  "harvestDate": "2024-02-01T00:00:00Z",
+  "sellerInfo": {
+    "sellerId": "65f1a1b1b74a576a0f1c1e05",
+    "sellerName": "Vegetable Grower",
+    "sellerEmail": "veggie.grower@smartagro.com",
+    "sellerPhone": "+8801755555555"
+  },
+  "region": "Chittagong",
+  "district": "Comilla",
+  "status": "approved",
+  "quality": "A",
+  "tags": [
+    "vegetable",
+    "tomato",
+    "fresh"
+  ],
+  "createdAt": "2024-02-03T10:00:00Z",
+  "approvedBy": {
+    "agentId": "65f1a1b1b74a576a0f1c1e03",
+    "approvedAt": "2024-02-04T11:00:00Z"
+  },
+  "averageRating": 4.6
+},
+{
+  "title": "Organic Potatoes",
+  "description": "Organically grown potatoes with no chemical pesticides. Great for various culinary preparations.",
+  "cropType": "vegetable",
+  "images": [
+    "https://i.ibb.co/MBtjqXQ/potato1.jpg",
+    "https://i.ibb.co/MBtjqXQ/potato2.jpg"
+  ],
+  "price": 25,
+  "unit": "kg",
+  "minimumOrderQuantity": 100,
+  "availableStock": 2000,
+  "harvestDate": "2024-02-05T00:00:00Z",
+  "sellerInfo": {
+    "sellerId": "65f1a1b1b74a576a0f1c1e05",
+    "sellerName": "Vegetable Grower",
+    "sellerEmail": "veggie.grower@smartagro.com",
+    "sellerPhone": "+8801755555555"
+  },
+  "region": "Chittagong",
+  "district": "Comilla",
+  "status": "approved",
+  "quality": "A",
+  "tags": [
+    "vegetable",
+    "potato",
+    "organic"
+  ],
+  "createdAt": "2024-02-08T10:00:00Z",
+  "approvedBy": {
+    "agentId": "65f1a1b1b74a576a0f1c1e03",
+    "approvedAt": "2024-02-09T11:00:00Z"
+  },
+  "averageRating": 4.5
+},
+{
+  "title": "Fresh Onions",
+  "description": "High-quality onions with excellent shelf life. Essential for every kitchen.",
+  "cropType": "vegetable",
+  "images": [
+    "https://i.ibb.co/MBtjqXQ/onion1.jpg",
+    "https://i.ibb.co/MBtjqXQ/onion2.jpg"
+  ],
+  "price": 30,
+  "unit": "kg",
+  "minimumOrderQuantity": 100,
+  "availableStock": 1500,
+  "harvestDate": "2024-02-10T00:00:00Z",
+  "sellerInfo": {
+    "sellerId": "65f1a1b1b74a576a0f1c1e05",
+    "sellerName": "Vegetable Grower",
+    "sellerEmail": "veggie.grower@smartagro.com",
+    "sellerPhone": "+8801755555555"
+  },
+  "region": "Chittagong",
+  "district": "Comilla",
+  "status": "approved",
+  "quality": "A",
+  "tags": [
+    "vegetable",
+    "onion",
+    "fresh"
+  ],
+  "createdAt": "2024-02-12T10:00:00Z",
+  "approvedBy": {
+    "agentId": "65f1a1b1b74a576a0f1c1e03",
+    "approvedAt": "2024-02-13T11:00:00Z"
+  },
+  "averageRating": 4.4
+},
+{
+  "title": "Green Chillies",
+  "description": "Fresh green chillies with the perfect level of spiciness for Bangladeshi cuisine.",
+  "cropType": "vegetable",
+  "images": [
+    "https://i.ibb.co/MBtjqXQ/chilli1.jpg",
+    "https://i.ibb.co/MBtjqXQ/chilli2.jpg"
+  ],
+  "price": 45,
+  "unit": "kg",
+  "minimumOrderQuantity": 20,
+  "availableStock": 500,
+  "harvestDate": "2024-02-15T00:00:00Z",
+  "sellerInfo": {
+    "sellerId": "65f1a1b1b74a576a0f1c1e05",
+    "sellerName": "Vegetable Grower",
+    "sellerEmail": "veggie.grower@smartagro.com",
+    "sellerPhone": "+8801755555555"
+  },
+  "region": "Chittagong",
+  "district": "Comilla",
+  "status": "approved",
+  "quality": "A",
+  "tags": [
+    "vegetable",
+    "chilli",
+    "spicy"
+  ],
+  "createdAt": "2024-02-17T10:00:00Z",
+  "approvedBy": {
+    "agentId": "65f1a1b1b74a576a0f1c1e03",
+    "approvedAt": "2024-02-18T11:00:00Z"
+  },
+  "averageRating": 4.7
+},
+{
+  "title": "Fresh Mangoes",
+  "description": "Juicy and sweet mangoes from Rajshahi. Perfect for direct consumption or making desserts.",
+  "cropType": "fruit",
+  "images": [
+    "https://i.ibb.co/MBtjqXQ/mango1.jpg",
+    "https://i.ibb.co/MBtjqXQ/mango2.jpg"
+  ],
+  "price": 120,
+  "unit": "kg",
+  "minimumOrderQuantity": 50,
+  "availableStock": 1000,
+  "harvestDate": "2024-02-20T00:00:00Z",
+  "sellerInfo": {
+    "sellerId": "65f1a1b1b74a576a0f1c1e06",
+    "sellerName": "Fruit Farmer",
+    "sellerEmail": "fruit.farmer@smartagro.com",
+    "sellerPhone": "+8801766666666"
+  },
+  "region": "Rajshahi",
+  "district": "Rajshahi",
+  "status": "approved",
+  "quality": "A",
+  "tags": [
+    "fruit",
+    "mango",
+    "sweet"
+  ],
+  "createdAt": "2024-02-22T10:00:00Z",
+  "approvedBy": {
+    "agentId": "65f1a1b1b74a576a0f1c1e02",
+    "approvedAt": "2024-02-23T11:00:00Z"
+  },
+  "averageRating": 4.9
+},
+{
+  "title": "Fresh Bananas",
+  "description": "High-quality bananas with perfect ripeness. Great source of energy and nutrients.",
+  "cropType": "fruit",
+  "images": [
+    "https://i.ibb.co/MBtjqXQ/banana1.jpg",
+    "https://i.ibb.co/MBtjqXQ/banana2.jpg"
+  ],
+  "price": 60,
+  "unit": "kg",
+  "minimumOrderQuantity": 50,
+  "availableStock": 1500,
+  "harvestDate": "2024-02-25T00:00:00Z",
+  "sellerInfo": {
+    "sellerId": "65f1a1b1b74a576a0f1c1e06",
+    "sellerName": "Fruit Farmer",
+    "sellerEmail": "fruit.farmer@smartagro.com",
+    "sellerPhone": "+8801766666666"
+  },
+  "region": "Rajshahi",
+  "district": "Rajshahi",
+  "status": "approved",
+  "quality": "A",
+  "tags": [
+    "fruit",
+    "banana",
+    "fresh"
+  ],
+  "createdAt": "2024-02-27T10:00:00Z",
+  "approvedBy": {
+    "agentId": "65f1a1b1b74a576a0f1c1e02",
+    "approvedAt": "2024-02-28T11:00:00Z"
+  },
+  "averageRating": 4.6
+},
+{
+  "title": "Fresh Pineapples",
+  "description": "Sweet and juicy pineapples. Perfect for direct consumption, juices, or desserts.",
+  "cropType": "fruit",
+  "images": [
+    "https://i.ibb.co/MBtjqXQ/pineapple1.jpg",
+    "https://i.ibb.co/MBtjqXQ/pineapple2.jpg"
+  ],
+  "price": 80,
+  "unit": "kg",
+  "minimumOrderQuantity": 30,
+  "availableStock": 800,
+  "harvestDate": "2024-03-01T00:00:00Z",
+  "sellerInfo": {
+    "sellerId": "65f1a1b1b74a576a0f1c1e06",
+    "sellerName": "Fruit Farmer",
+    "sellerEmail": "fruit.farmer@smartagro.com",
+    "sellerPhone": "+8801766666666"
+  },
+  "region": "Rajshahi",
+  "district": "Rajshahi",
+  "status": "approved",
+  "quality": "A",
+  "tags": [
+    "fruit",
+    "pineapple",
+    "sweet"
+  ],
+  "createdAt": "2024-03-03T10:00:00Z",
+  "approvedBy": {
+    "agentId": "65f1a1b1b74a576a0f1c1e02",
+    "approvedAt": "2024-03-04T11:00:00Z"
+  },
+  "averageRating": 4.7
+},
+{
+  "title": "Premium IRRI Rice",
+  "description": "High-yielding IRRI rice variety with excellent cooking quality.",
+  "cropType": "rice",
+  "images": [
+    "https://i.ibb.co/MBtjqXQ/irri1.jpg",
+    "https://i.ibb.co/MBtjqXQ/irri2.jpg"
+  ],
+  "price": 1700,
+  "unit": "quintal",
+  "minimumOrderQuantity": 5,
+  "availableStock": 250,
+  "harvestDate": "2024-03-05T00:00:00Z",
+  "sellerInfo": {
+    "sellerId": "65f1a1b1b74a576a0f1c1e04",
+    "sellerName": "Rice Farmer",
+    "sellerEmail": "rice.farmer@smartagro.com",
+    "sellerPhone": "+8801744444444"
+  },
+  "region": "Rajshahi",
+  "district": "Bogra",
+  "status": "approved",
+  "quality": "B",
+  "tags": [
+    "rice",
+    "irri",
+    "standard"
+  ],
+  "createdAt": "2024-03-08T10:00:00Z",
+  "approvedBy": {
+    "agentId": "65f1a1b1b74a576a0f1c1e02",
+    "approvedAt": "2024-03-09T11:00:00Z"
+  },
+  "averageRating": 4.3
+},
+{
+  "title": "Fresh Cauliflower",
+  "description": "Large, white cauliflowers grown with minimal pesticides. Great for various dishes.",
+  "cropType": "vegetable",
+  "images": [
+    "https://i.ibb.co/MBtjqXQ/cauliflower1.jpg",
+    "https://i.ibb.co/MBtjqXQ/cauliflower2.jpg"
+  ],
+  "price": 40,
+  "unit": "kg",
+  "minimumOrderQuantity": 30,
+  "availableStock": 600,
+  "harvestDate": "2024-03-10T00:00:00Z",
+  "sellerInfo": {
+    "sellerId": "65f1a1b1b74a576a0f1c1e05",
+    "sellerName": "Vegetable Grower",
+    "sellerEmail": "veggie.grower@smartagro.com",
+    "sellerPhone": "+8801755555555"
+  },
+  "region": "Chittagong",
+  "district": "Comilla",
+  "status": "approved",
+  "quality": "A",
+  "tags": [
+    "vegetable",
+    "cauliflower",
+    "fresh"
+  ],
+  "createdAt": "2024-03-12T10:00:00Z",
+  "approvedBy": {
+    "agentId": "65f1a1b1b74a576a0f1c1e03",
+    "approvedAt": "2024-03-13T11:00:00Z"
+  },
+  "averageRating": 4.5
+},
+{
+  "title": "Fresh Litchi",
+  "description": "Sweet and juicy litchis from Rajshahi. Limited seasonal availability.",
+  "cropType": "fruit",
+  "images": [
+    "https://i.ibb.co/MBtjqXQ/litchi1.jpg",
+    "https://i.ibb.co/MBtjqXQ/litchi2.jpg"
+  ],
+  "price": 150,
+  "unit": "kg",
+  "minimumOrderQuantity": 20,
+  "availableStock": 400,
+  "harvestDate": "2024-03-15T00:00:00Z",
+  "sellerInfo": {
+    "sellerId": "65f1a1b1b74a576a0f1c1e06",
+    "sellerName": "Fruit Farmer",
+    "sellerEmail": "fruit.farmer@smartagro.com",
+    "sellerPhone": "+8801766666666"
+  },
+  "region": "Rajshahi",
+  "district": "Rajshahi",
+  "status": "approved",
+  "quality": "A",
+  "tags": [
+    "fruit",
+    "litchi",
+    "seasonal"
+  ],
+  "createdAt": "2024-03-17T10:00:00Z",
+  "approvedBy": {
+    "agentId": "65f1a1b1b74a576a0f1c1e02",
+    "approvedAt": "2024-03-18T11:00:00Z"
+  },
+  "averageRating": 4.8
+},
+{
+  "title": "Fresh Eggplants",
+  "description": "Glossy purple eggplants grown using sustainable farming practices.",
+  "cropType": "vegetable",
+  "images": [
+    "https://i.ibb.co/MBtjqXQ/eggplant1.jpg",
+    "https://i.ibb.co/MBtjqXQ/eggplant2.jpg"
+  ],
+  "price": 35,
+  "unit": "kg",
+  "minimumOrderQuantity": 40,
+  "availableStock": 800,
+  "harvestDate": "2024-03-20T00:00:00Z",
+  "sellerInfo": {
+    "sellerId": "65f1a1b1b74a576a0f1c1e05",
+    "sellerName": "Vegetable Grower",
+    "sellerEmail": "veggie.grower@smartagro.com",
+    "sellerPhone": "+8801755555555"
+  },
+  "region": "Chittagong",
+  "district": "Comilla",
+  "status": "approved",
+  "quality": "A",
+  "tags": [
+    "vegetable",
+    "eggplant",
+    "fresh"
+  ],
+  "createdAt": "2024-03-22T10:00:00Z",
+  "approvedBy": {
+    "agentId": "65f1a1b1b74a576a0f1c1e03",
+    "approvedAt": "2024-03-23T11:00:00Z"
+  },
+  "averageRating": 4.4
+},
+{
+  "title": "Fresh Watermelons",
+  "description": "Sweet and juicy watermelons perfect for summer refreshment.",
+  "cropType": "fruit",
+  "images": [
+    "https://i.ibb.co/MBtjqXQ/watermelon1.jpg",
+    "https://i.ibb.co/MBtjqXQ/watermelon2.jpg"
+  ],
+  "price": 30,
+  "unit": "kg",
+  "minimumOrderQuantity": 100,
+  "availableStock": 2000,
+  "harvestDate": "2024-03-25T00:00:00Z",
+  "sellerInfo": {
+    "sellerId": "65f1a1b1b74a576a0f1c1e06",
+    "sellerName": "Fruit Farmer",
+    "sellerEmail": "fruit.farmer@smartagro.com",
+    "sellerPhone": "+8801766666666"
+  },
+  "region": "Rajshahi",
+  "district": "Rajshahi",
+  "status": "approved",
+  "quality": "A",
+  "tags": [
+    "fruit",
+    "watermelon",
+    "summer"
+  ],
+  "createdAt": "2024-03-27T10:00:00Z",
+  "approvedBy": {
+    "agentId": "65f1a1b1b74a576a0f1c1e02",
+    "approvedAt": "2024-03-28T11:00:00Z"
+  },
+  "averageRating": 4.6
+},
+{
+  "title": "Aromatic Miniket Rice",
+  "description": "Premium aromatic Miniket rice with slender grains and excellent taste.",
+  "cropType": "rice",
+  "images": [
+    "https://i.ibb.co/MBtjqXQ/miniket1.jpg",
+    "https://i.ibb.co/MBtjqXQ/miniket2.jpg"
+  ],
+  "price": 2500,
+  "unit": "quintal",
+  "minimumOrderQuantity": 3,
+  "availableStock": 120,
+  "harvestDate": "2024-03-30T00:00:00Z",
+  "sellerInfo": {
+    "sellerId": "65f1a1b1b74a576a0f1c1e04",
+    "sellerName": "Rice Farmer",
+    "sellerEmail": "rice.farmer@smartagro.com",
+    "sellerPhone": "+8801744444444"
+  },
+  "region": "Rajshahi",
+  "district": "Bogra",
+  "status": "approved",
+  "quality": "A",
+  "tags": [
+    "rice",
+    "miniket",
+    "aromatic"
+  ],
+  "createdAt": "2024-04-02T10:00:00Z",
+  "approvedBy": {
+    "agentId": "65f1a1b1b74a576a0f1c1e02",
+    "approvedAt": "2024-04-03T11:00:00Z"
+  },
+  "averageRating": 4.9
+},
+{
+  "title": "Fresh Cucumbers",
+  "description": "Crisp and juicy cucumbers great for salads and fresh consumption.",
+  "cropType": "vegetable",
+  "images": [
+    "https://i.ibb.co/MBtjqXQ/cucumber1.jpg",
+    "https://i.ibb.co/MBtjqXQ/cucumber2.jpg"
+  ],
+  "price": 40,
+  "unit": "kg",
+  "minimumOrderQuantity": 30,
+  "availableStock": 700,
+  "harvestDate": "2024-04-05T00:00:00Z",
+  "sellerInfo": {
+    "sellerId": "65f1a1b1b74a576a0f1c1e05",
+    "sellerName": "Vegetable Grower",
+    "sellerEmail": "veggie.grower@smartagro.com",
+    "sellerPhone": "+8801755555555"
+  },
+  "region": "Chittagong",
+  "district": "Comilla",
+  "status": "approved",
+  "quality": "A",
+  "tags": [
+    "vegetable",
+    "cucumber",
+    "fresh"
+  ],
+  "createdAt": "2024-04-07T10:00:00Z",
+  "approvedBy": {
+    "agentId": "65f1a1b1b74a576a0f1c1e03",
+    "approvedAt": "2024-04-08T11:00:00Z"
+  },
+  "averageRating": 4.5
+},
+{
+  "title": "Organic Guavas",
+  "description": "Sweet and crunchy guavas grown using organic farming practices.",
+  "cropType": "fruit",
+  "images": [
+    "https://i.ibb.co/MBtjqXQ/guava1.jpg",
+    "https://i.ibb.co/MBtjqXQ/guava2.jpg"
+  ],
+  "price": 70,
+  "unit": "kg",
+  "minimumOrderQuantity": 40,
+  "availableStock": 600,
+  "harvestDate": "2024-04-10T00:00:00Z",
+  "sellerInfo": {
+    "sellerId": "65f1a1b1b74a576a0f1c1e06",
+    "sellerName": "Fruit Farmer",
+    "sellerEmail": "fruit.farmer@smartagro.com",
+    "sellerPhone": "+8801766666666"
+  },
+  "region": "Rajshahi",
+  "district": "Rajshahi",
+  "status": "approved",
+  "quality": "A",
+  "tags": [
+    "fruit",
+    "guava",
+    "organic"
+  ],
+  "createdAt": "2024-04-12T10:00:00Z",
+  "approvedBy": {
+    "agentId": "65f1a1b1b74a576a0f1c1e02",
+    "approvedAt": "2024-04-13T11:00:00Z"
+  },
+  "averageRating": 4.7
+},
+{
+  "title": "Fresh Carrots",
+  "description": "Bright orange carrots rich in vitamin A, grown using sustainable practices.",
+  "cropType": "vegetable",
+  "images": [
+    "https://i.ibb.co/MBtjqXQ/carrot1.jpg",
+    "https://i.ibb.co/MBtjqXQ/carrot2.jpg"
+  ],
+  "price": 45,
+  "unit": "kg",
+  "minimumOrderQuantity": 35,
+  "availableStock": 850,
+  "harvestDate": "2024-04-15T00:00:00Z",
+  "sellerInfo": {
+    "sellerId": "65f1a1b1b74a576a0f1c1e05",
+    "sellerName": "Vegetable Grower",
+    "sellerEmail": "veggie.grower@smartagro.com",
+    "sellerPhone": "+8801755555555"
+  },
+  "region": "Chittagong",
+  "district": "Comilla",
+  "status": "approved",
+  "quality": "A",
+  "tags": [
+    "vegetable",
+    "carrot",
+    "nutritious"
+  ],
+  "createdAt": "2024-04-17T10:00:00Z",
+  "approvedBy": {
+    "agentId": "65f1a1b1b74a576a0f1c1e03",
+    "approvedAt": "2024-04-18T11:00:00Z"
+  },
+  "averageRating": 4.6
+},
+{
+  "title": "Chinigura Aromatic Rice",
+  "description": "Premium aromatic Chinigura rice, perfect for polao and special rice dishes.",
+  "cropType": "rice",
+  "images": [
+    "https://i.ibb.co/MBtjqXQ/chinigura1.jpg",
+    "https://i.ibb.co/MBtjqXQ/chinigura2.jpg"
+  ],
+  "price": 3200,
+  "unit": "quintal",
+  "minimumOrderQuantity": 2,
+  "availableStock": 80,
+  "harvestDate": "2024-04-20T00:00:00Z",
+  "sellerInfo": {
+    "sellerId": "65f1a1b1b74a576a0f1c1e04",
+    "sellerName": "Rice Farmer",
+    "sellerEmail": "rice.farmer@smartagro.com",
+    "sellerPhone": "+8801744444444"
+  },
+  "region": "Rajshahi",
+  "district": "Bogra",
+  "status": "approved",
+  "quality": "A",
+  "tags": [
+    "rice",
+    "chinigura",
+    "aromatic"
+  ],
+  "createdAt": "2024-04-22T10:00:00Z",
+  "approvedBy": {
+    "agentId": "65f1a1b1b74a576a0f1c1e02",
+    "approvedAt": "2024-04-23T11:00:00Z"
+  },
+  "averageRating": 4.9
+}]

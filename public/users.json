@@ -1,0 +1,274 @@
+[{
+  "name": "Admin User",
+  "email": "admin@smartagro.com",
+  "password": "$2a$10$XYZ123ABC456DEF789GHI",
+  "role": "admin",
+  "phoneNumber": "+8801711111111",
+  "address": {
+    "street": "123 Admin Street",
+    "city": "Dhaka",
+    "state": "Dhaka",
+    "zip": "1000",
+    "country": "Bangladesh"
+  },
+  "profilePicture": "https://i.ibb.co/MBtjqXQ/no-avatar.gif",
+  "verified": true,
+  "isActive": true,
+  "createdAt": "2023-10-01T10:00:00Z"
+},
+{
+  "name": "Dhaka Agent",
+  "email": "dhaka.agent@smartagro.com",
+  "password": "$2a$10$XYZ123ABC456DEF789GHI",
+  "role": "agent",
+  "phoneNumber": "+8801722222222",
+  "address": {
+    "street": "45 Agent Street",
+    "city": "Dhaka",
+    "state": "Dhaka",
+    "zip": "1000",
+    "country": "Bangladesh"
+  },
+  "profilePicture": "https://i.ibb.co/MBtjqXQ/no-avatar.gif",
+  "region": "Dhaka",
+  "verified": true,
+  "warehouseAddress": "78 Warehouse Lane, Dhaka",
+  "isActive": true,
+  "createdAt": "2023-10-05T11:00:00Z"
+},
+{
+  "name": "Chittagong Agent",
+  "email": "chittagong.agent@smartagro.com",
+  "password": "$2a$10$XYZ123ABC456DEF789GHI",
+  "role": "agent",
+  "phoneNumber": "+8801733333333",
+  "address": {
+    "street": "67 Agent Avenue",
+    "city": "Chittagong",
+    "state": "Chittagong",
+    "zip": "4000",
+    "country": "Bangladesh"
+  },
+  "profilePicture": "https://i.ibb.co/MBtjqXQ/no-avatar.gif",
+  "region": "Chittagong",
+  "verified": true,
+  "warehouseAddress": "92 Storage Boulevard, Chittagong",
+  "isActive": true,
+  "createdAt": "2023-10-10T12:00:00Z"
+},
+{
+  "name": "Rice Farmer",
+  "email": "rice.farmer@smartagro.com",
+  "password": "$2a$10$XYZ123ABC456DEF789GHI",
+  "role": "seller",
+  "phoneNumber": "+8801744444444",
+  "address": {
+    "street": "12 Rice Field Road",
+    "city": "Bogra",
+    "state": "Rajshahi",
+    "zip": "5800",
+    "country": "Bangladesh"
+  },
+  "profilePicture": "https://i.ibb.co/MBtjqXQ/no-avatar.gif",
+  "verified": true,
+  "isActive": true,
+  "createdAt": "2023-10-15T14:00:00Z"
+},
+{
+  "name": "Vegetable Grower",
+  "email": "veggie.grower@smartagro.com",
+  "password": "$2a$10$XYZ123ABC456DEF789GHI",
+  "role": "seller",
+  "phoneNumber": "+8801755555555",
+  "address": {
+    "street": "34 Garden Lane",
+    "city": "Comilla",
+    "state": "Chittagong",
+    "zip": "3500",
+    "country": "Bangladesh"
+  },
+  "profilePicture": "https://i.ibb.co/MBtjqXQ/no-avatar.gif",
+  "verified": true,
+  "isActive": true,
+  "createdAt": "2023-10-20T15:00:00Z"
+},
+{
+  "name": "Fruit Farmer",
+  "email": "fruit.farmer@smartagro.com",
+  "password": "$2a$10$XYZ123ABC456DEF789GHI",
+  "role": "seller",
+  "phoneNumber": "+8801766666666",
+  "address": {
+    "street": "56 Orchard Street",
+    "city": "Rajshahi",
+    "state": "Rajshahi",
+    "zip": "6000",
+    "country": "Bangladesh"
+  },
+  "profilePicture": "https://i.ibb.co/MBtjqXQ/no-avatar.gif",
+  "verified": true,
+  "isActive": true,
+  "createdAt": "2023-10-25T16:00:00Z"
+},
+{
+  "name": "Restaurant Owner",
+  "email": "resto.owner@smartagro.com",
+  "password": "$2a$10$XYZ123ABC456DEF789GHI",
+  "role": "consumer",
+  "phoneNumber": "+8801777777777",
+  "address": {
+    "street": "78 Food Street",
+    "city": "Dhaka",
+    "state": "Dhaka",
+    "zip": "1000",
+    "country": "Bangladesh"
+  },
+  "profilePicture": "https://i.ibb.co/MBtjqXQ/no-avatar.gif",
+  "verified": true,
+  "isActive": true,
+  "createdAt": "2023-11-01T09:00:00Z"
+},
+{
+  "name": "Hotel Manager",
+  "email": "hotel.manager@smartagro.com",
+  "password": "$2a$10$XYZ123ABC456DEF789GHI",
+  "role": "consumer",
+  "phoneNumber": "+8801788888888",
+  "address": {
+    "street": "90 Hospitality Avenue",
+    "city": "Chittagong",
+    "state": "Chittagong",
+    "zip": "4000",
+    "country": "Bangladesh"
+  },
+  "profilePicture": "https://i.ibb.co/MBtjqXQ/no-avatar.gif",
+  "verified": true,
+  "isActive": true,
+  "createdAt": "2023-11-05T10:00:00Z"
+},
+{
+  "name": "School Cafeteria",
+  "email": "school.cafe@smartagro.com",
+  "password": "$2a$10$XYZ123ABC456DEF789GHI",
+  "role": "consumer",
+  "phoneNumber": "+8801799999999",
+  "address": {
+    "street": "12 Education Lane",
+    "city": "Sylhet",
+    "state": "Sylhet",
+    "zip": "3100",
+    "country": "Bangladesh"
+  },
+  "profilePicture": "https://i.ibb.co/MBtjqXQ/no-avatar.gif",
+  "verified": true,
+  "isActive": true,
+  "createdAt": "2023-11-10T11:00:00Z"
+},
+{
+  "name": "Grocery Store Owner",
+  "email": "grocery.store@smartagro.com",
+  "password": "$2a$10$XYZ123ABC456DEF789GHI",
+  "role": "consumer",
+  "phoneNumber": "+8801712345678",
+  "address": {
+    "street": "45 Market Street",
+    "city": "Khulna",
+    "state": "Khulna",
+    "zip": "9000",
+    "country": "Bangladesh"
+  },
+  "profilePicture": "https://i.ibb.co/MBtjqXQ/no-avatar.gif",
+  "verified": true,
+  "isActive": true,
+  "createdAt": "2023-11-15T12:00:00Z"
+},
+{
+  "name": "Food Processor",
+  "email": "food.processor@smartagro.com",
+  "password": "$2a$10$XYZ123ABC456DEF789GHI",
+  "role": "consumer",
+  "phoneNumber": "+8801787654321",
+  "address": {
+    "street": "67 Factory Road",
+    "city": "Gazipur",
+    "state": "Dhaka",
+    "zip": "1700",
+    "country": "Bangladesh"
+  },
+  "profilePicture": "https://i.ibb.co/MBtjqXQ/no-avatar.gif",
+  "verified": true,
+  "isActive": true,
+  "createdAt": "2023-11-20T13:00:00Z"
+},
+{
+  "name": "Bakery Owner",
+  "email": "bakery.owner@smartagro.com",
+  "password": "$2a$10$XYZ123ABC456DEF789GHI",
+  "role": "consumer",
+  "phoneNumber": "+8801723456789",
+  "address": {
+    "street": "89 Bakery Boulevard",
+    "city": "Dhaka",
+    "state": "Dhaka",
+    "zip": "1000",
+    "country": "Bangladesh"
+  },
+  "profilePicture": "https://i.ibb.co/MBtjqXQ/no-avatar.gif",
+  "verified": true,
+  "isActive": true,
+  "createdAt": "2023-11-25T14:00:00Z"
+},
+{
+  "name": "Catering Service",
+  "email": "catering.service@smartagro.com",
+  "password": "$2a$10$XYZ123ABC456DEF789GHI",
+  "role": "consumer",
+  "phoneNumber": "+8801798765432",
+  "address": {
+    "street": "101 Catering Avenue",
+    "city": "Dhaka",
+    "state": "Dhaka",
+    "zip": "1000",
+    "country": "Bangladesh"
+  },
+  "profilePicture": "https://i.ibb.co/MBtjqXQ/no-avatar.gif",
+  "verified": true,
+  "isActive": true,
+  "createdAt": "2023-12-01T15:00:00Z"
+},
+{
+  "name": "Wholesale Buyer",
+  "email": "wholesale.buyer@smartagro.com",
+  "password": "$2a$10$XYZ123ABC456DEF789GHI",
+  "role": "consumer",
+  "phoneNumber": "+8801734567890",
+  "address": {
+    "street": "123 Wholesale Market",
+    "city": "Narayanganj",
+    "state": "Dhaka",
+    "zip": "1400",
+    "country": "Bangladesh"
+  },
+  "profilePicture": "https://i.ibb.co/MBtjqXQ/no-avatar.gif",
+  "verified": true,
+  "isActive": true,
+  "createdAt": "2023-12-05T16:00:00Z"
+},
+{
+  "name": "Export Company",
+  "email": "export.company@smartagro.com",
+  "password": "$2a$10$XYZ123ABC456DEF789GHI",
+  "role": "consumer",
+  "phoneNumber": "+8801745678901",
+  "address": {
+    "street": "45 Export Processing Zone",
+    "city": "Chittagong",
+    "state": "Chittagong",
+    "zip": "4000",
+    "country": "Bangladesh"
+  },
+  "profilePicture": "https://i.ibb.co/MBtjqXQ/no-avatar.gif",
+  "verified": true,
+  "isActive": true,
+  "createdAt": "2023-12-10T17:00:00Z"
+}]
