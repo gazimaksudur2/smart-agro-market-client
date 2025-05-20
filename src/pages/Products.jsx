@@ -135,12 +135,11 @@ export default function Products() {
 		if (products && products.length > 0) {
 			const prices = products.map((product) => product.price);
 			const maxPrice = Math.max(...prices);
-			const minPrice = Math.min(...prices);
-			setCurMaxMin({ max: maxPrice, min: minPrice });
+			setCurMaxMin({ max: maxPrice, min: 0 });
 			setFilters((prevFilters) => ({
 				...prevFilters,
 				maxPrice: maxPrice,
-				minPrice: minPrice,
+				minPrice: 0,
 			}));
 		}
 	}, [products]);
