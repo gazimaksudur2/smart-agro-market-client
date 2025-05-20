@@ -1,5 +1,5 @@
 /**
- * Cookie utility functions to manage cookies across domains
+ * Cookie utility functions optimized for authentication
  */
 
 // Get a cookie by name
@@ -9,11 +9,10 @@ export const getCookie = (name) => {
 	return null;
 };
 
-// Set a cookie with options (including SameSite and domain settings)
+// Set a cookie with optimal security settings for JWT
 export const setCookie = (name, value, options = {}) => {
 	const {
 		path = "/",
-		domain = window.location.hostname,
 		maxAge = 86400 * 30, // 30 days by default
 		secure = window.location.protocol === "https:",
 		sameSite = "lax", // 'strict', 'lax', or 'none'
@@ -29,9 +28,8 @@ export const setCookie = (name, value, options = {}) => {
 };
 
 // Remove a cookie
-export const removeCookie = (name, options = {}) => {
-	const { path = "/", domain = window.location.hostname } = options;
-	document.cookie = `${name}=; path=${path}; domain=${domain}; expires=Thu, 01 Jan 1970 00:00:00 GMT`;
+export const removeCookie = (name) => {
+	document.cookie = `${name}=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT`;
 	return true;
 };
 

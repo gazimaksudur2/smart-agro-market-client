@@ -63,6 +63,7 @@ export default function ProductCard({ product }) {
           </div>
           <Link 
             to={`/product/${product?._id}`}
+            state={{ product }}
             className="btn btn-primary py-1.5"
           >
             View Details

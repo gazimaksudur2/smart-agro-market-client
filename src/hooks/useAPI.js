@@ -4,12 +4,11 @@ import { useAuth } from "../contexts/AuthContext";
 
 /**
  * Hook for making API calls with automatic handling of authentication
- * Works with both cookie-based auth and token-based auth (fallback)
  */
 export const useAPI = () => {
 	const [loading, setLoading] = useState(false);
 	const [error, setError] = useState(null);
-	const { usingCookies, accessToken, logout } = useAuth();
+	const { logout } = useAuth();
 
 	const apiBaseUrl =
 		import.meta.env.VITE_SERVER_API_URL || "http://localhost:5000";
@@ -20,29 +19,12 @@ export const useAPI = () => {
 			setError(null);
 
 			try {
-				// Prepare headers
-				const headers = {
-					...customHeaders,
-					"Content-Type": "application/json",
-				};
-
-				// If we're not using cookies, add the token as Authorization header
-				if (!usingCookies && accessToken) {
-					headers["Authorization"] = `Bearer ${accessToken}`;
-				} else if (!usingCookies) {
-					// Try to get token from localStorage as fallback
-					const localToken = localStorage.getItem("jwt_token");
-					if (localToken) {
-						headers["Authorization"] = `Bearer ${localToken}`;
-					}
-				}
-
-				// Make the API call
+				// Prepare config
 				const config = {
 					method,
 					url: `${apiBaseUrl}${endpoint}`,
-					headers,
-					withCredentials: true, // Always include credentials for CORS
+					headers: customHeaders,
+					withCredentials: true, // Always include credentials
 				};
 
 				// Add data if provided
@@ -58,11 +40,8 @@ export const useAPI = () => {
 
 				// Handle authentication errors
 				const status = err.response?.status;
-
 				if (status === 401 || status === 403) {
-					// Unauthorized - token might be expired
-					// Logout the user
-					console.error("Authentication error:", err);
+					console.error("Authentication error:", err.response?.data);
 					logout();
 				}
 
@@ -72,7 +51,7 @@ export const useAPI = () => {
 				throw err;
 			}
 		},
-		[usingCookies, accessToken, logout]
+		[logout]
 	);
 
 	return {

@@ -20,7 +20,7 @@ export default function Login() {
 	const formRef = useRef(null);
 
 	// Redirect to the page the user was trying to access, or to dashboard
-	const from = location.state?.from?.pathname || "/dashboard";
+	const from = location.state?.from || "/dashboard";
 
 	// Handle email/password login
 	const onSubmit = async (data) => {
@@ -30,7 +30,10 @@ export default function Login() {
 			toast.success("Login successful!");
 			navigate(from, { replace: true });
 		} catch (error) {
-			toast.error(error.message || "Login failed. Please try again.");
+			// Clear form if authentication failed
+			toast.error(
+				error.message || "Login failed. Please check your credentials."
+			);
 		} finally {
 			setLoading(false);
 		}
@@ -44,7 +47,7 @@ export default function Login() {
 			toast.success("Login successful!");
 			navigate(from, { replace: true });
 		} catch (error) {
-			toast.error(error.message || "Google login failed. Please try again.");
+			toast.error(error.message || "Google login failed");
 		} finally {
 			setLoading(false);
 		}
@@ -58,7 +61,7 @@ export default function Login() {
 			toast.success("Login successful!");
 			navigate(from, { replace: true });
 		} catch (error) {
-			toast.error(error.message || "Facebook login failed. Please try again.");
+			toast.error(error.message || "Facebook login failed");
 		} finally {
 			setLoading(false);
 		}
@@ -141,7 +144,11 @@ export default function Login() {
 						</Link>
 					</div>
 					{/* Email/Password login form */}
-					<form className="space-y-5 md:px-2" ref={formRef} onSubmit={handleSubmit(onSubmit)}>
+					<form
+						className="space-y-5 md:px-2"
+						ref={formRef}
+						onSubmit={handleSubmit(onSubmit)}
+					>
 						{/* Email field */}
 						<div className="">
 							<fieldset className="fieldset">

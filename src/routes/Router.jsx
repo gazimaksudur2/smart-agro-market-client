@@ -4,7 +4,6 @@ import Home from "../pages/Home";
 import MainLayout from "../layouts/MainLayout";
 import About from "../pages/About";
 import Products from "../pages/Products";
-import ProductDetails from "../pages/ProductDetails";
 import Login from "../pages/Auth/Login";
 import Register from "../pages/Auth/Register";
 import DashboardLayout from "../layouts/DashboardLayout";
@@ -35,6 +34,14 @@ import SellerOrders from "../pages/Dashboard/Seller/SellerOrders";
 import ConsumerDashboard from "../pages/Dashboard/Consumer/ConsumerDashboard";
 import MyPurchases from "../pages/Dashboard/Consumer/MyPurchases";
 import NotFound from "../pages/NotFound";
+import ProductDetails from "../components/Products/ProductDetails";
+import OrderDetails from "../components/orders/OrderDetails";
+
+// Cart and Checkout Pages
+import CartPage from "../components/Cart/CartPage";
+import CheckoutPage from "../components/Checkout/CheckoutPage";
+import OrderSuccessPage from "../components/Checkout/OrderSuccessPage";
+import MyCart from "../pages/Dashboard/Consumer/MyCart";
 
 const Router = createBrowserRouter([
 	{
@@ -59,6 +66,30 @@ const Router = createBrowserRouter([
 				element: <ProductDetails />,
 			},
 			{
+				path: "/cart",
+				element: <CartPage />,
+			},
+			{
+				path: "/checkout",
+				element: (
+					<PrivateRoute>
+						<CheckoutPage />
+					</PrivateRoute>
+				),
+			},
+			{
+				path: "/order-success",
+				element: (
+					<PrivateRoute>
+						<OrderSuccessPage />
+					</PrivateRoute>
+				),
+			},
+			{
+				path: "/order/:id",
+				element: <OrderDetails />,
+			},
+			{
 				path: "/login",
 				element: <Login />,
 			},
@@ -66,11 +97,15 @@ const Router = createBrowserRouter([
 				path: "/register",
 				element: <Register />,
 			},
-		]
+		],
 	},
 	{
 		path: "/dashboard",
-		element: <PrivateRoute><DashboardLayout /></PrivateRoute>,
+		element: (
+			<PrivateRoute>
+				<DashboardLayout />
+			</PrivateRoute>
+		),
 		children: [
 			// Admin Routes
 			{
@@ -180,9 +215,12 @@ const Router = createBrowserRouter([
 				path: "consumer/purchases",
 				element: <MyPurchases />,
 			},
-		]
-	}
+			{
+				path: "consumer/my-cart",
+				element: <MyCart />,
+			},
+		],
+	},
 ]);
 
 export default Router;
-
