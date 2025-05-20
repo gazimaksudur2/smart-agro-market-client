@@ -12,18 +12,19 @@ import Select from "react-select";
 import { ConfigProvider, InputNumber, Slider } from "antd";
 
 export default function Products() {
-	const [filters, setFilters] = useState({
-		cropType: "",
-		region: "",
-		district: "",
-		minPrice: "",
-		maxPrice: "",
-	});
 	const [sortBy, setSortBy] = useState("latest");
 	const [showFilters, setShowFilters] = useState(false);
 	const [districts, setDistricts] = useState([]);
 	const [searchTerm, setSearchTerm] = useState("");
-	const [curMaxMin, setCurMaxMin] = useState({max: 0, min: 0});
+	const [curMax, setCurMax] = useState(1000);
+	const [products, setProducts] = useState([]);
+	const [filters, setFilters] = useState({
+		cropType: "",
+		region: "",
+		district: "",
+		minPrice: 1,
+		maxPrice: 1000,
+	});
 
 	const apiBaseUrl =
 		import.meta.env.VITE_SERVER_API_URL || "http://localhost:5000";
@@ -71,9 +72,13 @@ export default function Products() {
 		}
 	}, [filters.region, regions]);
 
+	useEffect(() => {
+		setFilters({...filters, maxPrice: curMax });
+	}, [])
+
 	// Fetch products with filters
 	const {
-		data: products,
+		data: productsData,
 		isLoading,
 		refetch,
 	} = useQuery(
@@ -90,7 +95,7 @@ export default function Products() {
 			}
 
 			const { data } = await axios.get(`${apiBaseUrl}/products`, { params });
-			return data.products;
+			return data;
 		},
 		{
 			// Don't refetch on window focus
@@ -98,7 +103,6 @@ export default function Products() {
 		}
 	);
 
-	console.log(products);
 
 	// Apply filters
 	const handleFilterApply = () => {
@@ -115,8 +119,8 @@ export default function Products() {
 			cropType: "",
 			region: "",
 			district: "",
-			minPrice: "",
-			maxPrice: "",
+			minPrice: 1,
+			maxPrice: curMax,
 		});
 		setSearchTerm("");
 
@@ -132,17 +136,9 @@ export default function Products() {
 	};
 
 	useEffect(() => {
-		if (products && products.length > 0) {
-			const prices = products.map((product) => product.price);
-			const maxPrice = Math.max(...prices);
-			setCurMaxMin({ max: maxPrice, min: 0 });
-			setFilters((prevFilters) => ({
-				...prevFilters,
-				maxPrice: maxPrice,
-				minPrice: 0,
-			}));
-		}
-	}, [products]);
+		setProducts(productsData?.products);
+		productsData?.products && setCurMax(productsData?.maxPrice);
+	}, [productsData]);
 
 	return (
 		<div className="bg-gray-50 min-h-screen">
@@ -302,7 +298,7 @@ export default function Products() {
 										<InputNumber
 											size="small"
 											min={1}
-											max={filters.maxPrice}
+											max={filters.maxPrice - 1}
 											value={filters.minPrice}
 											onChange={(value) =>
 												setFilters({ ...filters, minPrice: value })
@@ -310,8 +306,8 @@ export default function Products() {
 										/>
 										<InputNumber
 											size="small"
-											min={filters.minPrice}
-											max={100000}
+											min={filters.minPrice + 1}
+											max={curMax}
 											value={filters.maxPrice}
 											onChange={(value) =>
 												setFilters({ ...filters, maxPrice: value })
@@ -323,6 +319,8 @@ export default function Products() {
 											range={{ draggableTrack: true }}
 											value={[filters.minPrice, filters.maxPrice]}
 											tooltip={{ open: false }}
+											min={1}
+											max={curMax}
 											onChange={(value) => {
 												setFilters({
 													...filters,
