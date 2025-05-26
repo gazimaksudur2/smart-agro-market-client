@@ -22,7 +22,6 @@ export default function Navbar() {
 			console.error("Failed to log out", error);
 		}
 	};
-	// console.log(currentUser, isAdmin(), isAgent(), isSeller());
 
 	return (
 		<nav className="bg-white shadow-md">
@@ -101,7 +100,7 @@ export default function Navbar() {
 								<Link
 									to={
 										isAdmin()
-											? "/dashboard/admin"
+											? "/dashboard/admin/home"
 											: isAgent()
 											? "/dashboard/agent"
 											: isSeller()

@@ -4,35 +4,40 @@ import Home from "../pages/Home";
 import MainLayout from "../layouts/MainLayout";
 import About from "../pages/About";
 import Products from "../pages/Products";
+import Help from "../pages/Help";
+import Contact from "../pages/Contact";
+import Terms from "../pages/Terms";
+import Privacy from "../pages/Privacy";
 import Login from "../pages/Auth/Login";
 import Register from "../pages/Auth/Register";
 import DashboardLayout from "../layouts/DashboardLayout";
+// Centralized Dashboard Components
+import {
+	DashboardHome,
+	Profile,
+	AgentApplication,
+	ConsumerMyCart,
+	ConsumerMyOrders,
+	ConsumerMyPurchases,
+	SellerMyProducts,
+	SellerAddProduct,
+	SellerRequestedOrders,
+	AgentDashboard,
+	AgentVerifySellers,
+	AgentVerifyProducts,
+	AgentManageDeliveries,
+	AgentWarehouseManagement,
+	AdminDashboard,
+	AdminAnalytics,
+	AdminManageUsers,
+	AdminManageAgents,
+} from "../components/Dashboard/pages";
+
 import PrivateRoute from "./PrivateRoute";
 import AdminRoute from "./AdminRoute";
 import AgentRoute from "./AgentRoute";
 import SellerRoute from "./SellerRoute";
-
-// Admin Dashboard Pages
-import AdminDashboard from "../pages/Dashboard/Admin/AdminDashboard";
-import ManageAgents from "../pages/Dashboard/Admin/ManageAgents";
-import ManageUsers from "../pages/Dashboard/Admin/ManageUsers";
-import Analytics from "../pages/Dashboard/Admin/Analytics";
-
-// Agent Dashboard Pages
-import AgentDashboard from "../pages/Dashboard/Agent/AgentDashboard";
-import VerifySellers from "../pages/Dashboard/Agent/VerifySellers";
-import VerifyProducts from "../pages/Dashboard/Agent/VerifyProducts";
-import ManageDeliveries from "../pages/Dashboard/Agent/ManageDeliveries";
-
-// Seller Dashboard Pages
-import SellerDashboard from "../pages/Dashboard/Seller/SellerDashboard";
-import AddProduct from "../pages/Dashboard/Seller/AddProduct";
-import MyProducts from "../pages/Dashboard/Seller/MyProducts";
-import SellerOrders from "../pages/Dashboard/Seller/SellerOrders";
-
-// Consumer Dashboard Pages
-import ConsumerDashboard from "../pages/Dashboard/Consumer/ConsumerDashboard";
-import MyPurchases from "../pages/Dashboard/Consumer/MyPurchases";
+import ConsumerRoute from "./ConsumerRoute";
 import NotFound from "../pages/NotFound";
 import ProductDetails from "../components/Products/ProductDetails";
 import OrderDetails from "../components/orders/OrderDetails";
@@ -41,7 +46,6 @@ import OrderDetails from "../components/orders/OrderDetails";
 import CartPage from "../components/Cart/CartPage";
 import CheckoutPage from "../components/Checkout/CheckoutPage";
 import OrderSuccessPage from "../components/Checkout/OrderSuccessPage";
-import MyCart from "../pages/Dashboard/Consumer/MyCart";
 
 const Router = createBrowserRouter([
 	{
@@ -87,7 +91,11 @@ const Router = createBrowserRouter([
 			},
 			{
 				path: "/order/:id",
-				element: <OrderDetails />,
+				element: (
+					<PrivateRoute>
+						<OrderDetails />
+					</PrivateRoute>
+				),
 			},
 			{
 				path: "/login",
@@ -96,6 +104,22 @@ const Router = createBrowserRouter([
 			{
 				path: "/register",
 				element: <Register />,
+			},
+			{
+				path: "/help",
+				element: <Help />,
+			},
+			{
+				path: "/contact",
+				element: <Contact />,
+			},
+			{
+				path: "/terms",
+				element: <Terms />,
+			},
+			{
+				path: "/privacy",
+				element: <Privacy />,
 			},
 		],
 	},
@@ -107,37 +131,98 @@ const Router = createBrowserRouter([
 			</PrivateRoute>
 		),
 		children: [
-			// Admin Routes
+			// Main Dashboard Route (role-based)
 			{
-				path: "admin",
+				index: true,
+				element: <DashboardHome />,
+			},
+			// Profile Route (Available to all authenticated users)
+			{
+				path: "profile",
+				element: <Profile />,
+			},
+			// Agent Application Route (Available to all authenticated users)
+			{
+				path: "agent-application",
+				element: <AgentApplication />,
+			},
+			// Order Details Route (Available to all authenticated users)
+			{
+				path: "order/:id",
+				element: <OrderDetails />,
+			},
+			// Consumer Routes
+			{
+				path: "my-cart",
 				element: (
-					<AdminRoute>
-						<AdminDashboard />
-					</AdminRoute>
+					<ConsumerRoute>
+						<ConsumerMyCart />
+					</ConsumerRoute>
 				),
 			},
 			{
-				path: "admin/agents",
+				path: "my-orders",
 				element: (
-					<AdminRoute>
-						<ManageAgents />
-					</AdminRoute>
+					<ConsumerRoute>
+						<ConsumerMyOrders />
+					</ConsumerRoute>
 				),
 			},
 			{
-				path: "admin/users",
+				path: "my-purchases",
 				element: (
-					<AdminRoute>
-						<ManageUsers />
-					</AdminRoute>
+					<ConsumerRoute>
+						<ConsumerMyPurchases />
+					</ConsumerRoute>
 				),
 			},
 			{
-				path: "admin/analytics",
+				path: "wishlist",
 				element: (
-					<AdminRoute>
-						<Analytics />
-					</AdminRoute>
+					<ConsumerRoute>
+						<ConsumerMyCart />
+					</ConsumerRoute>
+				),
+			},
+			// Seller Routes
+			{
+				path: "my-products",
+				element: (
+					<SellerRoute>
+						<SellerMyProducts />
+					</SellerRoute>
+				),
+			},
+			{
+				path: "add-product",
+				element: (
+					<SellerRoute>
+						<SellerAddProduct />
+					</SellerRoute>
+				),
+			},
+			{
+				path: "edit-product/:id",
+				element: (
+					<SellerRoute>
+						<SellerAddProduct />
+					</SellerRoute>
+				),
+			},
+			{
+				path: "requested-orders",
+				element: (
+					<SellerRoute>
+						<SellerRequestedOrders />
+					</SellerRoute>
+				),
+			},
+			{
+				path: "sales-analytics",
+				element: (
+					<SellerRoute>
+						<SellerRequestedOrders />
+					</SellerRoute>
 				),
 			},
 			// Agent Routes
@@ -150,74 +235,90 @@ const Router = createBrowserRouter([
 				),
 			},
 			{
-				path: "agent/verify-sellers",
+				path: "verify-sellers",
 				element: (
 					<AgentRoute>
-						<VerifySellers />
+						<AgentVerifySellers />
 					</AgentRoute>
 				),
 			},
 			{
-				path: "agent/verify-products",
+				path: "verify-products",
 				element: (
 					<AgentRoute>
-						<VerifyProducts />
+						<AgentVerifyProducts />
 					</AgentRoute>
 				),
 			},
 			{
-				path: "agent/deliveries",
+				path: "manage-deliveries",
 				element: (
 					<AgentRoute>
-						<ManageDeliveries />
+						<AgentManageDeliveries />
 					</AgentRoute>
 				),
 			},
-			// Seller Routes
 			{
-				path: "seller",
+				path: "warehouse-management",
 				element: (
-					<SellerRoute>
-						<SellerDashboard />
-					</SellerRoute>
+					<AgentRoute>
+						<AgentWarehouseManagement />
+					</AgentRoute>
+				),
+			},
+			// Admin Routes
+			{
+				path: "admin",
+				element: (
+					<AdminRoute>
+						<AdminDashboard />
+					</AdminRoute>
 				),
 			},
 			{
-				path: "seller/add-product",
+				path: "analytics",
 				element: (
-					<SellerRoute>
-						<AddProduct />
-					</SellerRoute>
+					<AdminRoute>
+						<AdminAnalytics />
+					</AdminRoute>
 				),
 			},
 			{
-				path: "seller/my-products",
+				path: "manage-users",
 				element: (
-					<SellerRoute>
-						<MyProducts />
-					</SellerRoute>
+					<AdminRoute>
+						<AdminManageUsers />
+					</AdminRoute>
 				),
 			},
 			{
-				path: "seller/my-orders",
+				path: "manage-agents",
 				element: (
-					<SellerRoute>
-						<SellerOrders />
-					</SellerRoute>
+					<AdminRoute>
+						<AdminManageAgents />
+					</AdminRoute>
 				),
 			},
-			// Consumer Routes
 			{
-				path: "consumer",
-				element: <ConsumerDashboard />,
+				path: "system-settings",
+				element: (
+					<AdminRoute>
+						<AdminDashboard />
+					</AdminRoute>
+				),
 			},
 			{
-				path: "consumer/purchases",
-				element: <MyPurchases />,
+				path: "platform-analytics",
+				element: (
+					<AdminRoute>
+						<AdminAnalytics />
+					</AdminRoute>
+				),
 			},
+			// Catch-all route for dashboard - redirect to main dashboard
 			{
-				path: "consumer/my-cart",
-				element: <MyCart />,
+				path: "*",
+				element: <DashboardHome />,
 			},
 		],
 	},

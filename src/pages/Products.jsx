@@ -32,7 +32,7 @@ export default function Products() {
 	// Fetch regions for filter
 	const { data: regions } = useQuery("regions", async () => {
 		const { data } = await axios.get(`${apiBaseUrl}/regions`);
-		return data.data;
+		return data.regions;
 	});
 
 	// Fetch all available crop types

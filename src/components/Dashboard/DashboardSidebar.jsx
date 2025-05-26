@@ -58,6 +58,19 @@ export default function DashboardSidebar({ sidebarOpen, setSidebarOpen }) {
 		},
 	];
 
+	// Agent application link for non-agents
+	const agentApplicationLink =
+		currentUser?.DBUser?.role !== "agent" &&
+		currentUser?.DBUser?.role !== "admin"
+			? [
+					{
+						to: "/dashboard/agent-application",
+						icon: <FaUserCheck className="mr-3 h-6 w-6" />,
+						label: "Become an Agent",
+					},
+			  ]
+			: [];
+
 	// Role-specific links
 	const roleLinks = {
 		admin: [
@@ -66,47 +79,12 @@ export default function DashboardSidebar({ sidebarOpen, setSidebarOpen }) {
 				icon: <FaChartLine className="mr-3 h-6 w-6" />,
 				label: "Admin Dashboard",
 			},
-			{
-				to: "/dashboard/admin/agents",
-				icon: <FaUserCheck className="mr-3 h-6 w-6" />,
-				label: "Agent Applications",
-			},
-			{
-				to: "/dashboard/admin/users",
-				icon: <FaUsersCog className="mr-3 h-6 w-6" />,
-				label: "Manage Users",
-			},
-			{
-				to: "/dashboard/admin/products",
-				icon: <FaBoxOpen className="mr-3 h-6 w-6" />,
-				label: "All Products",
-			},
-			{
-				to: "/dashboard/admin/orders",
-				icon: <FaClipboardList className="mr-3 h-6 w-6" />,
-				label: "All Orders",
-			},
 		],
 		agent: [
 			{
 				to: "/dashboard/agent",
 				icon: <FaWarehouse className="mr-3 h-6 w-6" />,
 				label: "Agent Dashboard",
-			},
-			{
-				to: "/dashboard/agent/sellers",
-				icon: <FaUserCheck className="mr-3 h-6 w-6" />,
-				label: "Verify Sellers",
-			},
-			{
-				to: "/dashboard/agent/products",
-				icon: <FaBoxOpen className="mr-3 h-6 w-6" />,
-				label: "Product Approval",
-			},
-			{
-				to: "/dashboard/agent/deliveries",
-				icon: <FaTruck className="mr-3 h-6 w-6" />,
-				label: "Manage Deliveries",
 			},
 		],
 		seller: [
@@ -120,16 +98,16 @@ export default function DashboardSidebar({ sidebarOpen, setSidebarOpen }) {
 				icon: <FaPlus className="mr-3 h-6 w-6" />,
 				label: "Add New Product",
 			},
-			{
-				to: "/dashboard/seller/orders",
-				icon: <FaClipboardList className="mr-3 h-6 w-6" />,
-				label: "Orders Received",
-			},
 		],
 		consumer: [
 			{
-				to: "/dashboard/my-orders",
+				to: "/dashboard/my-cart",
 				icon: <FaShoppingCart className="mr-3 h-6 w-6" />,
+				label: "My Cart",
+			},
+			{
+				to: "/dashboard/my-orders",
+				icon: <FaClipboardList className="mr-3 h-6 w-6" />,
 				label: "My Orders",
 			},
 		],
@@ -137,7 +115,12 @@ export default function DashboardSidebar({ sidebarOpen, setSidebarOpen }) {
 
 	// Get links based on user role
 	const getNavLinks = () => {
-		return [...commonLinks, ...(roleLinks[currentUser?.DBUser?.role] || roleLinks.consumer)];
+		const userRole = currentUser?.DBUser?.role || "consumer";
+		return [
+			...commonLinks,
+			...agentApplicationLink,
+			...(roleLinks[userRole] || roleLinks.consumer),
+		];
 	};
 
 	// Create nav link
