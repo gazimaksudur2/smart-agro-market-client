@@ -16,70 +16,75 @@ import {
 } from "react-icons/fa";
 import { format } from "date-fns";
 import { useAuth } from "../../contexts/AuthContext";
+import { useCart } from "../../hooks/useCart";
 import axios from "axios";
 import toast from "react-hot-toast";
-import { useDispatch } from "react-redux";
-import { addToCart } from "../../redux/slices/cartSlice";
 
 export default function ProductDetails() {
 	const [selectedImage, setSelectedImage] = useState(0);
 	const [product, setProduct] = useState({});
 	const { currentUser } = useAuth();
+	const { addItemToCart } = useCart();
 	const navigate = useNavigate();
 	const params = useParams();
-	const dispatch = useDispatch();
 
 	// Fallback image in case product image is not available
 	const fallbackImage =
 		"https://images.unsplash.com/photo-1471193945509-9ad0617afabf?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&h=300&q=80";
 
 	const handleAddToCart = () => {
-		if (!currentUser) {
-			navigate("/login", { state: { from: `/product/${product?._id}` } });
-			return;
-		}
+		const productToAdd = {
+			_id: product?._id,
+			title: product?.title,
+			price: product?.price,
+			unit: product?.unit,
+			minimumOrderQuantity: product?.minimumOrderQuantity,
+			image: product?.images?.[0] || fallbackImage,
+			quantity: product?.minimumOrderQuantity,
+			seller: product?.sellerInfo,
+			region: product?.region,
+			district: product?.district,
+		};
 
-		dispatch(
-			addToCart({
-				_id: product?._id,
-				title: product?.title,
-				price: product?.price,
-				unit: product?.unit,
-				minimumOrderQuantity: product?.minimumOrderQuantity,
-				image: product?.images?.[0] || fallbackImage,
-				quantity: product?.minimumOrderQuantity,
-				seller: product?.sellerInfo,
-				region: product?.region,
-				district: product?.district,
-			})
-		);
-
-		toast.success(`${product?.title} added to cart`);
+		// Add to cart regardless of authentication status
+		// The useCart hook will handle localStorage for unauthenticated users
+		// and database sync for authenticated users
+		addItemToCart(productToAdd, product?.minimumOrderQuantity);
 	};
 
 	const handleBuyNow = () => {
+		const productToAdd = {
+			_id: product?._id,
+			title: product?.title,
+			price: product?.price,
+			unit: product?.unit,
+			minimumOrderQuantity: product?.minimumOrderQuantity,
+			image: product?.images?.[0] || fallbackImage,
+			quantity: product?.minimumOrderQuantity,
+			seller: product?.sellerInfo,
+			region: product?.region,
+			district: product?.district,
+		};
+
+		// Add to cart first (works for both authenticated and unauthenticated users)
+		addItemToCart(productToAdd, product?.minimumOrderQuantity);
+
+		// Check authentication only when proceeding to checkout
 		if (!currentUser) {
+			// Store checkout intent and redirect to login
+			localStorage.setItem(
+				"checkoutIntent",
+				JSON.stringify({
+					buyNow: true,
+					productId: product?._id,
+					timestamp: new Date().toISOString(),
+				})
+			);
 			navigate("/login", { state: { from: `/product/${product?._id}` } });
 			return;
 		}
 
-		// Add to cart first
-		dispatch(
-			addToCart({
-				_id: product?._id,
-				title: product?.title,
-				price: product?.price,
-				unit: product?.unit,
-				minimumOrderQuantity: product?.minimumOrderQuantity,
-				image: product?.images?.[0] || fallbackImage,
-				quantity: product?.minimumOrderQuantity,
-				seller: product?.sellerInfo,
-				region: product?.region,
-				district: product?.district,
-			})
-		);
-
-		// Navigate to checkout page
+		// Navigate to checkout page for authenticated users
 		navigate("/checkout", {
 			state: {
 				buyNow: true,
@@ -221,7 +226,7 @@ export default function ProductDetails() {
 						<div className="flex items-center text-gray-600">
 							<FaMapMarkerAlt className="mr-2" />
 							<span>
-								{product?.district}, {product?.region}
+								{product?.sellerInfo?.district}, {product?.sellerInfo?.region}
 							</span>
 						</div>
 						<div className="flex items-center text-gray-600">
@@ -269,15 +274,15 @@ export default function ProductDetails() {
 							<div className="space-y-2">
 								<div className="flex items-center text-gray-600">
 									<FaUser className="mr-2" />
-									<span>{product?.sellerInfo.sellerName}</span>
+									<span>{product?.sellerInfo.name}</span>
 								</div>
 								<div className="flex items-center text-gray-600">
 									<FaPhone className="mr-2" />
-									<span>{product?.sellerInfo.sellerPhone}</span>
+									<span>{product?.sellerInfo.phone}</span>
 								</div>
 								<div className="flex items-center text-gray-600">
 									<FaEnvelope className="mr-2" />
-									<span>{product?.sellerInfo.sellerEmail}</span>
+									<span>{product?.sellerInfo.email}</span>
 								</div>
 							</div>
 						</div>

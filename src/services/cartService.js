@@ -12,6 +12,10 @@ const cartService = {
 	 * Get cart from database for authenticated user
 	 */
 	getCartFromDB: async (email) => {
+		if (!email) {
+			throw new Error("Email is required to fetch cart from database");
+		}
+
 		try {
 			const response = await axios.get(`${API_BASE_URL}/carts/${email}`, {
 				withCredentials: true,
@@ -19,7 +23,9 @@ const cartService = {
 			return response.data.cart || { items: [] };
 		} catch (error) {
 			console.error("Error getting cart from database:", error);
-			return { items: [] };
+			throw new Error(
+				error.response?.data?.message || "Failed to fetch cart from database"
+			);
 		}
 	},
 
@@ -27,6 +33,17 @@ const cartService = {
 	 * Save cart to database for authenticated user
 	 */
 	saveCartToDB: async (email, cartData) => {
+		if (!email) {
+			throw new Error("Email is required to save cart to database");
+		}
+
+		if (!cartData || !Array.isArray(cartData.items)) {
+			throw new Error("Invalid cart data");
+		}
+
+		// Validate all items before saving
+		cartData.items.forEach((item) => cartService.validateCartItem(item));
+
 		try {
 			const response = await axios.post(
 				`${API_BASE_URL}/carts`,
@@ -43,7 +60,9 @@ const cartService = {
 			return response.data;
 		} catch (error) {
 			console.error("Error saving cart to database:", error);
-			throw error;
+			throw new Error(
+				error.response?.data?.message || "Failed to save cart to database"
+			);
 		}
 	},
 
@@ -76,7 +95,9 @@ const cartService = {
 			return response.data;
 		} catch (error) {
 			console.error("Error removing cart item from database:", error);
-			throw error;
+			throw new Error(
+				error.response?.data?.message || "Failed to remove item from cart"
+			);
 		}
 	},
 
@@ -158,11 +179,23 @@ const cartService = {
 	 * Merge carts when transferring from localStorage to database
 	 */
 	mergeAndTransferCart: async (email) => {
+		if (!email) {
+			throw new Error("Email is required to merge carts");
+		}
+
 		try {
 			const [localCart, dbCart] = await Promise.all([
 				cartService.getCartFromLocalStorage(),
 				cartService.getCartFromDB(email),
 			]);
+
+			// Validate both carts
+			if (localCart.items && !Array.isArray(localCart.items)) {
+				throw new Error("Invalid local cart items");
+			}
+			if (dbCart.items && !Array.isArray(dbCart.items)) {
+				throw new Error("Invalid database cart items");
+			}
 
 			// If no local cart items, just return database cart
 			if (!localCart.items || localCart.items.length === 0) {
@@ -175,6 +208,11 @@ const cartService = {
 				cartService.clearCartFromLocalStorage();
 				return localCart;
 			}
+
+			// Validate all items before merging
+			[...localCart.items, ...dbCart.items].forEach((item) =>
+				cartService.validateCartItem(item)
+			);
 
 			// Merge carts - combine items, avoiding duplicates
 			const mergedItems = [...dbCart.items];
@@ -220,6 +258,41 @@ const cartService = {
 			console.error("Error merging and transferring cart:", error);
 			throw error;
 		}
+	},
+
+	/**
+	 * Validate cart item before adding/updating
+	 */
+	validateCartItem: (item) => {
+		if (!item) {
+			throw new Error("Invalid cart item");
+		}
+
+		const requiredFields = [
+			"_id",
+			"title",
+			"price",
+			"quantity",
+			"unit",
+			"minimumOrderQuantity",
+		];
+		const missingFields = requiredFields.filter((field) => !item[field]);
+
+		if (missingFields.length > 0) {
+			throw new Error(`Missing required fields: ${missingFields.join(", ")}`);
+		}
+
+		if (item.quantity < item.minimumOrderQuantity) {
+			throw new Error(
+				`Quantity must be at least ${item.minimumOrderQuantity} ${item.unit}`
+			);
+		}
+
+		if (item.price <= 0) {
+			throw new Error("Invalid price");
+		}
+
+		return true;
 	},
 };
 

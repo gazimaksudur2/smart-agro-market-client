@@ -20,6 +20,7 @@ import {
 	FaHeart,
 } from "react-icons/fa";
 import { useAuth } from "../../contexts/AuthContext";
+import { AvatarWithInitials } from "../UI/Avatar";
 
 export default function DashboardSidebar({ sidebarOpen, setSidebarOpen }) {
 	const { currentUser, isAdmin, isAgent, isSeller, isConsumer } = useAuth();
@@ -173,7 +174,7 @@ export default function DashboardSidebar({ sidebarOpen, setSidebarOpen }) {
 	const getNavLinks = () => {
 		const userRole = currentUser?.DBUser?.role || "consumer";
 		return [
-			...commonLinks,
+			// ...commonLinks,
 			...agentApplicationLink,
 			...(roleLinks[userRole] || roleLinks.consumer),
 		];
@@ -258,13 +259,11 @@ export default function DashboardSidebar({ sidebarOpen, setSidebarOpen }) {
 					<div className="flex-shrink-0 flex border-t border-gray-200 p-4">
 						<div className="flex items-center w-full">
 							<div className="flex-shrink-0">
-								<img
-									className="inline-block h-10 w-10 rounded-full"
-									src={
-										currentUser?.FirebaseUser?.photoURL ||
-										"https://i.ibb.co/MBtjqXQ/no-avatar.gif"
-									}
-									alt={currentUser?.FirebaseUser?.displayName || "User"}
+								<AvatarWithInitials
+									src={currentUser?.FirebaseUser?.photoURL}
+									userName={currentUser?.FirebaseUser?.displayName || "User"}
+									size="lg"
+									className="inline-block"
 								/>
 							</div>
 							<div className="ml-3 flex-1 min-w-0">
@@ -310,13 +309,11 @@ export default function DashboardSidebar({ sidebarOpen, setSidebarOpen }) {
 						<div className="flex-shrink-0 flex border-t border-gray-200 p-4">
 							<div className="flex items-center w-full">
 								<div className="flex-shrink-0">
-									<img
-										className="inline-block h-9 w-9 rounded-full"
-										src={
-											currentUser?.FirebaseUser?.photoURL ||
-											"https://i.ibb.co/MBtjqXQ/no-avatar.gif"
-										}
-										alt={currentUser?.FirebaseUser?.displayName || "User"}
+									<AvatarWithInitials
+										src={currentUser?.FirebaseUser?.photoURL}
+										userName={currentUser?.FirebaseUser?.displayName || "User"}
+										size="md"
+										className="inline-block"
 									/>
 								</div>
 								<div className="ml-3 flex-1 min-w-0">

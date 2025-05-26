@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { FaBars, FaBell } from "react-icons/fa";
 import { useAuth } from "../../contexts/AuthContext";
+import { AvatarWithInitials } from "../UI/Avatar";
 
 export default function DashboardHeader({ setSidebarOpen }) {
 	const [userMenuOpen, setUserMenuOpen] = useState(false);
@@ -130,13 +131,10 @@ export default function DashboardHeader({ setSidebarOpen }) {
 							onClick={() => setUserMenuOpen(!userMenuOpen)}
 						>
 							<span className="sr-only">Open user menu</span>
-							<img
-								className="h-8 w-8 rounded-full"
-								src={
-									currentUser?.FirebaseUser?.photoURL ||
-									"https://i.ibb.co/MBtjqXQ/no-avatar.gif"
-								}
-								alt="User avatar"
+							<AvatarWithInitials
+								src={currentUser?.FirebaseUser?.photoURL}
+								userName={currentUser?.FirebaseUser?.displayName || "User"}
+								size="md"
 							/>
 							<span className="ml-2 text-sm font-medium text-gray-700 hidden sm:block">
 								{currentUser?.FirebaseUser?.displayName || "User"}

@@ -48,29 +48,84 @@ export const mergeCartOnLogin = createAsyncThunk(
 
 export const addToCartAsync = createAsyncThunk(
 	"cart/addToCartAsync",
-	async ({ product, email, isAuthenticated }) => {
-		if (isAuthenticated && email) {
-			// Update database
-			await cartService.saveCartToDB(email, {
-				items: [product],
-				operation: "add",
-			});
-		} else {
-			// Update localStorage
-			const currentCart = cartService.getCartFromLocalStorage();
-			const updatedCart = {
-				...currentCart,
-				items: [...(currentCart.items || []), product],
-			};
-			cartService.saveCartToLocalStorage(updatedCart);
+	async ({ product, email, isAuthenticated }, { rejectWithValue }) => {
+		try {
+			// Validate product before adding
+			cartService.validateCartItem(product);
+
+			if (isAuthenticated && email) {
+				// Update database
+				await cartService.saveCartToDB(email, {
+					items: [product],
+					operation: "add",
+				});
+			} else {
+				// Update localStorage
+				const currentCart = cartService.getCartFromLocalStorage();
+				const updatedCart = {
+					...currentCart,
+					items: [...(currentCart.items || []), product],
+				};
+				cartService.saveCartToLocalStorage(updatedCart);
+			}
+			return { product, isAuthenticated };
+		} catch (error) {
+			return rejectWithValue(error.message);
 		}
-		return { product, isAuthenticated };
+	}
+);
+
+export const updateCartItemQuantityAsync = createAsyncThunk(
+	"cart/updateCartItemQuantityAsync",
+	async ({ itemId, quantity, email, isAuthenticated }, { rejectWithValue }) => {
+		try {
+			if (isAuthenticated && email) {
+				await cartService.updateCartItemInDB(email, itemId, quantity);
+			}
+			return { itemId, quantity };
+		} catch (error) {
+			return rejectWithValue(error.message);
+		}
+	}
+);
+
+export const removeFromCartAsync = createAsyncThunk(
+	"cart/removeFromCartAsync",
+	async ({ itemId, email, isAuthenticated }, { rejectWithValue }) => {
+		try {
+			if (isAuthenticated && email) {
+				await cartService.removeCartItemFromDB(email, itemId);
+			}
+			return { itemId };
+		} catch (error) {
+			return rejectWithValue(error.message);
+		}
+	}
+);
+
+export const clearCartAsync = createAsyncThunk(
+	"cart/clearCartAsync",
+	async ({ email, isAuthenticated }, { rejectWithValue }) => {
+		try {
+			if (isAuthenticated && email) {
+				await cartService.clearCartInDB(email);
+			} else {
+				cartService.clearCartFromLocalStorage();
+			}
+			return true;
+		} catch (error) {
+			return rejectWithValue(error.message);
+		}
 	}
 );
 
 export const cartSlice = createSlice({
 	name: "cart",
-	initialState,
+	initialState: {
+		...initialState,
+		lastSync: null,
+		syncError: null,
+	},
 	reducers: {
 		addToCart: (state, action) => {
 			const { _id, quantity = 1, minimumOrderQuantity } = action.payload;
@@ -262,7 +317,81 @@ export const cartSlice = createSlice({
 			.addCase(mergeCartOnLogin.rejected, (state, action) => {
 				state.loading = false;
 				state.syncStatus = "error";
-				state.error = action.error.message;
+				state.syncError = action.payload;
+				toast.error(action.payload || "Failed to merge cart on login");
+			})
+			// Add to cart async
+			.addCase(addToCartAsync.pending, (state) => {
+				state.loading = true;
+				state.syncStatus = "syncing";
+			})
+			.addCase(addToCartAsync.fulfilled, (state, action) => {
+				state.loading = false;
+				state.syncStatus = "synced";
+				state.lastSync = new Date().toISOString();
+				state.syncError = null;
+			})
+			.addCase(addToCartAsync.rejected, (state, action) => {
+				state.loading = false;
+				state.syncStatus = "error";
+				state.syncError = action.payload;
+				toast.error(action.payload || "Failed to add item to cart");
+			})
+			// Update quantity async
+			.addCase(updateCartItemQuantityAsync.pending, (state) => {
+				state.loading = true;
+				state.syncStatus = "syncing";
+			})
+			.addCase(updateCartItemQuantityAsync.fulfilled, (state, action) => {
+				state.loading = false;
+				state.syncStatus = "synced";
+				state.lastSync = new Date().toISOString();
+				state.syncError = null;
+			})
+			.addCase(updateCartItemQuantityAsync.rejected, (state, action) => {
+				state.loading = false;
+				state.syncStatus = "error";
+				state.syncError = action.payload;
+				toast.error(action.payload || "Failed to update item quantity");
+			})
+			// Remove from cart async
+			.addCase(removeFromCartAsync.pending, (state) => {
+				state.loading = true;
+				state.syncStatus = "syncing";
+			})
+			.addCase(removeFromCartAsync.fulfilled, (state, action) => {
+				state.loading = false;
+				state.syncStatus = "synced";
+				state.lastSync = new Date().toISOString();
+				state.syncError = null;
+			})
+			.addCase(removeFromCartAsync.rejected, (state, action) => {
+				state.loading = false;
+				state.syncStatus = "error";
+				state.syncError = action.payload;
+				toast.error(action.payload || "Failed to remove item from cart");
+			})
+			// Clear cart async
+			.addCase(clearCartAsync.pending, (state) => {
+				state.loading = true;
+				state.syncStatus = "syncing";
+			})
+			.addCase(clearCartAsync.fulfilled, (state) => {
+				state.loading = false;
+				state.syncStatus = "synced";
+				state.lastSync = new Date().toISOString();
+				state.syncError = null;
+				state.items = [];
+				state.totalItems = 0;
+				state.subtotal = 0;
+				state.deliveryCharge = 0;
+				state.totalAmount = 0;
+			})
+			.addCase(clearCartAsync.rejected, (state, action) => {
+				state.loading = false;
+				state.syncStatus = "error";
+				state.syncError = action.payload;
+				toast.error(action.payload || "Failed to clear cart");
 			});
 	},
 });
@@ -283,5 +412,8 @@ export const selectCartTotalItems = (state) => state.cart.totalItems;
 export const selectCartSubtotal = (state) => state.cart.subtotal;
 export const selectCartDeliveryCharge = (state) => state.cart.deliveryCharge;
 export const selectCartTotal = (state) => state.cart.totalAmount;
+export const selectCartSyncStatus = (state) => state.cart.syncStatus;
+export const selectCartSyncError = (state) => state.cart.syncError;
+export const selectCartLastSync = (state) => state.cart.lastSync;
 
 export default cartSlice.reducer;
