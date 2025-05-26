@@ -115,19 +115,18 @@ export default function Footer() {
             </ul>
           </div>
         </div>
-
         <div className="mt-12 border-t border-gray-700 pt-8 flex flex-col md:flex-row justify-between">
           <p className="text-sm text-gray-400">
             &copy; {new Date().getFullYear()} SmartAgro Connect. All rights reserved.
           </p>
           <div className="mt-4 md:mt-0 flex space-x-6">
-            <a href="#" className="text-sm text-gray-400 hover:text-primary-400">
+            <a href="/privacy" className="text-sm text-gray-400 hover:text-primary-400">
               Privacy Policy
             </a>
-            <a href="#" className="text-sm text-gray-400 hover:text-primary-400">
+            <a href="/terms" className="text-sm text-gray-400 hover:text-primary-400">
               Terms of Service
             </a>
-            <a href="#" className="text-sm text-gray-400 hover:text-primary-400">
+            <a href="/cookie" className="text-sm text-gray-400 hover:text-primary-400">
               Cookie Policy
             </a>
           </div>

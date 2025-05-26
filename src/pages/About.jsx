@@ -1,8 +1,9 @@
 import { Link } from 'react-router-dom';
 import { FaLeaf, FaHandshake, FaTruck, FaShieldAlt } from 'react-icons/fa';
+import { useAuth } from '../contexts/AuthContext';
 
 export default function About() {
-  console.log("About page");
+  const { currentUser } = useAuth();
   return (
     <div className="bg-gray-50">
       {/* Hero section */}
@@ -128,9 +129,9 @@ export default function About() {
         </div>
       </div>
       
-      {/* Call to action */}
-      <div className="bg-secondary-500 text-white py-16">
-        <div className="container mx-auto px-4 text-center">
+      {!(currentUser?.FirebaseUser) && (
+        <div className="bg-secondary-500 text-white py-16">
+          <div className="container mx-auto px-4 text-center">
           <h2 className="text-3xl font-bold mb-6">Ready to Get Started?</h2>
           <p className="text-xl mb-8 max-w-2xl mx-auto">
             Join thousands of farmers and buyers already using SmartAgro Connect to transform their agricultural business.
@@ -145,6 +146,7 @@ export default function About() {
           </div>
         </div>
       </div>
+      )}
     </div>
   );
 } 

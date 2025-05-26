@@ -47,7 +47,7 @@ export default function Terms() {
 						SmartAgroConnect Platform Terms and Conditions
 					</p>
 					<p className="text-sm text-primary-200">
-						Last updated: January 22, 2024
+						Last updated: May 25, 2025
 					</p>
 				</div>
 			</div>
