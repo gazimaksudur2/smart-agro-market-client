@@ -28,10 +28,10 @@ export default function Navbar() {
 	const getDashboardRoute = () => {
 		if (!currentUser) return "/dashboard";
 
-		if (isAdmin()) return "/dashboard/admin";
+		if (isAdmin()) return "/dashboard/profile";
 		if (isAgent()) return "/dashboard/agent";
-		if (isSeller()) return "/dashboard/my-products";
-		if (isConsumer()) return "/dashboard/my-orders";
+		if (isSeller()) return "/dashboard/seller";
+		if (isConsumer()) return "/dashboard/consumer";
 
 		return "/dashboard";
 	};

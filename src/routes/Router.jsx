@@ -15,7 +15,6 @@ import DashboardLayout from "../layouts/DashboardLayout";
 import {
 	DashboardHome,
 	Profile,
-	AgentApplication,
 	ConsumerMyCart,
 	ConsumerMyOrders,
 	ConsumerMyPurchases,
@@ -27,8 +26,9 @@ import {
 	AgentVerifyProducts,
 	AgentManageDeliveries,
 	AgentWarehouseManagement,
-	AdminDashboard,
 	AdminAnalytics,
+	AdminManageProducts,
+	AdminManageOrders,
 	AdminManageUsers,
 	AdminManageAgents,
 } from "../components/Dashboard/pages";
@@ -50,6 +50,11 @@ import OrderDetails from "../components/orders/OrderDetails";
 import CartPage from "../components/Cart/CartPage";
 import CheckoutPage from "../components/Checkout/CheckoutPage";
 import OrderSuccessPage from "../components/Checkout/OrderSuccessPage";
+
+// Application Pages
+import SellerApplicationPage from "../pages/SellerApplicationPage";
+import AgentApplicationPage from "../pages/AgentApplicationPage";
+import SystemSettings from "../components/Dashboard/pages/admin/SystemSettings";
 
 const Router = createBrowserRouter([
 	{
@@ -125,6 +130,14 @@ const Router = createBrowserRouter([
 				path: "/privacy",
 				element: <Privacy />,
 			},
+			{
+				path: "/seller-application",
+				element: <SellerApplicationPage />,
+			},
+			{
+				path: "/agent-application",
+				element: <AgentApplicationPage />,
+			},
 		],
 	},
 	{
@@ -136,19 +149,15 @@ const Router = createBrowserRouter([
 		),
 		children: [
 			// Main Dashboard Route (role-based redirect)
-			{
-				index: true,
-				element: <DashboardHome />,
-			},
+			// {
+			// 	index: true,
+			// 	element: <DashboardHome />,
+			// },
 
 			// Common Routes (Available to all authenticated users)
 			{
 				path: "profile",
 				element: <Profile />,
-			},
-			{
-				path: "agent-application",
-				element: <AgentApplication />,
 			},
 			{
 				path: "order/:id",
@@ -275,18 +284,26 @@ const Router = createBrowserRouter([
 
 			// Admin Routes
 			{
-				path: "admin",
-				element: (
-					<AdminRoute>
-						<AdminDashboard />
-					</AdminRoute>
-				),
-			},
-			{
 				path: "analytics",
 				element: (
 					<AdminRoute>
 						<AdminAnalytics />
+					</AdminRoute>
+				),
+			},
+			{
+				path: "manage-products",
+				element: (
+					<AdminRoute>
+						<AdminManageProducts />
+					</AdminRoute>
+				),
+			},
+			{
+				path: "manage-orders",
+				element: (
+					<AdminRoute>
+						<AdminManageOrders />
 					</AdminRoute>
 				),
 			},
@@ -310,7 +327,7 @@ const Router = createBrowserRouter([
 				path: "system-settings",
 				element: (
 					<AdminRoute>
-						<AdminDashboard />
+						<SystemSettings />
 					</AdminRoute>
 				),
 			},

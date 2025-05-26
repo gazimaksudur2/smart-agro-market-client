@@ -9,8 +9,6 @@ import {
 	FaShoppingCart,
 	FaMoneyBillWave,
 	FaChartLine,
-	FaTruck,
-	FaWarehouse,
 	FaExclamationTriangle,
 } from "react-icons/fa";
 import DashboardTitle from "../../DashboardTitle";
@@ -45,7 +43,7 @@ const StatCard = ({ title, value, icon, color, trend, link }) => (
 	</div>
 );
 
-export default function AdminDashboard() {
+export default function SystemSettings() {
 	const { currentUser } = useAuth();
 	const { apiCall } = useAPI();
 	const [stats, setStats] = useState({});
@@ -114,7 +112,7 @@ export default function AdminDashboard() {
 			icon: <FaUsers className="h-6 w-6 text-primary-600" />,
 			color: "primary",
 			trend: { positive: true, value: "+12% this month" },
-			link: "/dashboard/admin/users",
+			link: "/dashboard/manage-users",
 		},
 		{
 			title: "Active Agents",
@@ -122,7 +120,7 @@ export default function AdminDashboard() {
 			icon: <FaUserCheck className="h-6 w-6 text-secondary-600" />,
 			color: "secondary",
 			trend: { positive: true, value: "+3 this week" },
-			link: "/dashboard/admin/agents",
+			link: "/dashboard/manage-agents",
 		},
 		{
 			title: "Total Products",
@@ -130,7 +128,7 @@ export default function AdminDashboard() {
 			icon: <FaBoxOpen className="h-6 w-6 text-green-600" />,
 			color: "green",
 			trend: { positive: true, value: "+156 this week" },
-			link: "/dashboard/admin/products",
+			link: "/dashboard/manage-products",
 		},
 		{
 			title: "Platform Revenue",
@@ -146,21 +144,21 @@ export default function AdminDashboard() {
 			title: "Agent Applications",
 			count: displayStats.pendingAgentApplications || 12,
 			icon: <FaUserCheck className="h-5 w-5 text-blue-600" />,
-			link: "/dashboard/admin/agents",
+			link: "/dashboard/manage-agents",
 			urgent: displayStats.pendingAgentApplications > 10,
 		},
 		{
 			title: "Product Approvals",
 			count: displayStats.pendingProducts || 156,
 			icon: <FaBoxOpen className="h-5 w-5 text-orange-600" />,
-			link: "/dashboard/admin/products",
+			link: "/dashboard/manage-products",
 			urgent: displayStats.pendingProducts > 100,
 		},
 		{
 			title: "Active Orders",
 			count: displayStats.activeOrders || 234,
 			icon: <FaShoppingCart className="h-5 w-5 text-green-600" />,
-			link: "/dashboard/admin/orders",
+			link: "/dashboard/manage-orders",
 		},
 	];
 
@@ -177,7 +175,7 @@ export default function AdminDashboard() {
 
 	return (
 		<div className="py-6">
-			<DashboardTitle title="Admin Dashboard" />
+			<DashboardTitle title="System Settings" />
 
 			{/* Welcome Message */}
 			<div className="mt-2 mb-6">
@@ -239,7 +237,7 @@ export default function AdminDashboard() {
 					</h2>
 					<div className="grid grid-cols-2 gap-4">
 						<Link
-							to="/dashboard/admin/agents"
+							to="/dashboard/manage-agents"
 							className="p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
 						>
 							<FaUserCheck className="h-8 w-8 text-secondary-600 mb-2" />
@@ -250,7 +248,7 @@ export default function AdminDashboard() {
 						</Link>
 
 						<Link
-							to="/dashboard/admin/users"
+							to="/dashboard/manage-users"
 							className="p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
 						>
 							<FaUsers className="h-8 w-8 text-primary-600 mb-2" />
@@ -261,7 +259,7 @@ export default function AdminDashboard() {
 						</Link>
 
 						<Link
-							to="/dashboard/admin/products"
+							to="/dashboard/manage-products"
 							className="p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
 						>
 							<FaBoxOpen className="h-8 w-8 text-green-600 mb-2" />
@@ -272,7 +270,7 @@ export default function AdminDashboard() {
 						</Link>
 
 						<Link
-							to="/dashboard/admin/analytics"
+							to="/dashboard/analytics"
 							className="p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
 						>
 							<FaChartLine className="h-8 w-8 text-accent-600 mb-2" />

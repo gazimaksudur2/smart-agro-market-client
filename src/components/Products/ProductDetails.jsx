@@ -36,7 +36,7 @@ export default function ProductDetails() {
 		const productToAdd = {
 			_id: product?._id,
 			title: product?.title,
-			price: product?.price,
+			price: product?.pricePerUnit,
 			unit: product?.unit,
 			minimumOrderQuantity: product?.minimumOrderQuantity,
 			image: product?.images?.[0] || fallbackImage,
@@ -56,7 +56,7 @@ export default function ProductDetails() {
 		const productToAdd = {
 			_id: product?._id,
 			title: product?.title,
-			price: product?.price,
+			price: product?.pricePerUnit,
 			unit: product?.unit,
 			minimumOrderQuantity: product?.minimumOrderQuantity,
 			image: product?.images?.[0] || fallbackImage,
@@ -195,7 +195,7 @@ export default function ProductDetails() {
 						<div className="flex justify-between items-center mb-4">
 							<div>
 								<span className="text-3xl font-bold text-gray-900">
-									৳{product?.price?.toLocaleString()}
+									৳{product?.pricePerUnit?.toLocaleString()}
 								</span>
 								<span className="text-gray-500 ml-2">per {product?.unit}</span>
 							</div>

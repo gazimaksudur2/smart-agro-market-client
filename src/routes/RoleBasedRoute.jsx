@@ -65,17 +65,18 @@ export default function RoleBasedRoute({
 	if (!hasRequiredRole && !hasValidRole) {
 		// Store the attempted route for potential future access
 		const attemptedRoute = location.pathname;
+		console.log(attemptedRoute);
 
 		// Redirect to appropriate dashboard based on user role
 		let redirectPath = redirectTo;
 		if (userRole === "admin") {
-			redirectPath = "/dashboard/admin";
+			redirectPath = "/dashboard/profile";
 		} else if (userRole === "agent") {
 			redirectPath = "/dashboard/agent";
 		} else if (userRole === "seller") {
-			redirectPath = "/dashboard/my-products";
+			redirectPath = "/dashboard/seller";
 		} else if (userRole === "consumer") {
-			redirectPath = "/dashboard/my-orders";
+			redirectPath = "/dashboard/consumer";
 		}
 
 		return (

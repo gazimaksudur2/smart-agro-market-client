@@ -16,6 +16,7 @@ export default function Products() {
 	const [showFilters, setShowFilters] = useState(false);
 	const [districts, setDistricts] = useState([]);
 	const [searchTerm, setSearchTerm] = useState("");
+	const [appliedSearchTerm, setAppliedSearchTerm] = useState("");
 	const [curMax, setCurMax] = useState(1000);
 	const [products, setProducts] = useState([]);
 	const [filters, setFilters] = useState({
@@ -23,7 +24,14 @@ export default function Products() {
 		region: "",
 		district: "",
 		minPrice: 1,
-		maxPrice: 1000,
+		maxPrice: 1000000,
+	});
+	const [appliedFilters, setAppliedFilters] = useState({
+		cropType: "",
+		region: "",
+		district: "",
+		minPrice: 1,
+		maxPrice: 1000000,
 	});
 
 	const apiBaseUrl =
@@ -73,26 +81,30 @@ export default function Products() {
 	}, [filters.region, regions]);
 
 	useEffect(() => {
-		setFilters({...filters, maxPrice: curMax });
-	}, [])
+		setFilters({ ...filters, maxPrice: curMax });
+	}, []);
 
-	// Fetch products with filters
+	// Fetch products with applied filters only
 	const {
 		data: productsData,
 		isLoading,
 		refetch,
 	} = useQuery(
-		["products", filters, sortBy, searchTerm],
+		["products", appliedFilters, sortBy, appliedSearchTerm],
 		async () => {
-			const params = { ...filters };
+			const params = { ...appliedFilters };
 
-			if (searchTerm) {
-				params.search = searchTerm;
+			if (appliedSearchTerm) {
+				params.search = appliedSearchTerm;
 			}
 
 			if (sortBy) {
 				params.sortBy = sortBy;
 			}
+
+			// if(appliedFilters?.district?.split(" ").length > 1) {
+			// 	params.district = appliedFilters.district.split(" ").join("%20");
+			// }
 
 			const { data } = await axios.get(`${apiBaseUrl}/products`, { params });
 			return data;
@@ -100,13 +112,30 @@ export default function Products() {
 		{
 			// Don't refetch on window focus
 			refetchOnWindowFocus: false,
+			// Don't enable automatic refetching
+			enabled: false,
 		}
 	);
 
+	// Initial load of products
+	useEffect(() => {
+		// Load products with default filters on component mount
+		setTimeout(() => {
+			refetch();
+		}, 100);
+	}, [refetch]);
 
 	// Apply filters
 	const handleFilterApply = () => {
-		refetch();
+		// Apply current filter selections
+		setAppliedFilters({ ...filters });
+		setAppliedSearchTerm(searchTerm);
+
+		// Trigger refetch with new applied filters
+		setTimeout(() => {
+			refetch();
+		}, 0);
+
 		// Hide filters on mobile after applying
 		if (window.innerWidth < 768) {
 			setShowFilters(false);
@@ -115,14 +144,18 @@ export default function Products() {
 
 	// Reset filters
 	const handleFilterReset = () => {
-		setFilters({
+		const resetFilters = {
 			cropType: "",
 			region: "",
 			district: "",
 			minPrice: 1,
 			maxPrice: curMax,
-		});
+		};
+
+		setFilters(resetFilters);
+		setAppliedFilters(resetFilters);
 		setSearchTerm("");
+		setAppliedSearchTerm("");
 
 		// After resetting, apply the filters
 		setTimeout(() => {
@@ -133,6 +166,17 @@ export default function Products() {
 	// Handle sort change
 	const handleSortChange = (value) => {
 		setSortBy(value);
+		// Immediately apply sort change if filters have been applied before
+		if (
+			appliedFilters.cropType !== "" ||
+			appliedFilters.region !== "" ||
+			appliedFilters.district !== "" ||
+			appliedSearchTerm !== ""
+		) {
+			setTimeout(() => {
+				refetch();
+			}, 0);
+		}
 	};
 
 	useEffect(() => {
@@ -431,9 +475,10 @@ export default function Products() {
 							</div>
 						) : products?.length > 0 ? (
 							<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-								{products && products?.map((product) => (
-									<ProductCard key={product._id} product={product} />
-								))}
+								{products &&
+									products?.map((product) => (
+										<ProductCard key={product._id} product={product} />
+									))}
 							</div>
 						) : (
 							<div className="bg-white p-8 rounded-lg shadow-sm text-center">

@@ -4,9 +4,6 @@ export { default as DashboardHome } from "./DashboardHome";
 // Profile
 export { default as Profile } from "./Profile";
 
-// Agent Application
-export { default as AgentApplication } from "./AgentApplication";
-
 // Consumer Dashboard Pages
 export { default as ConsumerMyCart } from "./consumer/MyCart";
 export { default as ConsumerMyOrders } from "./consumer/MyOrders";
@@ -25,7 +22,8 @@ export { default as AgentManageDeliveries } from "./agent/ManageDeliveries";
 export { default as AgentWarehouseManagement } from "./agent/WarehouseManagement";
 
 // Admin Dashboard Pages
-export { default as AdminDashboard } from "./admin/AdminDashboard";
 export { default as AdminAnalytics } from "./admin/Analytics";
+export { default as AdminManageProducts } from "./admin/ManageProducts";
+export { default as AdminManageOrders } from "./admin/ManageOrders";
 export { default as AdminManageUsers } from "./admin/ManageUsers";
 export { default as AdminManageAgents } from "./admin/ManageAgents";

@@ -8,6 +8,9 @@ import {
 	FacebookAuthProvider,
 	signInWithPopup,
 	updateProfile,
+	updatePassword,
+	reauthenticateWithCredential,
+	EmailAuthProvider,
 } from "firebase/auth";
 import { auth } from "../firebase/firebase.config";
 import axios from "axios";
@@ -259,6 +262,54 @@ export default function AuthProvider({ children }) {
 	// Check if user is Consumer
 	const isConsumer = () => currentUser?.DBUser?.role === "consumer";
 
+	// Change password
+	const changePassword = async (currentPassword, newPassword) => {
+		try {
+			const user = currentUser?.FirebaseUser;
+			if (!user || !user.email) {
+				throw new Error("User not authenticated");
+			}
+
+			// Re-authenticate user with current password
+			const credential = EmailAuthProvider.credential(
+				user.email,
+				currentPassword
+			);
+			await reauthenticateWithCredential(user, credential);
+
+			// Update password in Firebase
+			await updatePassword(user, newPassword);
+
+			// Update password in database
+			await axios.patch(
+				`${apiBaseUrl}/users/${user.email}/password`,
+				{ newPassword },
+				{ withCredentials: true }
+			);
+
+			toast.success("Password updated successfully");
+			return true;
+		} catch (error) {
+			console.error("Error changing password:", error);
+
+			// Handle specific error messages
+			if (error.code === "auth/wrong-password") {
+				toast.error("Current password is incorrect");
+			} else if (error.code === "auth/weak-password") {
+				toast.error(
+					"New password is too weak. Please choose a stronger password."
+				);
+			} else if (error.code === "auth/requires-recent-login") {
+				toast.error(
+					"Please log out and log in again before changing your password"
+				);
+			} else {
+				toast.error(error.message || "Failed to update password");
+			}
+			throw error;
+		}
+	};
+
 	// Set up an observer for auth state changes
 	useEffect(() => {
 		const unsubscribe = onAuthStateChanged(auth, async (user) => {
@@ -302,6 +353,7 @@ export default function AuthProvider({ children }) {
 		loginWithGoogle,
 		loginWithFacebook,
 		logout,
+		changePassword,
 		isAdmin,
 		isAgent,
 		isSeller,

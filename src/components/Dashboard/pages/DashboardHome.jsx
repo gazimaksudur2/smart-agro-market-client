@@ -104,13 +104,13 @@ export default function DashboardHome() {
 				let redirectPath = null;
 
 				if (isAdmin()) {
-					redirectPath = "/dashboard/admin";
+					redirectPath = "/dashboard/profile";
 				} else if (isAgent()) {
 					redirectPath = "/dashboard/agent";
 				} else if (isSeller()) {
-					redirectPath = "/dashboard/my-products";
+					redirectPath = "/dashboard/seller";
 				} else if (isConsumer()) {
-					redirectPath = "/dashboard/my-orders";
+					redirectPath = "/dashboard/consumer";
 				}
 
 				if (redirectPath) {
@@ -309,7 +309,7 @@ export default function DashboardHome() {
 						value: stats?.activeOrderCount || 3,
 						icon: <FaTruck className="h-6 w-6 text-secondary-600" />,
 						color: "secondary",
-						onClick: () => navigate("/dashboard/my-orders"),
+						onClick: () => navigate("/dashboard/active-orders"),
 					},
 					{
 						title: "Total Spent",
@@ -440,7 +440,7 @@ export default function DashboardHome() {
 	}
 
 	return (
-		<div className="space-y-6">
+		<div className="lg:mt-6 space-y-6">
 			<DashboardTitle
 				title={dashboardInfo.title}
 				subtitle={dashboardInfo.subtitle}

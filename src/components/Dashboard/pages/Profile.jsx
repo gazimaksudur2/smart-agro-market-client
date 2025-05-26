@@ -1,4 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useQuery } from "react-query";
+import axios from "axios";
 import { useAuth } from "../../../contexts/AuthContext";
 import {
 	FaUser,
@@ -8,27 +10,117 @@ import {
 	FaEdit,
 	FaSave,
 	FaTimes,
+	FaLock,
+	FaKey,
+	FaEye,
+	FaEyeSlash,
+	FaCamera,
+	FaShieldAlt,
+	FaUserTie,
+	FaCalendarAlt,
+	FaMapPin,
+	FaIdCard,
+	FaCrown,
+	FaStar,
+	FaChartLine,
+	FaCheckCircle,
+	FaExclamationTriangle,
 } from "react-icons/fa";
 import DashboardTitle from "../DashboardTitle";
+import { toast } from "react-hot-toast";
 
 export default function Profile() {
-	const { currentUser } = useAuth();
+	const { currentUser, changePassword } = useAuth();
 	const [isEditing, setIsEditing] = useState(false);
+	const [districts, setDistricts] = useState([]);
+	const [showPasswordForm, setShowPasswordForm] = useState(false);
+	const [passwordData, setPasswordData] = useState({
+		currentPassword: "",
+		newPassword: "",
+		confirmPassword: "",
+	});
+	const [showPasswords, setShowPasswords] = useState({
+		current: false,
+		new: false,
+		confirm: false,
+	});
+	const [passwordLoading, setPasswordLoading] = useState(false);
+
+	const apiBaseUrl =
+		import.meta.env.VITE_SERVER_API_URL || "http://localhost:5000";
+
+	// Fetch regions for dynamic district selection
+	const { data: regions } = useQuery("regions", async () => {
+		const { data } = await axios.get(`${apiBaseUrl}/regions`);
+		return data.regions;
+	});
+
+	// Helper function to format address object to string
+	const formatAddress = (addressObj) => {
+		if (!addressObj) return "";
+		if (typeof addressObj === "string") return addressObj;
+
+		const parts = [];
+		if (addressObj.street) parts.push(addressObj.street);
+		if (addressObj.city) parts.push(addressObj.city);
+		if (addressObj.state) parts.push(addressObj.state);
+		if (addressObj.zip) parts.push(addressObj.zip);
+		if (addressObj.country) parts.push(addressObj.country);
+
+		return parts.join(", ");
+	};
+
 	const [formData, setFormData] = useState({
 		displayName: currentUser?.FirebaseUser?.displayName || "",
 		email: currentUser?.FirebaseUser?.email || "",
 		phone: currentUser?.DBUser?.phone || "",
-		address: currentUser?.DBUser?.address || "",
+		address: formatAddress(currentUser?.DBUser?.address) || "",
 		region: currentUser?.DBUser?.region || "",
 		district: currentUser?.DBUser?.district || "",
 	});
 
+	// Update available districts when region changes
+	useEffect(() => {
+		if (regions && formData.region) {
+			const selectedRegion = regions.find((r) => r.name === formData.region);
+			if (selectedRegion) {
+				setDistricts(selectedRegion.districts);
+			} else {
+				setDistricts([]);
+			}
+		} else {
+			setDistricts([]);
+		}
+	}, [formData.region, regions]);
+
+	// Initialize districts on component mount if region is already selected
+	useEffect(() => {
+		if (regions && currentUser?.DBUser?.region) {
+			const selectedRegion = regions.find(
+				(r) => r.name === currentUser.DBUser.region
+			);
+			if (selectedRegion) {
+				setDistricts(selectedRegion.districts);
+			}
+		}
+	}, [regions, currentUser]);
+
 	const handleInputChange = (e) => {
 		const { name, value } = e.target;
-		setFormData((prev) => ({
-			...prev,
-			[name]: value,
-		}));
+		setFormData((prev) => {
+			// If region changes, clear the district selection
+			if (name === "region") {
+				return {
+					...prev,
+					[name]: value,
+					district: "", // Clear district when region changes
+				};
+			}
+			return {
+				...prev,
+				[name]: value,
+			};
+		});
 	};
 
 	const handleSave = () => {
@@ -42,253 +134,707 @@ export default function Profile() {
 			displayName: currentUser?.FirebaseUser?.displayName || "",
 			email: currentUser?.FirebaseUser?.email || "",
 			phone: currentUser?.DBUser?.phone || "",
-			address: currentUser?.DBUser?.address || "",
+			address: formatAddress(currentUser?.DBUser?.address) || "",
 			region: currentUser?.DBUser?.region || "",
 			district: currentUser?.DBUser?.district || "",
 		});
 		setIsEditing(false);
 	};
 
+	const handlePasswordChange = (e) => {
+		const { name, value } = e.target;
+		setPasswordData((prev) => ({
+			...prev,
+			[name]: value,
+		}));
+	};
+
+	const togglePasswordVisibility = (field) => {
+		setShowPasswords((prev) => ({
+			...prev,
+			[field]: !prev[field],
+		}));
+	};
+
+	const handlePasswordSubmit = async (e) => {
+		e.preventDefault();
+
+		// Validation
+		if (!passwordData.currentPassword) {
+			toast.error("Please enter your current password");
+			return;
+		}
+
+		if (!passwordData.newPassword) {
+			toast.error("Please enter a new password");
+			return;
+		}
+
+		if (passwordData.newPassword.length < 6) {
+			toast.error("New password must be at least 6 characters long");
+			return;
+		}
+
+		if (passwordData.newPassword !== passwordData.confirmPassword) {
+			toast.error("New passwords do not match");
+			return;
+		}
+
+		if (passwordData.currentPassword === passwordData.newPassword) {
+			toast.error("New password must be different from current password");
+			return;
+		}
+
+		setPasswordLoading(true);
+		try {
+			await changePassword(
+				passwordData.currentPassword,
+				passwordData.newPassword
+			);
+
+			// Reset form
+			setPasswordData({
+				currentPassword: "",
+				newPassword: "",
+				confirmPassword: "",
+			});
+			setShowPasswordForm(false);
+		} catch (error) {
+			// Error handling is done in the changePassword function
+		} finally {
+			setPasswordLoading(false);
+		}
+	};
+
+	const handlePasswordCancel = () => {
+		setPasswordData({
+			currentPassword: "",
+			newPassword: "",
+			confirmPassword: "",
+		});
+		setShowPasswordForm(false);
+	};
+
+	// Helper function to get role icon and color
+	const getRoleConfig = (role) => {
+		switch (role) {
+			case "admin":
+				return {
+					icon: <FaCrown className="h-5 w-5" />,
+					color: "text-yellow-600",
+					bgColor: "bg-yellow-100",
+					badge: "bg-gradient-to-r from-yellow-400 to-yellow-600",
+				};
+			case "agent":
+				return {
+					icon: <FaUserTie className="h-5 w-5" />,
+					color: "text-blue-600",
+					bgColor: "bg-blue-100",
+					badge: "bg-gradient-to-r from-blue-400 to-blue-600",
+				};
+			case "seller":
+				return {
+					icon: <FaUser className="h-5 w-5" />,
+					color: "text-green-600",
+					bgColor: "bg-green-100",
+					badge: "bg-gradient-to-r from-green-400 to-green-600",
+				};
+			default:
+				return {
+					icon: <FaUser className="h-5 w-5" />,
+					color: "text-primary-600",
+					bgColor: "bg-primary-100",
+					badge: "bg-gradient-to-r from-primary-400 to-primary-600",
+				};
+		}
+	};
+
+	const roleConfig = getRoleConfig(currentUser?.DBUser?.role);
+
 	return (
 		<div className="py-6">
-			<div className="flex items-center justify-between mb-6">
-				<DashboardTitle title="My Profile" />
-				{!isEditing ? (
-					<button
-						onClick={() => setIsEditing(true)}
-						className="btn btn-primary flex items-center"
-					>
-						<FaEdit className="mr-2 h-4 w-4" />
-						Edit Profile
-					</button>
-				) : (
-					<div className="flex space-x-2">
-						<button
-							onClick={handleSave}
-							className="btn btn-primary flex items-center"
-						>
-							<FaSave className="mr-2 h-4 w-4" />
-							Save
-						</button>
-						<button
-							onClick={handleCancel}
-							className="btn btn-outline-secondary flex items-center"
-						>
-							<FaTimes className="mr-2 h-4 w-4" />
-							Cancel
-						</button>
+			{/* Enhanced Header */}
+			<div className="mb-8">
+				<div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+					<div>
+						<h1 className="text-3xl font-bold text-gray-900 mb-2">
+							My Profile
+						</h1>
+						<p className="text-gray-600">
+							Manage your personal information and account settings
+						</p>
 					</div>
-				)}
+					{!isEditing ? (
+						<button
+							onClick={() => setIsEditing(true)}
+							className="btn btn-primary flex items-center shadow-lg hover:shadow-xl transition-all duration-200"
+						>
+							<FaEdit className="mr-2 h-4 w-4" />
+							Edit Profile
+						</button>
+					) : (
+						<div className="flex space-x-3">
+							<button
+								onClick={handleSave}
+								className="btn btn-primary flex items-center shadow-lg hover:shadow-xl transition-all duration-200"
+							>
+								<FaSave className="mr-2 h-4 w-4" />
+								Save Changes
+							</button>
+							<button
+								onClick={handleCancel}
+								className="btn btn-outline flex items-center hover:bg-gray-50 transition-all duration-200"
+							>
+								<FaTimes className="mr-2 h-4 w-4" />
+								Cancel
+							</button>
+						</div>
+					)}
+				</div>
 			</div>
 
-			<div className="bg-white shadow-sm rounded-lg overflow-hidden">
-				{/* Profile Header */}
-				<div className="bg-gradient-to-r from-primary-500 to-primary-600 px-6 py-8">
-					<div className="flex items-center">
-						<div className="flex-shrink-0">
-							<img
-								className="h-20 w-20 rounded-full border-4 border-white"
-								src={
-									currentUser?.FirebaseUser?.photoURL ||
-									"https://i.ibb.co/MBtjqXQ/no-avatar.gif"
-								}
-								alt={currentUser?.FirebaseUser?.displayName || "User"}
-							/>
-						</div>
-						<div className="ml-6">
-							<h1 className="text-2xl font-bold text-white">
-								{currentUser?.FirebaseUser?.displayName || "User"}
-							</h1>
-							<p className="text-primary-100 capitalize">
-								{currentUser?.DBUser?.role || "Consumer"}
-							</p>
-							<p className="text-primary-100 text-sm">
-								Member since{" "}
-								{new Date(
-									currentUser?.FirebaseUser?.metadata?.creationTime
-								).toLocaleDateString()}
-							</p>
-						</div>
+			{/* Profile Header Card */}
+			<div className="bg-white shadow-xl rounded-2xl overflow-hidden mb-8 border border-gray-100">
+				<div className="relative bg-gradient-to-br from-primary-500 via-primary-600 to-primary-700 px-8 py-12">
+					{/* Background Pattern */}
+					<div className="absolute inset-0 opacity-10">
+						<div className="absolute inset-0 bg-white bg-opacity-5"></div>
 					</div>
-				</div>
 
-				{/* Profile Details */}
-				<div className="px-6 py-6">
-					<div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-						{/* Personal Information */}
-						<div>
-							<h3 className="text-lg font-medium text-gray-900 mb-4">
-								Personal Information
-							</h3>
-							<div className="space-y-4">
-								<div>
-									<label className="block text-sm font-medium text-gray-700 mb-1">
-										<FaUser className="inline mr-2" />
-										Full Name
-									</label>
-									{isEditing ? (
-										<input
-											type="text"
-											name="displayName"
-											value={formData.displayName}
-											onChange={handleInputChange}
-											className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
-										/>
-									) : (
-										<p className="text-gray-900">
-											{formData.displayName || "Not provided"}
-										</p>
-									)}
+					<div className="relative flex flex-col md:flex-row items-center md:items-start">
+						{/* Profile Image Section */}
+						<div className="relative flex-shrink-0 mb-6 md:mb-0">
+							<div className="relative">
+								<img
+									className="h-32 w-32 rounded-2xl border-4 border-white shadow-2xl object-cover"
+									src={
+										currentUser?.FirebaseUser?.photoURL ||
+										"https://i.ibb.co/MBtjqXQ/no-avatar.gif"
+									}
+									alt={currentUser?.FirebaseUser?.displayName || "User"}
+								/>
+								{/* Camera overlay for future photo upload */}
+								<div className="absolute inset-0 bg-black bg-opacity-0 hover:bg-opacity-30 rounded-2xl transition-all duration-200 flex items-center justify-center cursor-pointer group">
+									<FaCamera className="text-white opacity-0 group-hover:opacity-100 h-6 w-6 transition-opacity duration-200" />
 								</div>
-
-								<div>
-									<label className="block text-sm font-medium text-gray-700 mb-1">
-										<FaEnvelope className="inline mr-2" />
-										Email Address
-									</label>
-									<p className="text-gray-900">{formData.email}</p>
-									<p className="text-xs text-gray-500">
-										Email cannot be changed
-									</p>
-								</div>
-
-								<div>
-									<label className="block text-sm font-medium text-gray-700 mb-1">
-										<FaPhone className="inline mr-2" />
-										Phone Number
-									</label>
-									{isEditing ? (
-										<input
-											type="tel"
-											name="phone"
-											value={formData.phone}
-											onChange={handleInputChange}
-											className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
-											placeholder="+880 1XXXXXXXXX"
-										/>
-									) : (
-										<p className="text-gray-900">
-											{formData.phone || "Not provided"}
-										</p>
-									)}
+								{/* Online status indicator */}
+								<div className="absolute -bottom-2 -right-2 h-8 w-8 bg-green-500 rounded-full border-4 border-white flex items-center justify-center">
+									<FaCheckCircle className="h-4 w-4 text-white" />
 								</div>
 							</div>
 						</div>
 
-						{/* Location Information */}
-						<div>
-							<h3 className="text-lg font-medium text-gray-900 mb-4">
-								Location Information
-							</h3>
-							<div className="space-y-4">
+						{/* Profile Info Section */}
+						<div className="md:ml-8 text-center md:text-left flex-1">
+							<div className="flex flex-col md:flex-row md:items-center md:justify-between mb-4">
 								<div>
-									<label className="block text-sm font-medium text-gray-700 mb-1">
-										<FaMapMarkerAlt className="inline mr-2" />
-										Region
-									</label>
-									{isEditing ? (
-										<select
-											name="region"
-											value={formData.region}
-											onChange={handleInputChange}
-											className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
-										>
-											<option value="">Select Region</option>
-											<option value="Dhaka">Dhaka</option>
-											<option value="Chittagong">Chittagong</option>
-											<option value="Rajshahi">Rajshahi</option>
-											<option value="Khulna">Khulna</option>
-											<option value="Barisal">Barisal</option>
-											<option value="Sylhet">Sylhet</option>
-											<option value="Rangpur">Rangpur</option>
-											<option value="Mymensingh">Mymensingh</option>
-										</select>
-									) : (
-										<p className="text-gray-900">
-											{formData.region || "Not provided"}
-										</p>
-									)}
+									<h1 className="text-3xl font-bold text-white mb-2">
+										{typeof currentUser?.FirebaseUser?.displayName === "string"
+											? currentUser.FirebaseUser.displayName
+											: "User"}
+									</h1>
+
+									{/* Role Badge */}
+									<div
+										className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-white text-sm font-medium mb-3"
+										style={{ background: roleConfig.badge }}
+									>
+										{roleConfig.icon}
+										<span className="capitalize">
+											{typeof currentUser?.DBUser?.role === "string"
+												? currentUser.DBUser.role
+												: "Consumer"}
+										</span>
+									</div>
 								</div>
 
-								<div>
-									<label className="block text-sm font-medium text-gray-700 mb-1">
-										District
-									</label>
-									{isEditing ? (
-										<input
-											type="text"
-											name="district"
-											value={formData.district}
-											onChange={handleInputChange}
-											className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
-											placeholder="Enter your district"
-										/>
-									) : (
-										<p className="text-gray-900">
-											{formData.district || "Not provided"}
-										</p>
-									)}
+								{/* Account Status */}
+								<div className="text-center md:text-right">
+									<div className="inline-flex items-center gap-2 bg-white bg-opacity-20 rounded-lg px-3 py-2 text-white text-sm">
+										<FaShieldAlt className="h-4 w-4" />
+										<span>Verified Account</span>
+									</div>
 								</div>
+							</div>
 
-								<div>
-									<label className="block text-sm font-medium text-gray-700 mb-1">
-										Address
-									</label>
-									{isEditing ? (
-										<textarea
-											name="address"
-											value={formData.address}
-											onChange={handleInputChange}
-											rows={3}
-											className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
-											placeholder="Enter your full address"
-										/>
-									) : (
-										<p className="text-gray-900">
-											{formData.address || "Not provided"}
-										</p>
-									)}
+							{/* Account Meta Info */}
+							<div className="flex flex-col md:flex-row gap-4 text-primary-100">
+								<div className="flex items-center justify-center md:justify-start gap-2">
+									<FaCalendarAlt className="h-4 w-4" />
+									<span className="text-sm">
+										Member since{" "}
+										{new Date(
+											currentUser?.FirebaseUser?.metadata?.creationTime
+										).toLocaleDateString("en-US", {
+											year: "numeric",
+											month: "long",
+											day: "numeric",
+										})}
+									</span>
+								</div>
+								<div className="flex items-center justify-center md:justify-start gap-2">
+									<FaIdCard className="h-4 w-4" />
+									<span className="text-sm">
+										ID: {currentUser?.FirebaseUser?.uid?.slice(0, 8)}...
+									</span>
 								</div>
 							</div>
 						</div>
 					</div>
 				</div>
 
-				{/* Account Statistics */}
-				<div className="bg-gray-50 px-6 py-4">
-					<h3 className="text-lg font-medium text-gray-900 mb-4">
-						Account Statistics
-					</h3>
-					<div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-						<div className="text-center">
-							<p className="text-2xl font-bold text-primary-600">
+				{/* Quick Stats Bar */}
+				<div className="bg-gray-50 px-8 py-4 border-t border-gray-200">
+					<div className="grid grid-cols-3 gap-4 text-center">
+						<div>
+							<p className="text-2xl font-bold text-gray-900">
 								{currentUser?.DBUser?.role === "seller" ? "24" : "12"}
 							</p>
 							<p className="text-sm text-gray-500">
+								{currentUser?.DBUser?.role === "seller" ? "Products" : "Orders"}
+							</p>
+						</div>
+						<div>
+							<p className="text-2xl font-bold text-green-600">
+								৳{currentUser?.DBUser?.role === "seller" ? "54,500" : "28,750"}
+							</p>
+							<p className="text-sm text-gray-500">
+								{currentUser?.DBUser?.role === "seller" ? "Earnings" : "Spent"}
+							</p>
+						</div>
+						<div className="flex items-center justify-center gap-1">
+							<p className="text-2xl font-bold text-yellow-600">
+								{currentUser?.DBUser?.role === "seller" ? "4.8" : "5.0"}
+							</p>
+							<FaStar className="h-5 w-5 text-yellow-500" />
+							<p className="text-sm text-gray-500 ml-2">Rating</p>
+						</div>
+					</div>
+				</div>
+			</div>
+
+			{/* Profile Information Cards */}
+			<div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6 mb-8">
+				{/* Personal Information Card */}
+				<div className="bg-white shadow-lg rounded-2xl overflow-hidden border border-gray-100 hover:shadow-xl transition-all duration-300">
+					<div className="bg-gradient-to-r from-primary-500 to-primary-600 px-6 py-4">
+						<div className="flex items-center gap-3">
+							<div className="p-2 bg-white bg-opacity-20 rounded-lg">
+								<FaUser className="h-5 w-5 text-white" />
+							</div>
+							<h3 className="text-lg font-semibold text-white">
+								Personal Information
+							</h3>
+						</div>
+					</div>
+					<div className="p-6 space-y-5">
+						<div>
+							<label className="flex items-center text-sm font-medium text-gray-700 mb-2">
+								<FaIdCard className="mr-2 h-4 w-4 text-gray-500" />
+								Full Name
+							</label>
+							{isEditing ? (
+								<input
+									type="text"
+									name="displayName"
+									value={formData.displayName || ""}
+									onChange={handleInputChange}
+									className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200"
+									placeholder="Enter your full name"
+								/>
+							) : (
+								<div className="bg-gray-50 px-4 py-3 rounded-lg">
+									<p className="text-gray-900 font-medium">
+										{formData.displayName || "Not provided"}
+									</p>
+								</div>
+							)}
+						</div>
+
+						<div>
+							<label className="flex items-center text-sm font-medium text-gray-700 mb-2">
+								<FaEnvelope className="mr-2 h-4 w-4 text-gray-500" />
+								Email Address
+							</label>
+							<div className="bg-gray-50 px-4 py-3 rounded-lg border border-gray-200">
+								<p className="text-gray-900 font-medium">
+									{formData.email || "Not provided"}
+								</p>
+								<p className="text-xs text-gray-500 mt-1">
+									<FaShieldAlt className="inline mr-1" />
+									Email cannot be changed for security
+								</p>
+							</div>
+						</div>
+
+						<div>
+							<label className="flex items-center text-sm font-medium text-gray-700 mb-2">
+								<FaPhone className="mr-2 h-4 w-4 text-gray-500" />
+								Phone Number
+							</label>
+							{isEditing ? (
+								<input
+									type="tel"
+									name="phone"
+									value={formData.phone || ""}
+									onChange={handleInputChange}
+									className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200"
+									placeholder="+880 1XXXXXXXXX"
+								/>
+							) : (
+								<div className="bg-gray-50 px-4 py-3 rounded-lg">
+									<p className="text-gray-900 font-medium">
+										{formData.phone || "Not provided"}
+									</p>
+								</div>
+							)}
+						</div>
+					</div>
+				</div>
+
+				{/* Location Information Card */}
+				<div className="bg-white shadow-lg rounded-2xl overflow-hidden border border-gray-100 hover:shadow-xl transition-all duration-300">
+					<div className="bg-gradient-to-r from-blue-500 to-blue-600 px-6 py-4">
+						<div className="flex items-center gap-3">
+							<div className="p-2 bg-white bg-opacity-20 rounded-lg">
+								<FaMapPin className="h-5 w-5 text-white" />
+							</div>
+							<h3 className="text-lg font-semibold text-white">
+								Location Information
+							</h3>
+						</div>
+					</div>
+					<div className="p-6 space-y-5">
+						<div>
+							<label className="flex items-center text-sm font-medium text-gray-700 mb-2">
+								<FaMapMarkerAlt className="mr-2 h-4 w-4 text-gray-500" />
+								Region
+							</label>
+							{isEditing ? (
+								<select
+									name="region"
+									value={formData.region || ""}
+									onChange={handleInputChange}
+									className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200"
+								>
+									<option value="">Select Region</option>
+									{regions?.map((region) => (
+										<option key={region.name} value={region.name}>
+											{region.name}
+										</option>
+									))}
+								</select>
+							) : (
+								<div className="bg-gray-50 px-4 py-3 rounded-lg">
+									<p className="text-gray-900 font-medium">
+										{formData.region || "Not provided"}
+									</p>
+								</div>
+							)}
+						</div>
+
+						<div>
+							<label className="flex items-center text-sm font-medium text-gray-700 mb-2">
+								<FaMapPin className="mr-2 h-4 w-4 text-gray-500" />
+								District
+							</label>
+							{isEditing ? (
+								<select
+									name="district"
+									value={formData.district || ""}
+									onChange={handleInputChange}
+									className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200 disabled:bg-gray-100 disabled:cursor-not-allowed"
+									disabled={!formData.region}
+								>
+									<option value="">
+										{formData.region
+											? "Select District"
+											: "Select Region First"}
+									</option>
+									{districts?.map((district) => (
+										<option key={district.name} value={district.name}>
+											{district.name}
+										</option>
+									))}
+								</select>
+							) : (
+								<div className="bg-gray-50 px-4 py-3 rounded-lg">
+									<p className="text-gray-900 font-medium">
+										{formData.district || "Not provided"}
+									</p>
+								</div>
+							)}
+						</div>
+
+						<div>
+							<label className="flex items-center text-sm font-medium text-gray-700 mb-2">
+								<FaMapMarkerAlt className="mr-2 h-4 w-4 text-gray-500" />
+								Full Address
+							</label>
+							{isEditing ? (
+								<textarea
+									name="address"
+									value={formData.address || ""}
+									onChange={handleInputChange}
+									rows={3}
+									className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200 resize-none"
+									placeholder="Enter your complete address..."
+								/>
+							) : (
+								<div className="bg-gray-50 px-4 py-3 rounded-lg min-h-[80px]">
+									<p className="text-gray-900 font-medium">
+										{formData.address || "Not provided"}
+									</p>
+								</div>
+							)}
+						</div>
+					</div>
+				</div>
+
+				{/* Security Settings Card */}
+				<div className="bg-white shadow-lg rounded-2xl overflow-hidden border border-gray-100 hover:shadow-xl transition-all duration-300">
+					<div className="bg-gradient-to-r from-red-500 to-red-600 px-6 py-4">
+						<div className="flex items-center gap-3">
+							<div className="p-2 bg-white bg-opacity-20 rounded-lg">
+								<FaShieldAlt className="h-5 w-5 text-white" />
+							</div>
+							<h3 className="text-lg font-semibold text-white">
+								Security Settings
+							</h3>
+						</div>
+					</div>
+					<div className="p-6 space-y-5">
+						<div>
+							<label className="flex items-center text-sm font-medium text-gray-700 mb-2">
+								<FaLock className="mr-2 h-4 w-4 text-gray-500" />
+								Password
+							</label>
+							{!showPasswordForm ? (
+								<div className="bg-gray-50 px-4 py-3 rounded-lg border border-gray-200">
+									<div className="flex items-center justify-between">
+										<div className="flex items-center gap-2">
+											<p className="text-gray-900 font-medium">••••••••••••</p>
+											<span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+												<FaCheckCircle className="h-3 w-3 mr-1" />
+												Secure
+											</span>
+										</div>
+										<button
+											onClick={() => setShowPasswordForm(true)}
+											className="btn btn-primary text-sm px-4 py-2 hover:shadow-lg transition-all duration-200"
+										>
+											<FaKey className="mr-2 h-4 w-4" />
+											Change Password
+										</button>
+									</div>
+								</div>
+							) : (
+								<div className="border border-gray-200 rounded-lg p-4 bg-gray-50">
+									<form onSubmit={handlePasswordSubmit} className="space-y-4">
+										{/* Current Password */}
+										<div>
+											<label className="block text-sm font-medium text-gray-700 mb-1">
+												Current Password
+											</label>
+											<div className="relative">
+												<input
+													type={showPasswords.current ? "text" : "password"}
+													name="currentPassword"
+													value={passwordData.currentPassword}
+													onChange={handlePasswordChange}
+													className="w-full px-3 py-2 pr-10 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+													placeholder="Enter current password"
+													required
+												/>
+												<button
+													type="button"
+													onClick={() => togglePasswordVisibility("current")}
+													className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600"
+												>
+													{showPasswords.current ? (
+														<FaEyeSlash className="h-4 w-4" />
+													) : (
+														<FaEye className="h-4 w-4" />
+													)}
+												</button>
+											</div>
+										</div>
+
+										{/* New Password */}
+										<div>
+											<label className="block text-sm font-medium text-gray-700 mb-1">
+												New Password
+											</label>
+											<div className="relative">
+												<input
+													type={showPasswords.new ? "text" : "password"}
+													name="newPassword"
+													value={passwordData.newPassword}
+													onChange={handlePasswordChange}
+													className="w-full px-3 py-2 pr-10 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+													placeholder="Enter new password"
+													required
+													minLength={6}
+												/>
+												<button
+													type="button"
+													onClick={() => togglePasswordVisibility("new")}
+													className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600"
+												>
+													{showPasswords.new ? (
+														<FaEyeSlash className="h-4 w-4" />
+													) : (
+														<FaEye className="h-4 w-4" />
+													)}
+												</button>
+											</div>
+										</div>
+
+										{/* Confirm New Password */}
+										<div>
+											<label className="block text-sm font-medium text-gray-700 mb-1">
+												Confirm New Password
+											</label>
+											<div className="relative">
+												<input
+													type={showPasswords.confirm ? "text" : "password"}
+													name="confirmPassword"
+													value={passwordData.confirmPassword}
+													onChange={handlePasswordChange}
+													className="w-full px-3 py-2 pr-10 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+													placeholder="Confirm new password"
+													required
+												/>
+												<button
+													type="button"
+													onClick={() => togglePasswordVisibility("confirm")}
+													className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600"
+												>
+													{showPasswords.confirm ? (
+														<FaEyeSlash className="h-4 w-4" />
+													) : (
+														<FaEye className="h-4 w-4" />
+													)}
+												</button>
+											</div>
+										</div>
+
+										{/* Password Requirements */}
+										<div className="text-xs text-gray-500 bg-blue-50 p-3 rounded-lg">
+											<p className="font-medium mb-1">Password requirements:</p>
+											<ul className="list-disc list-inside ml-2 space-y-1">
+												<li>At least 6 characters long</li>
+												<li>Different from current password</li>
+											</ul>
+										</div>
+
+										{/* Action Buttons */}
+										<div className="flex space-x-3 pt-2">
+											<button
+												type="submit"
+												disabled={passwordLoading}
+												className="btn btn-primary flex items-center"
+											>
+												{passwordLoading ? (
+													<div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-white mr-2"></div>
+												) : (
+													<FaKey className="mr-2 h-4 w-4" />
+												)}
+												{passwordLoading ? "Updating..." : "Update Password"}
+											</button>
+											<button
+												type="button"
+												onClick={handlePasswordCancel}
+												disabled={passwordLoading}
+												className="btn btn-outline flex items-center"
+											>
+												<FaTimes className="mr-2 h-4 w-4" />
+												Cancel
+											</button>
+										</div>
+									</form>
+								</div>
+							)}
+						</div>
+					</div>
+				</div>
+			</div>
+
+			{/* Account Activity & Achievements */}
+			<div className="bg-white shadow-xl rounded-2xl overflow-hidden border border-gray-100 mb-8">
+				<div className="bg-gradient-to-r from-purple-500 to-purple-600 px-8 py-6">
+					<div className="flex items-center gap-3">
+						<div className="p-3 bg-white bg-opacity-20 rounded-xl">
+							<FaChartLine className="h-6 w-6 text-white" />
+						</div>
+						<div>
+							<h3 className="text-xl font-bold text-white">
+								Account Activity & Performance
+							</h3>
+							<p className="text-purple-100 text-sm">
+								Your activity summary and achievements
+							</p>
+						</div>
+					</div>
+				</div>
+				<div className="p-8">
+					<div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+						<div className="text-center p-6 bg-gradient-to-br from-primary-50 to-primary-100 rounded-xl">
+							<div className="flex items-center justify-center mb-3">
+								<div className="p-3 bg-primary-600 rounded-full">
+									<FaUser className="h-6 w-6 text-white" />
+								</div>
+							</div>
+							<p className="text-2xl font-bold text-primary-600 mb-1">
+								{currentUser?.DBUser?.role === "seller" ? "24" : "12"}
+							</p>
+							<p className="text-sm text-gray-600 font-medium">
 								{currentUser?.DBUser?.role === "seller"
 									? "Products Listed"
 									: "Orders Placed"}
 							</p>
 						</div>
-						<div className="text-center">
-							<p className="text-2xl font-bold text-green-600">
+
+						<div className="text-center p-6 bg-gradient-to-br from-green-50 to-green-100 rounded-xl">
+							<div className="flex items-center justify-center mb-3">
+								<div className="p-3 bg-green-600 rounded-full">
+									<FaChartLine className="h-6 w-6 text-white" />
+								</div>
+							</div>
+							<p className="text-2xl font-bold text-green-600 mb-1">
 								৳{currentUser?.DBUser?.role === "seller" ? "54,500" : "28,750"}
 							</p>
-							<p className="text-sm text-gray-500">
+							<p className="text-sm text-gray-600 font-medium">
 								{currentUser?.DBUser?.role === "seller"
 									? "Total Earnings"
 									: "Total Spent"}
 							</p>
 						</div>
-						<div className="text-center">
-							<p className="text-2xl font-bold text-secondary-600">
+
+						<div className="text-center p-6 bg-gradient-to-br from-yellow-50 to-yellow-100 rounded-xl">
+							<div className="flex items-center justify-center mb-3">
+								<div className="p-3 bg-yellow-600 rounded-full">
+									<FaStar className="h-6 w-6 text-white" />
+								</div>
+							</div>
+							<p className="text-2xl font-bold text-yellow-600 mb-1">
 								{currentUser?.DBUser?.role === "seller" ? "4.8" : "5.0"}
 							</p>
-							<p className="text-sm text-gray-500">
+							<p className="text-sm text-gray-600 font-medium">
 								{currentUser?.DBUser?.role === "seller"
 									? "Average Rating"
 									: "Customer Rating"}
 							</p>
+						</div>
+
+						<div className="text-center p-6 bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl">
+							<div className="flex items-center justify-center mb-3">
+								<div className="p-3 bg-blue-600 rounded-full">
+									<FaCheckCircle className="h-6 w-6 text-white" />
+								</div>
+							</div>
+							<p className="text-2xl font-bold text-blue-600 mb-1">98%</p>
+							<p className="text-sm text-gray-600 font-medium">Success Rate</p>
 						</div>
 					</div>
 				</div>

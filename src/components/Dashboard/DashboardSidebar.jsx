@@ -1,15 +1,12 @@
-import { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import {
 	FaHome,
 	FaUser,
-	FaUserPlus,
 	FaShoppingCart,
 	FaClipboardList,
 	FaBoxOpen,
 	FaPlus,
 	FaWarehouse,
-	FaChartLine,
 	FaUsers,
 	FaUserCheck,
 	FaTruck,
@@ -18,12 +15,14 @@ import {
 	FaFileInvoice,
 	FaStore,
 	FaHeart,
+	FaCubes,
+	FaReceipt,
 } from "react-icons/fa";
 import { useAuth } from "../../contexts/AuthContext";
 import { AvatarWithInitials } from "../UI/Avatar";
 
 export default function DashboardSidebar({ sidebarOpen, setSidebarOpen }) {
-	const { currentUser, isAdmin, isAgent, isSeller, isConsumer } = useAuth();
+	const { currentUser } = useAuth();
 	const location = useLocation();
 
 	const closeSidebar = () => {
@@ -31,6 +30,13 @@ export default function DashboardSidebar({ sidebarOpen, setSidebarOpen }) {
 	};
 
 	const isActive = (path) => {
+		// Handle exact match for dashboard home route
+		if (path === "/dashboard") {
+			return (
+				location.pathname === "/dashboard" ||
+				location.pathname === "/dashboard/"
+			);
+		}
 		return location.pathname === path;
 	};
 
@@ -44,11 +50,11 @@ export default function DashboardSidebar({ sidebarOpen, setSidebarOpen }) {
 
 	// Common links for all users
 	const commonLinks = [
-		{
-			to: "/dashboard",
-			icon: <FaHome className="mr-3 h-6 w-6" />,
-			label: "Dashboard Home",
-		},
+	// 	{
+	// 		to: "/dashboard",
+	// 		icon: <FaHome className="mr-3 h-6 w-6" />,
+	// 		label: "Dashboard Home",
+	// 	},
 		{
 			to: "/dashboard/profile",
 			icon: <FaUser className="mr-3 h-6 w-6" />,
@@ -56,30 +62,23 @@ export default function DashboardSidebar({ sidebarOpen, setSidebarOpen }) {
 		},
 	];
 
-	// Agent application link (for non-agents)
-	const agentApplicationLink =
-		!isAgent() && !isAdmin()
-			? [
-					{
-						to: "/dashboard/agent-application",
-						icon: <FaUserPlus className="mr-3 h-6 w-6" />,
-						label: "Become an Agent",
-					},
-			  ]
-			: [];
-
 	// Role-specific links with comprehensive navigation
 	const roleLinks = {
 		admin: [
 			{
-				to: "/dashboard/admin",
-				icon: <FaChartLine className="mr-3 h-6 w-6" />,
-				label: "Admin Dashboard",
-			},
-			{
 				to: "/dashboard/analytics",
 				icon: <FaChartBar className="mr-3 h-6 w-6" />,
 				label: "Platform Analytics",
+			},
+			{
+				to: "/dashboard/manage-products",
+				icon: <FaCubes className="mr-3 h-6 w-6" />,
+				label: "Manage Products",
+			},
+			{
+				to: "/dashboard/manage-orders",
+				icon: <FaReceipt className="mr-3 h-6 w-6" />,
+				label: "Manage Orders",
 			},
 			{
 				to: "/dashboard/manage-users",
@@ -173,11 +172,7 @@ export default function DashboardSidebar({ sidebarOpen, setSidebarOpen }) {
 	// Get links based on user role
 	const getNavLinks = () => {
 		const userRole = currentUser?.DBUser?.role || "consumer";
-		return [
-			// ...commonLinks,
-			...agentApplicationLink,
-			...(roleLinks[userRole] || roleLinks.consumer),
-		];
+		return [...commonLinks, ...(roleLinks[userRole] || roleLinks.consumer)];
 	};
 
 	// Create nav link with proper accessibility

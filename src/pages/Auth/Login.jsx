@@ -28,7 +28,15 @@ export default function Login() {
 		try {
 			await loginWithEmail(data.email, data.password);
 			toast.success("Login successful!");
-			navigate(from, { replace: true });
+
+			// Check for stored redirect path from application flow
+			const redirectPath = localStorage.getItem("redirectAfterLogin");
+			if (redirectPath) {
+				localStorage.removeItem("redirectAfterLogin");
+				navigate(redirectPath, { replace: true });
+			} else {
+				navigate(from, { replace: true });
+			}
 		} catch (error) {
 			// Clear form if authentication failed
 			toast.error(
@@ -45,7 +53,15 @@ export default function Login() {
 		try {
 			await loginWithGoogle();
 			toast.success("Login successful!");
-			navigate(from, { replace: true });
+
+			// Check for stored redirect path from application flow
+			const redirectPath = localStorage.getItem("redirectAfterLogin");
+			if (redirectPath) {
+				localStorage.removeItem("redirectAfterLogin");
+				navigate(redirectPath, { replace: true });
+			} else {
+				navigate(from, { replace: true });
+			}
 		} catch (error) {
 			toast.error(error.message || "Google login failed");
 		} finally {
@@ -59,7 +75,15 @@ export default function Login() {
 		try {
 			await loginWithFacebook();
 			toast.success("Login successful!");
-			navigate(from, { replace: true });
+
+			// Check for stored redirect path from application flow
+			const redirectPath = localStorage.getItem("redirectAfterLogin");
+			if (redirectPath) {
+				localStorage.removeItem("redirectAfterLogin");
+				navigate(redirectPath, { replace: true });
+			} else {
+				navigate(from, { replace: true });
+			}
 		} catch (error) {
 			toast.error(error.message || "Facebook login failed");
 		} finally {
