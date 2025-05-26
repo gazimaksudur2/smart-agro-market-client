@@ -22,6 +22,7 @@ export default function Navbar() {
 			console.error("Failed to log out", error);
 		}
 	};
+	// console.log(currentUser, isAdmin(), isAgent(), isSeller());
 
 	return (
 		<nav className="bg-white shadow-md">
@@ -104,7 +105,7 @@ export default function Navbar() {
 											: isAgent()
 											? "/dashboard/agent"
 											: isSeller()
-											? "/dashboard/my-products"
+											? "/dashboard/seller"
 											: "/dashboard"
 									}
 									className="btn btn-outline py-1.5"

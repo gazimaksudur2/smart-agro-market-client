@@ -14,6 +14,7 @@ import axios from "axios";
 import toast from "react-hot-toast";
 import { areCookiesEnabled } from "../utils/cookieUtils";
 import authService from "../services/authService";
+import cartService from "../services/cartService";
 
 export const AuthContext = createContext();
 
@@ -23,7 +24,6 @@ export function useAuth() {
 
 export default function AuthProvider({ children }) {
 	const [currentUser, setCurrentUser] = useState(null);
-	const [userRole, setUserRole] = useState("consumer");
 	const [loading, setLoading] = useState(true);
 	const [accessToken, setAccessToken] = useState("");
 	const [usingCookies, setUsingCookies] = useState(true);
@@ -227,15 +227,18 @@ export default function AuthProvider({ children }) {
 	};
 
 	// Get user role from API
-	const getUserRole = async (email) => {
+	const getDBUser = async (email) => {
 		try {
 			const { data } = await axios.get(`${apiBaseUrl}/users/${email}`, {
 				withCredentials: true,
 			});
 
-			if (data.role) {
-				setUserRole(data.role);
-				return data.role;
+			if (data.success) {
+				setCurrentUser((prevUser) => ({
+					Firebaseuser: prevUser?.Firebaseuser,
+					DBuser: data.user,
+				}));
+				return data.user.role;
 			}
 			return "consumer";
 		} catch (error) {
@@ -245,35 +248,41 @@ export default function AuthProvider({ children }) {
 	};
 
 	// Check if user is Admin
-	const isAdmin = () => userRole === "admin";
+	const isAdmin = () => currentUser?.DBuser?.role === "admin";
 
 	// Check if user is Agent
-	const isAgent = () => userRole === "agent";
+	const isAgent = () => currentUser?.DBuser?.role === "agent";
 
 	// Check if user is Seller
-	const isSeller = () => userRole === "seller";
+	const isSeller = () => currentUser?.DBuser?.role === "seller";
 
 	// Check if user is Consumer
-	const isConsumer = () => userRole === "consumer";
+	const isConsumer = () => currentUser?.DBuser?.role === "consumer";
 
 	// Set up an observer for auth state changes
 	useEffect(() => {
 		const unsubscribe = onAuthStateChanged(auth, async (user) => {
 			if (user) {
-				setCurrentUser(user);
+				setCurrentUser({ Firebaseuser: user, DBuser: null });
 				try {
 					// Get token from backend
 					const token = await authService.getToken(user);
 					await handleToken(token);
 
 					// Get user role
-					await getUserRole(user.email);
+					await getDBUser(user.email);
+
+					// Merge cart from localStorage to database when user logs in
+					try {
+						await cartService.mergeAndTransferCart(user.email);
+					} catch (error) {
+						console.error("Error merging cart on login:", error);
+					}
 				} catch (error) {
 					console.error("Error during auth state change:", error);
 				}
 			} else {
 				setCurrentUser(null);
-				setUserRole("consumer");
 				setAccessToken("");
 			}
 			setLoading(false);
@@ -285,7 +294,6 @@ export default function AuthProvider({ children }) {
 	// Context value
 	const value = {
 		currentUser,
-		userRole,
 		loading,
 		accessToken,
 		usingCookies,
@@ -298,8 +306,7 @@ export default function AuthProvider({ children }) {
 		isAgent,
 		isSeller,
 		isConsumer,
-		getUserRole,
-		setUserRole,
+		getDBUser,
 	};
 
 	return (

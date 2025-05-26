@@ -1,5 +1,6 @@
-import { createSlice } from "@reduxjs/toolkit";
+import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import toast from "react-hot-toast";
+import cartService from "../../services/cartService";
 
 const initialState = {
 	items: [],
@@ -7,7 +8,65 @@ const initialState = {
 	subtotal: 0,
 	deliveryCharge: 0,
 	totalAmount: 0,
+	loading: false,
+	error: null,
+	syncStatus: "idle", // 'idle', 'syncing', 'synced', 'error'
 };
+
+// Async thunks for database operations
+export const loadCartFromDB = createAsyncThunk(
+	"cart/loadFromDB",
+	async (email) => {
+		const cart = await cartService.getCartFromDB(email);
+		return cart;
+	}
+);
+
+export const loadCartFromLocalStorage = createAsyncThunk(
+	"cart/loadFromLocalStorage",
+	async () => {
+		const cart = cartService.getCartFromLocalStorage();
+		return cart;
+	}
+);
+
+export const syncCartToDB = createAsyncThunk(
+	"cart/syncToDB",
+	async ({ email, cartData }) => {
+		await cartService.saveCartToDB(email, cartData);
+		return cartData;
+	}
+);
+
+export const mergeCartOnLogin = createAsyncThunk(
+	"cart/mergeOnLogin",
+	async (email) => {
+		const mergedCart = await cartService.mergeAndTransferCart(email);
+		return mergedCart;
+	}
+);
+
+export const addToCartAsync = createAsyncThunk(
+	"cart/addToCartAsync",
+	async ({ product, email, isAuthenticated }) => {
+		if (isAuthenticated && email) {
+			// Update database
+			await cartService.saveCartToDB(email, {
+				items: [product],
+				operation: "add",
+			});
+		} else {
+			// Update localStorage
+			const currentCart = cartService.getCartFromLocalStorage();
+			const updatedCart = {
+				...currentCart,
+				items: [...(currentCart.items || []), product],
+			};
+			cartService.saveCartToLocalStorage(updatedCart);
+		}
+		return { product, isAuthenticated };
+	}
+);
 
 export const cartSlice = createSlice({
 	name: "cart",
@@ -115,6 +174,96 @@ export const cartSlice = createSlice({
 			state.deliveryCharge = baseCharge;
 			state.totalAmount = state.subtotal + state.deliveryCharge;
 		},
+
+		// Sync cart to localStorage for non-authenticated users
+		syncToLocalStorage: (state) => {
+			cartService.saveCartToLocalStorage({
+				items: state.items,
+				totalItems: state.totalItems,
+				subtotal: state.subtotal,
+				deliveryCharge: state.deliveryCharge,
+				totalAmount: state.totalAmount,
+			});
+		},
+
+		// Set cart from external source (DB or localStorage)
+		setCart: (state, action) => {
+			const {
+				items = [],
+				totalItems = 0,
+				subtotal = 0,
+				deliveryCharge = 0,
+				totalAmount = 0,
+			} = action.payload;
+			state.items = items;
+			state.totalItems = totalItems;
+			state.subtotal = subtotal;
+			state.deliveryCharge = deliveryCharge;
+			state.totalAmount = totalAmount;
+		},
+	},
+	extraReducers: (builder) => {
+		builder
+			// Load cart from database
+			.addCase(loadCartFromDB.pending, (state) => {
+				state.loading = true;
+				state.syncStatus = "syncing";
+			})
+			.addCase(loadCartFromDB.fulfilled, (state, action) => {
+				state.loading = false;
+				state.syncStatus = "synced";
+				const cart = action.payload;
+				state.items = cart.items || [];
+				state.totalItems = cart.totalItems || 0;
+				state.subtotal = cart.subtotal || 0;
+				state.deliveryCharge = cart.deliveryCharge || 0;
+				state.totalAmount = cart.totalAmount || 0;
+			})
+			.addCase(loadCartFromDB.rejected, (state, action) => {
+				state.loading = false;
+				state.syncStatus = "error";
+				state.error = action.error.message;
+			})
+			// Load cart from localStorage
+			.addCase(loadCartFromLocalStorage.fulfilled, (state, action) => {
+				const cart = action.payload;
+				state.items = cart.items || [];
+				state.totalItems = cart.totalItems || 0;
+				state.subtotal = cart.subtotal || 0;
+				state.deliveryCharge = cart.deliveryCharge || 0;
+				state.totalAmount = cart.totalAmount || 0;
+			})
+			// Sync cart to database
+			.addCase(syncCartToDB.pending, (state) => {
+				state.syncStatus = "syncing";
+			})
+			.addCase(syncCartToDB.fulfilled, (state) => {
+				state.syncStatus = "synced";
+			})
+			.addCase(syncCartToDB.rejected, (state, action) => {
+				state.syncStatus = "error";
+				state.error = action.error.message;
+			})
+			// Merge cart on login
+			.addCase(mergeCartOnLogin.pending, (state) => {
+				state.loading = true;
+				state.syncStatus = "syncing";
+			})
+			.addCase(mergeCartOnLogin.fulfilled, (state, action) => {
+				state.loading = false;
+				state.syncStatus = "synced";
+				const cart = action.payload;
+				state.items = cart.items || [];
+				state.totalItems = cart.totalItems || 0;
+				state.subtotal = cart.subtotal || 0;
+				state.deliveryCharge = cart.deliveryCharge || 0;
+				state.totalAmount = cart.totalAmount || 0;
+			})
+			.addCase(mergeCartOnLogin.rejected, (state, action) => {
+				state.loading = false;
+				state.syncStatus = "error";
+				state.error = action.error.message;
+			});
 	},
 });
 
@@ -124,6 +273,8 @@ export const {
 	removeFromCart,
 	clearCart,
 	updateDeliveryCharge,
+	syncToLocalStorage,
+	setCart,
 } = cartSlice.actions;
 
 export const selectCart = (state) => state.cart;

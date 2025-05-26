@@ -16,7 +16,8 @@ import Select from "react-select";
 import toast from "react-hot-toast";
 
 export default function Profile() {
-	const { currentUser, accessToken, userRole } = useAuth();
+	const { currentUser, accessToken } = useAuth();
+	const userRole = currentUser?.DBUser?.role;
 	const {
 		register,
 		handleSubmit,
@@ -40,13 +41,13 @@ export default function Profile() {
 
 	// Fetch user profile data
 	const { data: userData, isLoading: profileLoading } = useQuery(
-		["userProfile", currentUser?.email],
+		["userProfile", currentUser?.FirebaseUser?.email],
 		async () => {
-			if (!currentUser?.email || !accessToken) return null;
+			if (!currentUser?.FirebaseUser?.email || !accessToken) return null;
 
 			try {
 				const { data } = await axios.get(
-					`${apiBaseUrl}/users/${currentUser.email}`
+					`${apiBaseUrl}/users/${currentUser.FirebaseUser.email}`
 				);
 				return data;
 			} catch (error) {
@@ -55,7 +56,7 @@ export default function Profile() {
 			}
 		},
 		{
-			enabled: !!currentUser?.email && !!accessToken,
+			enabled: !!currentUser?.FirebaseUser?.email && !!accessToken,
 			onSuccess: (data) => {
 				if (data) {
 					// Set form values from fetched data
@@ -239,7 +240,7 @@ export default function Profile() {
 													id="email"
 													type="email"
 													className="form-input bg-gray-100"
-													value={currentUser?.email || "N/A"}
+													value={currentUser?.FirebaseUser?.email || "N/A"}
 													readOnly
 												/>
 											</div>
@@ -449,7 +450,8 @@ export default function Profile() {
 														Email
 													</p>
 													<p className="text-sm text-gray-500">
-														{currentUser?.email || "Not specified"}
+														{currentUser?.FirebaseUser?.email ||
+															"Not specified"}
 													</p>
 												</div>
 											</div>

@@ -62,7 +62,7 @@ function CheckoutForm({
 				`${import.meta.env.VITE_SERVER_API_URL}/create-payment-intent`,
 				{
 					amount: advancePaymentAmount, // amount in smallest currency unit (cents/paisa)
-					userId: currentUser.uid,
+					userId: currentUser.FirebaseUser.uid,
 					items: items.map((item) => ({
 						id: item._id,
 						title: item.title,
@@ -78,8 +78,8 @@ function CheckoutForm({
 				payment_method: {
 					card: elements.getElement(CardElement),
 					billing_details: {
-						name: currentUser.displayName || "Customer",
-						email: currentUser.email,
+						name: currentUser.FirebaseUser.displayName || "Customer",
+						email: currentUser.FirebaseUser.email,
 					},
 				},
 			});
@@ -91,7 +91,7 @@ function CheckoutForm({
 				if (result.paymentIntent.status === "succeeded") {
 					// Create the order in database
 					await axios.post(`${import.meta.env.VITE_SERVER_API_URL}/orders`, {
-						userId: currentUser.uid,
+						userId: currentUser.FirebaseUser.uid,
 						items: items.map((item) => ({
 							productId: item._id,
 							title: item.title,
