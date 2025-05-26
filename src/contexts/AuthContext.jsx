@@ -235,8 +235,8 @@ export default function AuthProvider({ children }) {
 
 			if (data.success) {
 				setCurrentUser((prevUser) => ({
-					Firebaseuser: prevUser?.Firebaseuser,
-					DBuser: data.user,
+					FirebaseUser: prevUser?.FirebaseUser,
+					DBUser: data.user,
 				}));
 				return data.user.role;
 			}
@@ -248,22 +248,22 @@ export default function AuthProvider({ children }) {
 	};
 
 	// Check if user is Admin
-	const isAdmin = () => currentUser?.DBuser?.role === "admin";
+	const isAdmin = () => currentUser?.DBUser?.role === "admin";
 
 	// Check if user is Agent
-	const isAgent = () => currentUser?.DBuser?.role === "agent";
+	const isAgent = () => currentUser?.DBUser?.role === "agent";
 
 	// Check if user is Seller
-	const isSeller = () => currentUser?.DBuser?.role === "seller";
+	const isSeller = () => currentUser?.DBUser?.role === "seller";
 
 	// Check if user is Consumer
-	const isConsumer = () => currentUser?.DBuser?.role === "consumer";
+	const isConsumer = () => currentUser?.DBUser?.role === "consumer";
 
 	// Set up an observer for auth state changes
 	useEffect(() => {
 		const unsubscribe = onAuthStateChanged(auth, async (user) => {
 			if (user) {
-				setCurrentUser({ Firebaseuser: user, DBuser: null });
+				setCurrentUser({ FirebaseUser: user, DBUser: null });
 				try {
 					// Get token from backend
 					const token = await authService.getToken(user);

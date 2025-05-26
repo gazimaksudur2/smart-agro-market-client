@@ -33,11 +33,15 @@ import {
 	AdminManageAgents,
 } from "../components/Dashboard/pages";
 
+// Route Protection Components
 import PrivateRoute from "./PrivateRoute";
-import AdminRoute from "./AdminRoute";
-import AgentRoute from "./AgentRoute";
-import SellerRoute from "./SellerRoute";
-import ConsumerRoute from "./ConsumerRoute";
+import {
+	AdminRoute,
+	AgentRoute,
+	SellerRoute,
+	ConsumerRoute,
+} from "./RoleBasedRoute";
+
 import NotFound from "../pages/NotFound";
 import ProductDetails from "../components/Products/ProductDetails";
 import OrderDetails from "../components/orders/OrderDetails";
@@ -131,26 +135,26 @@ const Router = createBrowserRouter([
 			</PrivateRoute>
 		),
 		children: [
-			// Main Dashboard Route (role-based)
+			// Main Dashboard Route (role-based redirect)
 			{
 				index: true,
 				element: <DashboardHome />,
 			},
-			// Profile Route (Available to all authenticated users)
+
+			// Common Routes (Available to all authenticated users)
 			{
 				path: "profile",
 				element: <Profile />,
 			},
-			// Agent Application Route (Available to all authenticated users)
 			{
 				path: "agent-application",
 				element: <AgentApplication />,
 			},
-			// Order Details Route (Available to all authenticated users)
 			{
 				path: "order/:id",
 				element: <OrderDetails />,
 			},
+
 			// Consumer Routes
 			{
 				path: "my-cart",
@@ -180,10 +184,11 @@ const Router = createBrowserRouter([
 				path: "wishlist",
 				element: (
 					<ConsumerRoute>
-						<ConsumerMyCart />
+						<ConsumerMyCart /> // Here need changes
 					</ConsumerRoute>
 				),
 			},
+
 			// Seller Routes
 			{
 				path: "my-products",
@@ -225,6 +230,7 @@ const Router = createBrowserRouter([
 					</SellerRoute>
 				),
 			},
+
 			// Agent Routes
 			{
 				path: "agent",
@@ -266,6 +272,7 @@ const Router = createBrowserRouter([
 					</AgentRoute>
 				),
 			},
+
 			// Admin Routes
 			{
 				path: "admin",
@@ -315,6 +322,7 @@ const Router = createBrowserRouter([
 					</AdminRoute>
 				),
 			},
+
 			// Catch-all route for dashboard - redirect to main dashboard
 			{
 				path: "*",

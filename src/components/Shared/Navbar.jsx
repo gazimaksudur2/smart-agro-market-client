@@ -9,7 +9,8 @@ import { selectCartTotalItems } from "../../redux/slices/cartSlice";
 
 export default function Navbar() {
 	const [isOpen, setIsOpen] = useState(false);
-	const { currentUser, logout, isAdmin, isAgent, isSeller } = useAuth();
+	const { currentUser, logout, isAdmin, isAgent, isSeller, isConsumer } =
+		useAuth();
 	const navigate = useNavigate();
 	const cartItemCount = useSelector(selectCartTotalItems);
 
@@ -21,6 +22,18 @@ export default function Navbar() {
 		} catch (error) {
 			console.error("Failed to log out", error);
 		}
+	};
+
+	// Get dashboard route based on user role
+	const getDashboardRoute = () => {
+		if (!currentUser) return "/dashboard";
+
+		if (isAdmin()) return "/dashboard/admin";
+		if (isAgent()) return "/dashboard/agent";
+		if (isSeller()) return "/dashboard/my-products";
+		if (isConsumer()) return "/dashboard/my-orders";
+
+		return "/dashboard";
 	};
 
 	return (
@@ -76,6 +89,30 @@ export default function Navbar() {
 							>
 								About
 							</NavLink>
+							<NavLink
+								to="/help"
+								className={({ isActive }) =>
+									`inline-flex items-center px-1 pt-1 text-sm font-medium border-b-2 ${
+										isActive
+											? "border-primary-500 text-gray-900"
+											: "border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700"
+									}`
+								}
+							>
+								Help
+							</NavLink>
+							<NavLink
+								to="/contact"
+								className={({ isActive }) =>
+									`inline-flex items-center px-1 pt-1 text-sm font-medium border-b-2 ${
+										isActive
+											? "border-primary-500 text-gray-900"
+											: "border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700"
+									}`
+								}
+							>
+								Contact
+							</NavLink>
 						</div>
 					</div>
 
@@ -98,15 +135,7 @@ export default function Navbar() {
 							<div className="flex items-center">
 								{/* Dashboard Button */}
 								<Link
-									to={
-										isAdmin()
-											? "/dashboard/admin/home"
-											: isAgent()
-											? "/dashboard/agent"
-											: isSeller()
-											? "/dashboard/seller"
-											: "/dashboard"
-									}
+									to={getDashboardRoute()}
 									className="btn btn-outline py-1.5"
 								>
 									Dashboard
@@ -210,12 +239,38 @@ export default function Navbar() {
 						>
 							About
 						</NavLink>
+						<NavLink
+							to="/help"
+							className={({ isActive }) =>
+								`block pl-3 pr-4 py-2 border-l-4 text-base font-medium ${
+									isActive
+										? "bg-primary-50 border-primary-500 text-primary-700"
+										: "border-transparent text-gray-500 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-700"
+								}`
+							}
+							onClick={() => setIsOpen(false)}
+						>
+							Help
+						</NavLink>
+						<NavLink
+							to="/contact"
+							className={({ isActive }) =>
+								`block pl-3 pr-4 py-2 border-l-4 text-base font-medium ${
+									isActive
+										? "bg-primary-50 border-primary-500 text-primary-700"
+										: "border-transparent text-gray-500 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-700"
+								}`
+							}
+							onClick={() => setIsOpen(false)}
+						>
+							Contact
+						</NavLink>
 
 						{/* Conditional nav items for mobile */}
 						{currentUser ? (
 							<>
 								<NavLink
-									to="/dashboard"
+									to={getDashboardRoute()}
 									className={({ isActive }) =>
 										`block pl-3 pr-4 py-2 border-l-4 text-base font-medium ${
 											isActive
@@ -267,6 +322,24 @@ export default function Navbar() {
 								</NavLink>
 							</>
 						)}
+
+						{/* Footer Links for Mobile */}
+						<div className="border-t border-gray-200 pt-4 mt-4">
+							<NavLink
+								to="/terms"
+								className="block pl-3 pr-4 py-2 text-sm text-gray-500 hover:text-gray-700"
+								onClick={() => setIsOpen(false)}
+							>
+								Terms of Service
+							</NavLink>
+							<NavLink
+								to="/privacy"
+								className="block pl-3 pr-4 py-2 text-sm text-gray-500 hover:text-gray-700"
+								onClick={() => setIsOpen(false)}
+							>
+								Privacy Policy
+							</NavLink>
+						</div>
 					</div>
 				</div>
 			)}

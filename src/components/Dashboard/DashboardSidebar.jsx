@@ -1,45 +1,43 @@
+import { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { useAuth } from "../../contexts/AuthContext";
 import {
 	FaHome,
-	FaUserCircle,
+	FaUser,
+	FaUserPlus,
 	FaShoppingCart,
+	FaClipboardList,
 	FaBoxOpen,
 	FaPlus,
 	FaWarehouse,
-	FaUsersCog,
 	FaChartLine,
-	FaClipboardList,
+	FaUsers,
 	FaUserCheck,
 	FaTruck,
+	FaCog,
+	FaChartBar,
+	FaFileInvoice,
+	FaStore,
+	FaHeart,
 } from "react-icons/fa";
+import { useAuth } from "../../contexts/AuthContext";
 
 export default function DashboardSidebar({ sidebarOpen, setSidebarOpen }) {
+	const { currentUser, isAdmin, isAgent, isSeller, isConsumer } = useAuth();
 	const location = useLocation();
-	const { currentUser } = useAuth();
 
-	// Close sidebar when clicking outside on mobile
 	const closeSidebar = () => {
 		setSidebarOpen(false);
 	};
 
-	// Path is active if it matches the current location
 	const isActive = (path) => {
-		return (
-			location.pathname === path || location.pathname.startsWith(`${path}/`)
-		);
+		return location.pathname === path;
 	};
 
-	// Mobile sidebar backdrop
-	const mobileBackdrop = (
+	// Mobile backdrop
+	const mobileBackdrop = sidebarOpen && (
 		<div
-			className={`fixed inset-0 z-40 bg-gray-600 bg-opacity-75 transition-opacity lg:hidden ${
-				sidebarOpen
-					? "ease-out duration-300 opacity-100"
-					: "ease-in duration-200 opacity-0 pointer-events-none"
-			}`}
+			className="fixed inset-0 bg-gray-600 bg-opacity-75 z-30 lg:hidden"
 			onClick={closeSidebar}
-			aria-hidden="true"
 		/>
 	);
 
@@ -48,30 +46,28 @@ export default function DashboardSidebar({ sidebarOpen, setSidebarOpen }) {
 		{
 			to: "/dashboard",
 			icon: <FaHome className="mr-3 h-6 w-6" />,
-			label: "Dashboard",
-			exact: true,
+			label: "Dashboard Home",
 		},
 		{
 			to: "/dashboard/profile",
-			icon: <FaUserCircle className="mr-3 h-6 w-6" />,
-			label: "My Profile",
+			icon: <FaUser className="mr-3 h-6 w-6" />,
+			label: "Profile",
 		},
 	];
 
-	// Agent application link for non-agents
+	// Agent application link (for non-agents)
 	const agentApplicationLink =
-		currentUser?.DBUser?.role !== "agent" &&
-		currentUser?.DBUser?.role !== "admin"
+		!isAgent() && !isAdmin()
 			? [
 					{
 						to: "/dashboard/agent-application",
-						icon: <FaUserCheck className="mr-3 h-6 w-6" />,
+						icon: <FaUserPlus className="mr-3 h-6 w-6" />,
 						label: "Become an Agent",
 					},
 			  ]
 			: [];
 
-	// Role-specific links
+	// Role-specific links with comprehensive navigation
 	const roleLinks = {
 		admin: [
 			{
@@ -79,12 +75,52 @@ export default function DashboardSidebar({ sidebarOpen, setSidebarOpen }) {
 				icon: <FaChartLine className="mr-3 h-6 w-6" />,
 				label: "Admin Dashboard",
 			},
+			{
+				to: "/dashboard/analytics",
+				icon: <FaChartBar className="mr-3 h-6 w-6" />,
+				label: "Platform Analytics",
+			},
+			{
+				to: "/dashboard/manage-users",
+				icon: <FaUsers className="mr-3 h-6 w-6" />,
+				label: "Manage Users",
+			},
+			{
+				to: "/dashboard/manage-agents",
+				icon: <FaUserCheck className="mr-3 h-6 w-6" />,
+				label: "Manage Agents",
+			},
+			{
+				to: "/dashboard/system-settings",
+				icon: <FaCog className="mr-3 h-6 w-6" />,
+				label: "System Settings",
+			},
 		],
 		agent: [
 			{
 				to: "/dashboard/agent",
 				icon: <FaWarehouse className="mr-3 h-6 w-6" />,
 				label: "Agent Dashboard",
+			},
+			{
+				to: "/dashboard/verify-sellers",
+				icon: <FaUserCheck className="mr-3 h-6 w-6" />,
+				label: "Verify Sellers",
+			},
+			{
+				to: "/dashboard/verify-products",
+				icon: <FaBoxOpen className="mr-3 h-6 w-6" />,
+				label: "Verify Products",
+			},
+			{
+				to: "/dashboard/manage-deliveries",
+				icon: <FaTruck className="mr-3 h-6 w-6" />,
+				label: "Manage Deliveries",
+			},
+			{
+				to: "/dashboard/warehouse-management",
+				icon: <FaWarehouse className="mr-3 h-6 w-6" />,
+				label: "Warehouse Management",
 			},
 		],
 		seller: [
@@ -98,6 +134,16 @@ export default function DashboardSidebar({ sidebarOpen, setSidebarOpen }) {
 				icon: <FaPlus className="mr-3 h-6 w-6" />,
 				label: "Add New Product",
 			},
+			{
+				to: "/dashboard/requested-orders",
+				icon: <FaFileInvoice className="mr-3 h-6 w-6" />,
+				label: "Order Requests",
+			},
+			{
+				to: "/dashboard/sales-analytics",
+				icon: <FaChartBar className="mr-3 h-6 w-6" />,
+				label: "Sales Analytics",
+			},
 		],
 		consumer: [
 			{
@@ -109,6 +155,16 @@ export default function DashboardSidebar({ sidebarOpen, setSidebarOpen }) {
 				to: "/dashboard/my-orders",
 				icon: <FaClipboardList className="mr-3 h-6 w-6" />,
 				label: "My Orders",
+			},
+			{
+				to: "/dashboard/my-purchases",
+				icon: <FaStore className="mr-3 h-6 w-6" />,
+				label: "Purchase History",
+			},
+			{
+				to: "/dashboard/wishlist",
+				icon: <FaHeart className="mr-3 h-6 w-6" />,
+				label: "Wishlist",
 			},
 		],
 	};
@@ -123,16 +179,17 @@ export default function DashboardSidebar({ sidebarOpen, setSidebarOpen }) {
 		];
 	};
 
-	// Create nav link
+	// Create nav link with proper accessibility
 	const NavLink = ({ to, icon, label }) => (
 		<Link
 			to={to}
-			className={`flex items-center px-4 py-3 text-base font-medium rounded-md ${
+			className={`flex items-center px-4 py-3 text-base font-medium rounded-md transition-colors duration-200 ${
 				isActive(to)
-					? "bg-primary-100 text-primary-900"
+					? "bg-primary-100 text-primary-900 border-r-2 border-primary-500"
 					: "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
 			}`}
 			onClick={() => setSidebarOpen(false)}
+			aria-current={isActive(to) ? "page" : undefined}
 		>
 			{icon}
 			{label}
@@ -157,6 +214,7 @@ export default function DashboardSidebar({ sidebarOpen, setSidebarOpen }) {
 							type="button"
 							className="ml-1 flex items-center justify-center h-10 w-10 rounded-full focus:outline-none focus:ring-2 focus:ring-inset focus:ring-white"
 							onClick={closeSidebar}
+							aria-label="Close sidebar"
 						>
 							<span className="sr-only">Close sidebar</span>
 							<svg
@@ -198,8 +256,8 @@ export default function DashboardSidebar({ sidebarOpen, setSidebarOpen }) {
 
 					{/* User info for mobile */}
 					<div className="flex-shrink-0 flex border-t border-gray-200 p-4">
-						<div className="flex items-center">
-							<div>
+						<div className="flex items-center w-full">
+							<div className="flex-shrink-0">
 								<img
 									className="inline-block h-10 w-10 rounded-full"
 									src={
@@ -209,12 +267,12 @@ export default function DashboardSidebar({ sidebarOpen, setSidebarOpen }) {
 									alt={currentUser?.FirebaseUser?.displayName || "User"}
 								/>
 							</div>
-							<div className="ml-3">
+							<div className="ml-3 flex-1 min-w-0">
 								<p className="text-base font-medium text-gray-700 truncate">
 									{currentUser?.FirebaseUser?.displayName || "User"}
 								</p>
 								<p className="text-sm font-medium text-gray-500 truncate capitalize">
-									{currentUser?.DBUser?.role}
+									{currentUser?.DBUser?.role || "Consumer"}
 								</p>
 							</div>
 						</div>
@@ -241,7 +299,7 @@ export default function DashboardSidebar({ sidebarOpen, setSidebarOpen }) {
 							</Link>
 						</div>
 						<div className="flex-1 flex flex-col overflow-y-auto pt-4">
-							<nav className="flex-1 px-2 pb-4 space-y-1">
+							<nav className="flex-1 px-2 pb-4 space-y-1" aria-label="Sidebar">
 								{getNavLinks().map((link, index) => (
 									<NavLink key={index} {...link} />
 								))}
@@ -250,8 +308,8 @@ export default function DashboardSidebar({ sidebarOpen, setSidebarOpen }) {
 
 						{/* User info for desktop */}
 						<div className="flex-shrink-0 flex border-t border-gray-200 p-4">
-							<div className="flex items-center">
-								<div>
+							<div className="flex items-center w-full">
+								<div className="flex-shrink-0">
 									<img
 										className="inline-block h-9 w-9 rounded-full"
 										src={
@@ -261,12 +319,12 @@ export default function DashboardSidebar({ sidebarOpen, setSidebarOpen }) {
 										alt={currentUser?.FirebaseUser?.displayName || "User"}
 									/>
 								</div>
-								<div className="ml-3">
+								<div className="ml-3 flex-1 min-w-0">
 									<p className="text-sm font-medium text-gray-700 truncate">
 										{currentUser?.FirebaseUser?.displayName || "User"}
 									</p>
 									<p className="text-xs font-medium text-gray-500 truncate capitalize">
-										{currentUser?.DBUser?.role}
+										{currentUser?.DBUser?.role || "Consumer"}
 									</p>
 								</div>
 							</div>
