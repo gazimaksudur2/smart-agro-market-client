@@ -9,7 +9,7 @@ import { selectCartTotalItems } from "../../redux/slices/cartSlice";
 
 export default function Navbar() {
 	const [isOpen, setIsOpen] = useState(false);
-	const { currentUser, logout, isAdmin, isAgent, isSeller, isConsumer } =
+	const { currentUser, logout } =
 		useAuth();
 	const navigate = useNavigate();
 	const cartItemCount = useSelector(selectCartTotalItems);
@@ -28,12 +28,7 @@ export default function Navbar() {
 	const getDashboardRoute = () => {
 		if (!currentUser) return "/dashboard";
 
-		if (isAdmin()) return "/dashboard/profile";
-		if (isAgent()) return "/dashboard/agent";
-		if (isSeller()) return "/dashboard/seller";
-		if (isConsumer()) return "/dashboard/consumer";
-
-		return "/dashboard";
+		return "/dashboard/profile";
 	};
 
 	return (

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "../../contexts/AuthContext";
 import {
 	FaWarehouse,
@@ -10,10 +10,13 @@ import {
 } from "react-icons/fa";
 import useAPI from "../../hooks/useAPI";
 import { toast } from "react-hot-toast";
+import useRegions from "../../hooks/useRegions";
 
 export default function AgentApplication() {
 	const { currentUser } = useAuth();
 	const { apiCall, loading } = useAPI();
+	const allRegions = useRegions();
+	const [districts, setDistricts] = useState([]);
 
 	const [formData, setFormData] = useState({
 		businessName: "",
@@ -43,28 +46,33 @@ export default function AgentApplication() {
 		"Other",
 	];
 
-	const regions = [
-		"Dhaka",
-		"Chittagong",
-		"Rajshahi",
-		"Khulna",
-		"Barisal",
-		"Sylhet",
-		"Rangpur",
-		"Mymensingh",
-	];
+	useEffect(() => {
+		if (formData.region && allRegions?.length) {
+			const selectedRegion = allRegions.find((r) => r.name === formData.region);
+			if (selectedRegion && selectedRegion.districts) {
+				setDistricts(selectedRegion.districts);
+			} else {
+				setDistricts([]);
+			}
+		} else {
+			setDistricts([]);
+		}
+	}, [formData.region, allRegions]);
 
 	const handleInputChange = (e) => {
 		const { name, value } = e.target;
-		setFormData((prev) => ({
-			...prev,
-			[name]: value,
-		}));
+		setFormData((prev) => {
+			const newFormData = { ...prev, [name]: value };
+			if (name === "region") {
+				newFormData.district = "";
+			}
+			return newFormData;
+		});
 
 		// Clear error when user starts typing
 		if (errors[name]) {
-			setErrors((prev) => ({
-				...prev,
+			setErrors((prevErrors) => ({
+				...prevErrors,
 				[name]: "",
 			}));
 		}
@@ -123,15 +131,20 @@ export default function AgentApplication() {
 
 		try {
 			const applicationData = {
-				...formData,
-				applicantId: currentUser?.FirebaseUser?.uid,
+				formData,
+				operationalArea: {
+					region: formData.region,
+					district: formData.district
+				},
+				applicantId: currentUser?.DBUser?._id,
 				applicantName: currentUser?.FirebaseUser?.displayName,
 				applicantEmail: currentUser?.FirebaseUser?.email,
+				applicantImg: currentUser?.FirebaseUser?.photoURL,
+				applicationType: "agent-application",
 				status: "pending",
-				submittedAt: new Date().toISOString(),
 			};
 
-			await apiCall("/agent-applications", "POST", applicationData);
+			await apiCall("/applications", "POST", applicationData);
 
 			toast.success(
 				"Agent application submitted successfully! We'll review your application and get back to you within 5-7 business days."
@@ -155,7 +168,7 @@ export default function AgentApplication() {
 			});
 		} catch (error) {
 			console.error("Error submitting application:", error);
-			toast.error("Failed to submit application. Please try again.");
+			toast.error(error.response.data.message || "Failed to submit application. Please try again.");
 		}
 	};
 
@@ -393,9 +406,9 @@ export default function AgentApplication() {
 										}`}
 									>
 										<option value="">Select Region</option>
-										{regions.map((region) => (
-											<option key={region} value={region}>
-												{region}
+										{allRegions?.map((region) => (
+											<option key={region.name} value={region.name}>
+												{region.name}
 											</option>
 										))}
 									</select>
@@ -408,16 +421,30 @@ export default function AgentApplication() {
 									<label className="block text-sm font-medium text-gray-700 mb-1">
 										Primary District *
 									</label>
-									<input
-										type="text"
+									<select
 										name="district"
 										value={formData.district}
 										onChange={handleInputChange}
+										disabled={!formData.region || districts.length === 0}
 										className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 ${
 											errors.district ? "border-red-500" : "border-gray-300"
+										} ${
+											!formData.region || districts.length === 0
+												? "bg-gray-100 cursor-not-allowed"
+												: ""
 										}`}
-										placeholder="Enter district name"
-									/>
+									>
+										<option value="">
+											{formData.region
+												? "Select District"
+												: "Select Region First"}
+										</option>
+										{districts?.map((district) => (
+											<option key={district.name} value={district.name}>
+												{district.name}
+											</option>
+										))}
+									</select>
 									{errors.district && (
 										<p className="mt-1 text-sm text-red-600">
 											{errors.district}

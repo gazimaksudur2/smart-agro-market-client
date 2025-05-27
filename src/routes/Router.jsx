@@ -31,6 +31,7 @@ import {
 	AdminManageOrders,
 	AdminManageUsers,
 	AdminManageAgents,
+	SellerSalesAnalytics,
 } from "../components/Dashboard/pages";
 
 // Route Protection Components
@@ -148,7 +149,7 @@ const Router = createBrowserRouter([
 			</PrivateRoute>
 		),
 		children: [
-			// Main Dashboard Route (role-based redirect)
+			// // Main Dashboard Route (role-based redirect)
 			// {
 			// 	index: true,
 			// 	element: <DashboardHome />,
@@ -235,7 +236,7 @@ const Router = createBrowserRouter([
 				path: "sales-analytics",
 				element: (
 					<SellerRoute>
-						<SellerRequestedOrders />
+						<SellerSalesAnalytics />
 					</SellerRoute>
 				),
 			},
@@ -338,12 +339,6 @@ const Router = createBrowserRouter([
 						<AdminAnalytics />
 					</AdminRoute>
 				),
-			},
-
-			// Catch-all route for dashboard - redirect to main dashboard
-			{
-				path: "*",
-				element: <DashboardHome />,
 			},
 		],
 	},

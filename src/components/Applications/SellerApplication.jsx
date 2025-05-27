@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useAuth } from "../../contexts/AuthContext";
 import {
 	FaTractor,
@@ -11,11 +11,13 @@ import {
 } from "react-icons/fa";
 import useAPI from "../../hooks/useAPI";
 import { toast } from "react-hot-toast";
+import useRegions from "../../hooks/useRegions";
 
 export default function SellerApplication() {
 	const { currentUser } = useAuth();
 	const { apiCall, loading } = useAPI();
-
+	const [districts, setDistricts] = useState([]);
+	const regions = useRegions();
 	const [formData, setFormData] = useState({
 		farmName: "",
 		farmType: "",
@@ -35,9 +37,7 @@ export default function SellerApplication() {
 		references: "",
 		motivation: "",
 	});
-
 	const [errors, setErrors] = useState({});
-
 	const farmTypes = [
 		"Crop Farming",
 		"Vegetable Farming",
@@ -51,28 +51,36 @@ export default function SellerApplication() {
 		"Other",
 	];
 
-	const regions = [
-		"Dhaka",
-		"Chittagong",
-		"Rajshahi",
-		"Khulna",
-		"Barisal",
-		"Sylhet",
-		"Rangpur",
-		"Mymensingh",
-	];
+	// Update available districts when region in formData changes
+	useEffect(() => {
+		if (formData.region && regions?.length) {
+			const selectedRegion = regions.find((r) => r.name === formData.region);
+			if (selectedRegion && selectedRegion.districts) {
+				setDistricts(selectedRegion.districts);
+			} else {
+				setDistricts([]);
+			}
+		} else {
+			setDistricts([]);
+		}
+		// No need to setFormData.district here, handleInputChange will do it if region changes
+	}, [formData.region, regions]);
 
 	const handleInputChange = (e) => {
 		const { name, value } = e.target;
-		setFormData((prev) => ({
-			...prev,
-			[name]: value,
-		}));
+		setFormData((prev) => {
+			const newFormData = { ...prev, [name]: value };
+			// If region changes, clear the district selection
+			if (name === "region") {
+				newFormData.district = "";
+			}
+			return newFormData;
+		});
 
 		// Clear error when user starts typing
 		if (errors[name]) {
-			setErrors((prev) => ({
-				...prev,
+			setErrors((prevErrors) => ({
+				...prevErrors,
 				[name]: "",
 			}));
 		}
@@ -143,15 +151,20 @@ export default function SellerApplication() {
 
 		try {
 			const applicationData = {
-				...formData,
-				applicantId: currentUser?.FirebaseUser?.uid,
+				formData,
+				operationalArea: {
+					region: formData.region,
+					district: formData.district
+				},
+				applicantId: currentUser?.DBUser?._id,
 				applicantName: currentUser?.FirebaseUser?.displayName,
 				applicantEmail: currentUser?.FirebaseUser?.email,
+				applicantImg: currentUser?.FirebaseUser?.photoURL,
+				applicationType: "seller-application",
 				status: "pending",
-				submittedAt: new Date().toISOString(),
 			};
 
-			await apiCall("/seller-applications", "POST", applicationData);
+			await apiCall("/applications", "POST", applicationData);
 
 			toast.success(
 				"Seller application submitted successfully! We'll review your application and get back to you within 5-7 business days."
@@ -179,7 +192,7 @@ export default function SellerApplication() {
 			});
 		} catch (error) {
 			console.error("Error submitting application:", error);
-			toast.error("Failed to submit application. Please try again.");
+			toast.error(error.response.data.message || "Failed to submit application. Please try again.");
 		}
 	};
 
@@ -240,7 +253,7 @@ export default function SellerApplication() {
 										className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 ${
 											errors.farmName ? "border-red-500" : "border-gray-300"
 										}`}
-										placeholder="Enter your farm name"
+										placeholder="Vai Vai Agro LTD."
 									/>
 									{errors.farmName && (
 										<p className="mt-1 text-sm text-red-600">
@@ -377,9 +390,9 @@ export default function SellerApplication() {
 										}`}
 									>
 										<option value="">Select Region</option>
-										{regions.map((region) => (
-											<option key={region} value={region}>
-												{region}
+										{regions?.map((region) => (
+											<option key={region.name} value={region.name}>
+												{region.name}
 											</option>
 										))}
 									</select>
@@ -392,16 +405,30 @@ export default function SellerApplication() {
 									<label className="block text-sm font-medium text-gray-700 mb-1">
 										District *
 									</label>
-									<input
-										type="text"
+									<select
 										name="district"
 										value={formData.district}
 										onChange={handleInputChange}
+										disabled={!formData.region || districts.length === 0}
 										className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 ${
 											errors.district ? "border-red-500" : "border-gray-300"
+										} ${
+											!formData.region || districts.length === 0
+												? "bg-gray-100 cursor-not-allowed"
+												: ""
 										}`}
-										placeholder="Enter district name"
-									/>
+									>
+										<option value="">
+											{formData.region
+												? "Select District"
+												: "Select Region First"}
+										</option>
+										{districts?.map((district) => (
+											<option key={district.name} value={district.name}>
+												{district.name}
+											</option>
+										))}
+									</select>
 									{errors.district && (
 										<p className="mt-1 text-sm text-red-600">
 											{errors.district}

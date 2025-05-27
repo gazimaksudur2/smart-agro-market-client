@@ -310,6 +310,41 @@ export default function AuthProvider({ children }) {
 		}
 	};
 
+	// Update user profile
+	const updateUserProfile = async (displayName = null, photoURL = null) => {
+		try {
+			const user = currentUser?.FirebaseUser;
+			if (!user || !user.email) {
+				throw new Error("User not authenticated");
+			}
+
+			// Update Firebase profile
+			await updateProfile(user, {
+				displayName: displayName || user.displayName,
+				photoURL: photoURL || user.photoURL,
+			});
+
+			// Update current user state
+			setCurrentUser((prevUser) => ({
+				...prevUser,
+				FirebaseUser: {
+					...prevUser.FirebaseUser,
+					photoURL: photoURL || user.photoURL,
+					displayName: displayName || user.displayName,
+				},
+			}));
+
+			// Refresh database user data
+			await getDBUser(user.email);
+
+			return true;
+		} catch (error) {
+			console.error("Error updating profile picture:", error);
+			toast.error("Failed to update profile picture");
+			throw error;
+		}
+	};
+
 	// Set up an observer for auth state changes
 	useEffect(() => {
 		const unsubscribe = onAuthStateChanged(auth, async (user) => {
@@ -354,6 +389,7 @@ export default function AuthProvider({ children }) {
 		loginWithFacebook,
 		logout,
 		changePassword,
+		updateUserProfile,
 		isAdmin,
 		isAgent,
 		isSeller,

@@ -13,6 +13,7 @@ export { default as ConsumerMyPurchases } from "./consumer/MyPurchases";
 export { default as SellerMyProducts } from "./seller/MyProducts";
 export { default as SellerAddProduct } from "./seller/AddProduct";
 export { default as SellerRequestedOrders } from "./seller/RequestedOrders";
+export { default as SellerSalesAnalytics } from "./seller/SalesAnalytics";
 
 // Agent Dashboard Pages
 export { default as AgentDashboard } from "./agent/AgentDashboard";

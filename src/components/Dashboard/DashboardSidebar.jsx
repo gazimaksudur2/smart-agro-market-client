@@ -99,8 +99,8 @@ export default function DashboardSidebar({ sidebarOpen, setSidebarOpen }) {
 		agent: [
 			{
 				to: "/dashboard/agent",
-				icon: <FaWarehouse className="mr-3 h-6 w-6" />,
-				label: "Agent Dashboard",
+				icon: <FaHome className="mr-3 h-6 w-6" />,
+				label: "Agent Home",
 			},
 			{
 				to: "/dashboard/verify-sellers",
@@ -137,7 +137,7 @@ export default function DashboardSidebar({ sidebarOpen, setSidebarOpen }) {
 			{
 				to: "/dashboard/requested-orders",
 				icon: <FaFileInvoice className="mr-3 h-6 w-6" />,
-				label: "Order Requests",
+				label: "Handle Orders",
 			},
 			{
 				to: "/dashboard/sales-analytics",
@@ -251,7 +251,7 @@ export default function DashboardSidebar({ sidebarOpen, setSidebarOpen }) {
 					</div>
 
 					{/* User info for mobile */}
-					<div className="flex-shrink-0 flex border-t border-gray-200 p-4">
+					<Link to={'/dashboard/profile'} className="flex-shrink-0 flex border-t border-gray-200 p-4">
 						<div className="flex items-center w-full">
 							<div className="flex-shrink-0">
 								<AvatarWithInitials
@@ -270,7 +270,7 @@ export default function DashboardSidebar({ sidebarOpen, setSidebarOpen }) {
 								</p>
 							</div>
 						</div>
-					</div>
+					</Link>
 				</div>
 
 				<div className="flex-shrink-0 w-14" aria-hidden="true">
@@ -280,7 +280,7 @@ export default function DashboardSidebar({ sidebarOpen, setSidebarOpen }) {
 
 			{/* Desktop sidebar */}
 			<div className="hidden lg:flex lg:flex-shrink-0">
-				<div className="flex flex-col w-64">
+				<div className="flex flex-col w-64 xl:w-72">
 					<div className="flex flex-col h-0 flex-1 border-r border-gray-200 bg-white">
 						<div className="flex items-center h-16 flex-shrink-0 px-4 bg-white border-b border-gray-200">
 							<Link to="/" className="flex items-center">
@@ -311,14 +311,14 @@ export default function DashboardSidebar({ sidebarOpen, setSidebarOpen }) {
 										className="inline-block"
 									/>
 								</div>
-								<div className="ml-3 flex-1 min-w-0">
+								<Link to={'/dashboard/profile'} className="ml-3 flex-1 min-w-0">
 									<p className="text-sm font-medium text-gray-700 truncate">
 										{currentUser?.FirebaseUser?.displayName || "User"}
 									</p>
 									<p className="text-xs font-medium text-gray-500 truncate capitalize">
 										{currentUser?.DBUser?.role || "Consumer"}
 									</p>
-								</div>
+								</Link>
 							</div>
 						</div>
 					</div>

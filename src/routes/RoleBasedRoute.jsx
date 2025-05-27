@@ -65,7 +65,6 @@ export default function RoleBasedRoute({
 	if (!hasRequiredRole && !hasValidRole) {
 		// Store the attempted route for potential future access
 		const attemptedRoute = location.pathname;
-		console.log(attemptedRoute);
 
 		// Redirect to appropriate dashboard based on user role
 		let redirectPath = redirectTo;

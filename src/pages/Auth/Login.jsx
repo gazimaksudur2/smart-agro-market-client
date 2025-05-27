@@ -20,7 +20,7 @@ export default function Login() {
 	const formRef = useRef(null);
 
 	// Redirect to the page the user was trying to access, or to dashboard
-	const from = location.state?.from || "/dashboard";
+	const from = location.state?.from || "/dashboard/profile";
 
 	// Handle email/password login
 	const onSubmit = async (data) => {

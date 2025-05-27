@@ -10,6 +10,7 @@ import {
 } from "react-icons/fa";
 import Select from "react-select";
 import { ConfigProvider, InputNumber, Slider } from "antd";
+import useRegions from "../hooks/useRegions";
 
 export default function Products() {
 	const [sortBy, setSortBy] = useState("latest");
@@ -33,15 +34,10 @@ export default function Products() {
 		minPrice: 1,
 		maxPrice: 1000000,
 	});
+	const regions = useRegions();
 
 	const apiBaseUrl =
 		import.meta.env.VITE_SERVER_API_URL || "http://localhost:5000";
-
-	// Fetch regions for filter
-	const { data: regions } = useQuery("regions", async () => {
-		const { data } = await axios.get(`${apiBaseUrl}/regions`);
-		return data.regions;
-	});
 
 	// Fetch all available crop types
 	const { data: cropTypes } = useQuery("cropTypes", async () => {

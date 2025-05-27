@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useQuery } from "react-query";
 import axios from "axios";
 import { useAuth } from "../../../contexts/AuthContext";
@@ -24,13 +24,14 @@ import {
 	FaStar,
 	FaChartLine,
 	FaCheckCircle,
-	FaExclamationTriangle,
+	FaSignOutAlt,
+	FaUpload,
+	FaSpinner,
 } from "react-icons/fa";
-import DashboardTitle from "../DashboardTitle";
 import { toast } from "react-hot-toast";
 
 export default function Profile() {
-	const { currentUser, changePassword } = useAuth();
+	const { currentUser, changePassword, logout, updateUserProfile } = useAuth();
 	const [isEditing, setIsEditing] = useState(false);
 	const [districts, setDistricts] = useState([]);
 	const [showPasswordForm, setShowPasswordForm] = useState(false);
@@ -45,6 +46,10 @@ export default function Profile() {
 		confirm: false,
 	});
 	const [passwordLoading, setPasswordLoading] = useState(false);
+	const [selectedImage, setSelectedImage] = useState(null);
+	const [previewUrl, setPreviewUrl] = useState("");
+	const [imageUploading, setImageUploading] = useState(false);
+	const fileInputRef = useRef(null);
 
 	const apiBaseUrl =
 		import.meta.env.VITE_SERVER_API_URL || "http://localhost:5000";
@@ -121,6 +126,11 @@ export default function Profile() {
 				[name]: value,
 			};
 		});
+	};
+
+	const handleLogout = () => {
+		logout();
+		navigate("/login");
 	};
 
 	const handleSave = () => {
@@ -215,6 +225,141 @@ export default function Profile() {
 		setShowPasswordForm(false);
 	};
 
+	// Handle image selection
+	const handleImageChange = (e) => {
+		const file = e.target.files[0];
+
+		if (!file) return;
+
+		// Size validation (2MB)
+		if (file.size > 2 * 1024 * 1024) {
+			toast.error("Image size must be less than 2MB");
+			fileInputRef.current.value = "";
+			return;
+		}
+
+		// File type validation
+		const allowedTypes = ["image/jpeg", "image/jpg", "image/png", "image/gif"];
+		if (!allowedTypes.includes(file.type)) {
+			toast.error("Please select a valid image file (JPEG, PNG, or GIF)");
+			fileInputRef.current.value = "";
+			return;
+		}
+
+		setSelectedImage(file);
+
+		// Create preview URL
+		const reader = new FileReader();
+		reader.onloadend = () => {
+			setPreviewUrl(reader.result);
+		};
+		reader.readAsDataURL(file);
+	};
+
+	// Upload image to Cloudinary
+	const uploadImageToCloudinary = async (image) => {
+		if (!image) return null;
+
+		const cloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
+		const uploadPreset = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET;
+
+		if (!cloudName || !uploadPreset) {
+			toast.error("Cloudinary configuration is missing");
+			return null;
+		}
+
+		const formData = new FormData();
+		formData.append("file", image);
+		formData.append("upload_preset", uploadPreset);
+
+		try {
+			const response = await axios.post(
+				`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`,
+				formData,
+				{
+					withCredentials: false,
+					headers: { "Content-Type": "multipart/form-data" },
+				}
+			);
+
+			return response.data.secure_url;
+		} catch (error) {
+			console.error("Error uploading image:", error);
+			toast.error("Failed to upload image. Please try again.");
+			return null;
+		}
+	};
+
+	// Handle profile picture update
+	const handleProfilePictureUpdate = async () => {
+		if (!selectedImage) {
+			toast.error("Please select an image first");
+			return;
+		}
+
+		setImageUploading(true);
+		try {
+			// Upload image to Cloudinary
+			const uploadedImageUrl = await uploadImageToCloudinary(selectedImage);
+			if (!uploadedImageUrl) {
+				throw new Error("Failed to upload image");
+			}
+
+			const user = currentUser?.FirebaseUser;
+			if (!user) {
+				throw new Error("User not authenticated");
+			}
+
+			// Update profile picture in database
+			const response = await axios.patch(
+				`${apiBaseUrl}/users/${user.email}`,
+				{ profilePicture: uploadedImageUrl },
+				{
+					withCredentials: true,
+					headers: {
+						Authorization: `Bearer ${
+							localStorage.getItem("token") || sessionStorage.getItem("token")
+						}`,
+					},
+				}
+			);
+
+			if (response.data.success) {
+				// Update Firebase profile and refresh user data
+				await updateUserProfile(null, uploadedImageUrl);
+
+				// Reset image selection
+				setSelectedImage(null);
+				setPreviewUrl("");
+				if (fileInputRef.current) {
+					fileInputRef.current.value = "";
+				}
+
+				toast.success("Profile picture updated successfully!");
+			} else {
+				throw new Error(
+					response.data.message || "Failed to update profile picture"
+				);
+			}
+		} catch (error) {
+			console.error("Error updating profile picture:", error);
+			toast.error(
+				error.message || "Failed to update profile picture. Please try again."
+			);
+		} finally {
+			setImageUploading(false);
+		}
+	};
+
+	// Cancel profile picture update
+	const handleCancelImageUpdate = () => {
+		setSelectedImage(null);
+		setPreviewUrl("");
+		if (fileInputRef.current) {
+			fileInputRef.current.value = "";
+		}
+	};
+
 	// Helper function to get role icon and color
 	const getRoleConfig = (role) => {
 		switch (role) {
@@ -265,13 +410,22 @@ export default function Profile() {
 						</p>
 					</div>
 					{!isEditing ? (
-						<button
-							onClick={() => setIsEditing(true)}
-							className="btn btn-primary flex items-center shadow-lg hover:shadow-xl transition-all duration-200"
-						>
-							<FaEdit className="mr-2 h-4 w-4" />
-							Edit Profile
-						</button>
+						<div className="flex space-x-3">
+							<button
+								className="btn btn-outline flex items-center shadow-lg hover:shadow-xl transition-all duration-200"
+								onClick={handleLogout}
+							>
+								<FaSignOutAlt className="mr-2 h-4 w-4" />
+								Sign Out
+							</button>
+							<button
+								onClick={() => setIsEditing(true)}
+								className="btn btn-primary flex items-center shadow-lg hover:shadow-xl transition-all duration-200"
+							>
+								<FaEdit className="mr-2 h-4 w-4" />
+								Edit Profile
+							</button>
+						</div>
 					) : (
 						<div className="flex space-x-3">
 							<button
@@ -308,20 +462,79 @@ export default function Profile() {
 								<img
 									className="h-32 w-32 rounded-2xl border-4 border-white shadow-2xl object-cover"
 									src={
+										previewUrl ||
 										currentUser?.FirebaseUser?.photoURL ||
 										"https://i.ibb.co/MBtjqXQ/no-avatar.gif"
 									}
 									alt={currentUser?.FirebaseUser?.displayName || "User"}
 								/>
-								{/* Camera overlay for future photo upload */}
-								<div className="absolute inset-0 bg-black bg-opacity-0 hover:bg-opacity-30 rounded-2xl transition-all duration-200 flex items-center justify-center cursor-pointer group">
-									<FaCamera className="text-white opacity-0 group-hover:opacity-100 h-6 w-6 transition-opacity duration-200" />
-								</div>
+								{/* Camera overlay for photo upload */}
+								<label
+									htmlFor="profilePictureInput"
+									className="absolute inset-0 bg-black bg-opacity-0 hover:bg-opacity-30 rounded-2xl transition-all duration-200 flex items-center justify-center cursor-pointer group"
+									title={
+										imageUploading
+											? "Uploading..."
+											: "Click to change profile picture"
+									}
+								>
+									{imageUploading ? (
+										<FaSpinner className="text-white h-6 w-6 animate-spin" />
+									) : (
+										<FaCamera className="text-white opacity-0 group-hover:opacity-100 h-6 w-6 transition-opacity duration-200" />
+									)}
+								</label>
+								{/* Hidden file input */}
+								<input
+									type="file"
+									id="profilePictureInput"
+									ref={fileInputRef}
+									accept="image/*"
+									className="hidden"
+									onChange={handleImageChange}
+									disabled={imageUploading}
+								/>
 								{/* Online status indicator */}
 								<div className="absolute -bottom-2 -right-2 h-8 w-8 bg-green-500 rounded-full border-4 border-white flex items-center justify-center">
 									<FaCheckCircle className="h-4 w-4 text-white" />
 								</div>
 							</div>
+
+							{/* Image upload controls */}
+							{selectedImage && (
+								<div className="mt-4 flex flex-col items-center space-y-2">
+									<div className="flex space-x-2">
+										<button
+											onClick={handleProfilePictureUpdate}
+											disabled={imageUploading}
+											className="btn btn-primary btn-sm flex items-center"
+										>
+											{imageUploading ? (
+												<>
+													<FaSpinner className="mr-2 h-3 w-3 animate-spin" />
+													Uploading...
+												</>
+											) : (
+												<>
+													<FaUpload className="mr-2 h-3 w-3" />
+													Update Photo
+												</>
+											)}
+										</button>
+										<button
+											onClick={handleCancelImageUpdate}
+											disabled={imageUploading}
+											className="btn btn-outline btn-sm flex items-center"
+										>
+											<FaTimes className="mr-2 h-3 w-3" />
+											Cancel
+										</button>
+									</div>
+									<p className="text-xs text-primary-100">
+										Max size: 2MB • JPEG, PNG, GIF
+									</p>
+								</div>
+							)}
 						</div>
 
 						{/* Profile Info Section */}

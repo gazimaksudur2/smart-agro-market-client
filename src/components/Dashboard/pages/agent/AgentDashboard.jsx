@@ -118,21 +118,21 @@ export default function AgentDashboard() {
 			icon: <FaUserCheck className="h-6 w-6 text-primary-600" />,
 			color: "primary",
 			trend: { positive: true, value: "+3 this week" },
-			link: "/dashboard/agent/sellers",
+			link: "/dashboard/verify-sellers",
 		},
 		{
 			title: "Pending Products",
 			value: displayStats.pendingProducts || "12",
 			icon: <FaBoxOpen className="h-6 w-6 text-secondary-600" />,
 			color: "secondary",
-			link: "/dashboard/agent/products",
+			link: "/dashboard/verify-products",
 		},
 		{
 			title: "Active Deliveries",
 			value: displayStats.activeDeliveries || "18",
 			icon: <FaTruck className="h-6 w-6 text-green-600" />,
 			color: "green",
-			link: "/dashboard/agent/deliveries",
+			link: "/dashboard/manage-deliveries",
 		},
 		{
 			title: "Monthly Commission",
@@ -148,21 +148,21 @@ export default function AgentDashboard() {
 			title: "Seller Applications",
 			count: displayStats.pendingSellerApplications || 5,
 			icon: <FaUserCheck className="h-5 w-5 text-blue-600" />,
-			link: "/dashboard/agent/sellers",
+			link: "/dashboard/verify-sellers",
 			priority: "high",
 		},
 		{
 			title: "Product Approvals",
 			count: displayStats.pendingProducts || 12,
 			icon: <FaBoxOpen className="h-5 w-5 text-orange-600" />,
-			link: "/dashboard/agent/products",
+			link: "/dashboard/verify-products",
 			priority: "medium",
 		},
 		{
 			title: "Delivery Assignments",
 			count: displayStats.pendingDeliveries || 8,
 			icon: <FaTruck className="h-5 w-5 text-green-600" />,
-			link: "/dashboard/agent/deliveries",
+			link: "/dashboard/manage-deliveries",
 			priority: "high",
 		},
 	];
@@ -288,7 +288,7 @@ export default function AgentDashboard() {
 
 						<div className="pt-4 border-t border-gray-200">
 							<Link
-								to="/dashboard/agent/warehouse"
+								to="/dashboard/manage-warehouse"
 								className="btn btn-outline-primary btn-sm w-full"
 							>
 								Manage Warehouse
@@ -305,7 +305,7 @@ export default function AgentDashboard() {
 				</h2>
 				<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
 					<Link
-						to="/dashboard/agent/sellers"
+						to="/dashboard/verify-sellers"
 						className="p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
 					>
 						<FaUserCheck className="h-8 w-8 text-primary-600 mb-2" />
@@ -316,7 +316,7 @@ export default function AgentDashboard() {
 					</Link>
 
 					<Link
-						to="/dashboard/agent/products"
+						to="/dashboard/verify-products"
 						className="p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
 					>
 						<FaBoxOpen className="h-8 w-8 text-secondary-600 mb-2" />
@@ -327,7 +327,7 @@ export default function AgentDashboard() {
 					</Link>
 
 					<Link
-						to="/dashboard/agent/deliveries"
+						to="/dashboard/manage-deliveries"
 						className="p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
 					>
 						<FaTruck className="h-8 w-8 text-green-600 mb-2" />
@@ -338,7 +338,7 @@ export default function AgentDashboard() {
 					</Link>
 
 					<Link
-						to="/dashboard/agent/reports"
+						to="/dashboard/reports"
 						className="p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
 					>
 						<FaClipboardList className="h-8 w-8 text-accent-600 mb-2" />
