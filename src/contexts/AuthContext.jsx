@@ -27,6 +27,7 @@ export function useAuth() {
 
 export default function AuthProvider({ children }) {
 	const [currentUser, setCurrentUser] = useState(null);
+	const [currentRole, setCurrentRole] = useState(null);
 	const [loading, setLoading] = useState(true);
 	const [accessToken, setAccessToken] = useState("");
 	const [usingCookies, setUsingCookies] = useState(true);
@@ -42,7 +43,16 @@ export default function AuthProvider({ children }) {
 		console.log("Cookies enabled:", cookiesEnabled);
 
 		// Initialize token from localStorage if available
-		authService.initializeToken();
+		const tokenInitialized = authService.initializeToken();
+
+		// If token was initialized, get user info from token
+		if (tokenInitialized) {
+			const userInfo = authService.getCurrentUserInfo();
+			if (userInfo) {
+				setCurrentRole(userInfo.role);
+				console.log("Initialized role from existing token:", userInfo.role);
+			}
+		}
 
 		// If in production and cookies aren't working, show a warning
 		if (!cookiesEnabled && process.env.NODE_ENV === "production") {
@@ -94,8 +104,9 @@ export default function AuthProvider({ children }) {
 			);
 
 			// Get JWT token after registration
-			const token = await authService.getToken(user);
+			const { token, user: userFromToken } = await authService.getToken(user);
 			await handleToken(token);
+			setCurrentRole(userFromToken.role);
 
 			// Return user info
 			return user;
@@ -117,8 +128,12 @@ export default function AuthProvider({ children }) {
 			const user = userCredential.user;
 
 			// Then get token from backend
-			const token = await authService.getToken(user, password);
+			const { token, user: userFromToken } = await authService.getToken(
+				user,
+				password
+			);
 			await handleToken(token);
+			setCurrentRole(userFromToken.role);
 
 			return user;
 		} catch (error) {
@@ -146,8 +161,9 @@ export default function AuthProvider({ children }) {
 			}
 
 			// Get JWT token (will use existing valid token if available)
-			const token = await authService.getToken(user);
+			const { token, user: userFromToken } = await authService.getToken(user);
 			await handleToken(token);
+			setCurrentRole(userFromToken.role);
 
 			return user;
 		} catch (error) {
@@ -174,8 +190,9 @@ export default function AuthProvider({ children }) {
 			}
 
 			// Get JWT token (will use existing valid token if available)
-			const token = await authService.getToken(user);
+			const { token, user: userFromToken } = await authService.getToken(user);
 			await handleToken(token);
+			setCurrentRole(userFromToken.role);
 
 			return user;
 		} catch (error) {
@@ -192,6 +209,7 @@ export default function AuthProvider({ children }) {
 			// Clear auth data
 			await authService.clearToken();
 			setAccessToken("");
+			setCurrentRole(null);
 
 			toast.success("User logged out successfully");
 		} catch (error) {
@@ -225,6 +243,7 @@ export default function AuthProvider({ children }) {
 				},
 				{ withCredentials: true }
 			);
+			setCurrentRole(role);
 			return data;
 		} catch (error) {
 			currentUser && logout();
@@ -241,29 +260,29 @@ export default function AuthProvider({ children }) {
 
 			if (data.success) {
 				setCurrentUser((prevUser) => ({
-					FirebaseUser: prevUser?.FirebaseUser,
+					...prevUser,
 					DBUser: data.user,
 				}));
 				return data.user.role;
 			}
-			return "consumer";
+			return null; // Don't assign default role
 		} catch (error) {
 			console.error("Error getting user role:", error);
-			return "consumer";
+			return null; // Don't assign default role
 		}
 	};
 
 	// Check if user is Admin
-	const isAdmin = () => currentUser?.DBUser?.role === "admin";
+	const isAdmin = () => currentRole === "admin";
 
 	// Check if user is Agent
-	const isAgent = () => currentUser?.DBUser?.role === "agent";
+	const isAgent = () => currentRole === "agent";
 
 	// Check if user is Seller
-	const isSeller = () => currentUser?.DBUser?.role === "seller";
+	const isSeller = () => currentRole === "seller";
 
 	// Check if user is Consumer
-	const isConsumer = () => currentUser?.DBUser?.role === "consumer";
+	const isConsumer = () => currentRole === "consumer";
 
 	// Check if user is authenticated with valid token
 	const isAuthenticated = () => {
@@ -358,20 +377,35 @@ export default function AuthProvider({ children }) {
 		const unsubscribe = onAuthStateChanged(auth, async (user) => {
 			if (user) {
 				setCurrentUser({ FirebaseUser: user, DBUser: null });
+				setCurrentRole(getDBUser(user.email));
 				try {
 					// Check if we already have a valid token before making API call
 					let token = authService.getCurrentToken();
 					if (!token || !authService.isTokenValid(token)) {
 						console.log("Getting new token for user:", user.email);
-						token = await authService.getToken(user);
+						const { token: tokenValue, user: userFromToken } =
+							await authService.getToken(user);
+						token = tokenValue;
 						await handleToken(token);
+						setCurrentRole(userFromToken.role);
 					} else {
 						console.log("Using existing valid token for user:", user.email);
 						setAccessToken(token);
-					}
 
-					// Get user role
-					await getDBUser(user.email);
+						// Get user info from existing token using centralized function
+						const userInfo = authService.getCurrentUserInfo();
+						if (userInfo) {
+							setCurrentRole(userInfo.role);
+							console.log("Set role from existing token:", userInfo.role);
+						} else {
+							// If we can't decode, fetch new token
+							const { token: tokenValue, user: userFromToken } =
+								await authService.getToken(user);
+							token = tokenValue;
+							await handleToken(token);
+							setCurrentRole(userFromToken.role);
+						}
+					}
 
 					// Merge cart from localStorage to database when user logs in
 					try {
@@ -385,6 +419,7 @@ export default function AuthProvider({ children }) {
 			} else {
 				setCurrentUser(null);
 				setAccessToken("");
+				setCurrentRole(null);
 			}
 			setLoading(false);
 		});
@@ -398,6 +433,8 @@ export default function AuthProvider({ children }) {
 		loading,
 		accessToken,
 		usingCookies,
+		currentRole,
+		setCurrentRole,
 		registerWithEmail,
 		loginWithEmail,
 		loginWithGoogle,

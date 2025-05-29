@@ -4,28 +4,42 @@ import { removeCookie } from "../utils/cookieUtils";
 const JWT_TOKEN_KEY = "jwt_token";
 const API_BASE_URL =
 	import.meta.env.VITE_SERVER_API_URL || "http://localhost:5000";
-
 /**
  * Auth service to centralize JWT token handling
  */
 const authService = {
+	/**
+	 * Decode JWT token and extract user information
+	 */
+	decodeTokenUserInfo: (token) => {
+		if (!token) return null;
+
+		try {
+			const payload = JSON.parse(atob(token.split(".")[1]));
+			return {
+				role: payload.role || null,
+				email: payload.email || null,
+				uid: payload.uid || null,
+				exp: payload.exp || null,
+			};
+		} catch (error) {
+			console.error("Error decoding token:", error);
+			return null;
+		}
+	},
+
 	/**
 	 * Check if current token is valid by decoding and checking expiration
 	 */
 	isTokenValid: (token) => {
 		if (!token) return false;
 
-		try {
-			// Decode JWT payload (simple base64 decode)
-			const payload = JSON.parse(atob(token.split(".")[1]));
-			const currentTime = Date.now() / 1000;
+		const userInfo = authService.decodeTokenUserInfo(token);
+		if (!userInfo || !userInfo.exp) return false;
 
-			// Check if token is expired (with 5 minute buffer)
-			return payload.exp && payload.exp > currentTime + 300;
-		} catch (error) {
-			console.error("Error validating token:", error);
-			return false;
-		}
+		const currentTime = Date.now() / 1000;
+		// Check if token is expired (with 5 minute buffer)
+		return userInfo.exp > currentTime + 300;
 	},
 
 	/**
@@ -44,7 +58,20 @@ const authService = {
 			const existingToken = authService.getCurrentToken();
 			if (existingToken && authService.isTokenValid(existingToken)) {
 				console.log("Using existing valid token");
-				return existingToken;
+				// Use centralized decoding function
+				const userInfo = authService.decodeTokenUserInfo(existingToken);
+				if (userInfo) {
+					console.log("Decoded user info:", userInfo);
+					return {
+						token: existingToken,
+						user: {
+							role: userInfo.role,
+							email: userInfo.email || user.email,
+							uid: userInfo.uid || user.uid,
+						},
+					};
+				}
+				// If decoding fails, fall through to fetch new token
 			}
 
 			console.log("Fetching new token from server");
@@ -59,9 +86,16 @@ const authService = {
 			);
 
 			if (response.data.token) {
-				return response.data.token;
+				return {
+					token: response.data.token,
+					user: response.data.user || {
+						role: null,
+						email: user.email,
+						uid: user.uid,
+					},
+				};
 			}
-			return null;
+			return { token: null, user: null };
 		} catch (error) {
 			console.error("Error retrieving JWT token:", error);
 			throw error;
@@ -116,6 +150,17 @@ const authService = {
 	hasValidToken: () => {
 		const token = authService.getCurrentToken();
 		return token && authService.isTokenValid(token);
+	},
+
+	/**
+	 * Get user info from current stored token
+	 */
+	getCurrentUserInfo: () => {
+		const token = authService.getCurrentToken();
+		if (token && authService.isTokenValid(token)) {
+			return authService.decodeTokenUserInfo(token);
+		}
+		return null;
 	},
 
 	/**

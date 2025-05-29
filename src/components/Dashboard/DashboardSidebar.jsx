@@ -1,4 +1,4 @@
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
 	FaHome,
 	FaUser,
@@ -22,8 +22,9 @@ import { useAuth } from "../../contexts/AuthContext";
 import { AvatarWithInitials } from "../UI/Avatar";
 
 export default function DashboardSidebar({ sidebarOpen, setSidebarOpen }) {
-	const { currentUser } = useAuth();
+	const { currentUser, currentRole } = useAuth();
 	const location = useLocation();
+	const navigate = useNavigate();
 
 	const closeSidebar = () => {
 		setSidebarOpen(false);
@@ -50,11 +51,6 @@ export default function DashboardSidebar({ sidebarOpen, setSidebarOpen }) {
 
 	// Common links for all users
 	const commonLinks = [
-	// 	{
-	// 		to: "/dashboard",
-	// 		icon: <FaHome className="mr-3 h-6 w-6" />,
-	// 		label: "Dashboard Home",
-	// 	},
 		{
 			to: "/dashboard/profile",
 			icon: <FaUser className="mr-3 h-6 w-6" />,
@@ -171,8 +167,12 @@ export default function DashboardSidebar({ sidebarOpen, setSidebarOpen }) {
 
 	// Get links based on user role
 	const getNavLinks = () => {
-		const userRole = currentUser?.DBUser?.role || "consumer";
-		return [...commonLinks, ...(roleLinks[userRole] || roleLinks.consumer)];
+		// Use currentRole directly
+		if (!currentRole) {
+			return commonLinks;
+		}
+
+		return [...commonLinks, ...(roleLinks[currentRole] || [])];
 	};
 
 	// Create nav link with proper accessibility
@@ -251,7 +251,10 @@ export default function DashboardSidebar({ sidebarOpen, setSidebarOpen }) {
 					</div>
 
 					{/* User info for mobile */}
-					<Link to={'/dashboard/profile'} className="flex-shrink-0 flex border-t border-gray-200 p-4">
+					<Link
+						to={"/dashboard/profile"}
+						className="flex-shrink-0 flex border-t border-gray-200 p-4"
+					>
 						<div className="flex items-center w-full">
 							<div className="flex-shrink-0">
 								<AvatarWithInitials
@@ -266,7 +269,7 @@ export default function DashboardSidebar({ sidebarOpen, setSidebarOpen }) {
 									{currentUser?.FirebaseUser?.displayName || "User"}
 								</p>
 								<p className="text-sm font-medium text-gray-500 truncate capitalize">
-									{currentUser?.DBUser?.role || "Consumer"}
+									{currentRole || "Loading..."}
 								</p>
 							</div>
 						</div>
@@ -311,12 +314,12 @@ export default function DashboardSidebar({ sidebarOpen, setSidebarOpen }) {
 										className="inline-block"
 									/>
 								</div>
-								<Link to={'/dashboard/profile'} className="ml-3 flex-1 min-w-0">
+								<Link to={"/dashboard/profile"} className="ml-3 flex-1 min-w-0">
 									<p className="text-sm font-medium text-gray-700 truncate">
 										{currentUser?.FirebaseUser?.displayName || "User"}
 									</p>
 									<p className="text-xs font-medium text-gray-500 truncate capitalize">
-										{currentUser?.DBUser?.role || "Consumer"}
+										{currentRole || "Loading..."}
 									</p>
 								</Link>
 							</div>

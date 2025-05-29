@@ -7,6 +7,7 @@ import {
 	FaSearch,
 	FaSortAmountDown,
 	FaSortAmountUpAlt,
+	FaSyncAlt,
 } from "react-icons/fa";
 import Select from "react-select";
 import { ConfigProvider, InputNumber, Slider, Pagination } from "antd";
@@ -39,7 +40,7 @@ export default function Products() {
 	const regions = useRegions();
 
 	// Use the useProducts hook with applied filters and pagination
-	const { products, total, maxPrice, isLoading, error } = useProducts({
+	const { products, total, maxPrice, isLoading, error, refetch } = useProducts({
 		page: currentPage,
 		limit: pageSize,
 		cropType: appliedFilters.cropType,
@@ -395,7 +396,13 @@ export default function Products() {
 								{isLoading ? (
 									"Loading products..."
 								) : (
-									<span>Showing {products?.length || 0} products</span>
+									<div className="flex items-center gap-4">
+										<span>Showing {products?.length || 0} products</span>
+										<FaSyncAlt
+											className="ml-2 hover:cursor-pointer"
+											onClick={() => refetch()}
+										/>
+									</div>
 								)}
 							</div>
 							<div className="flex items-center">

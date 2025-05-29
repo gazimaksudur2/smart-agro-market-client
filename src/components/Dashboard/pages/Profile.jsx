@@ -1,5 +1,4 @@
 import { useState, useEffect, useRef } from "react";
-import { useQuery } from "react-query";
 import axios from "axios";
 import { useAuth } from "../../../contexts/AuthContext";
 import {
@@ -30,6 +29,7 @@ import {
 } from "react-icons/fa";
 import { toast } from "react-hot-toast";
 import { uploadImageToCloudinary } from "../../../services/imageUploadService";
+import useRegions from "../../../hooks/useRegions";
 
 export default function Profile() {
 	const {
@@ -38,6 +38,7 @@ export default function Profile() {
 		logout,
 		updateUserProfilePicture,
 		getDBUser,
+		currentRole,
 	} = useAuth();
 	const [isEditing, setIsEditing] = useState(false);
 	const [districts, setDistricts] = useState([]);
@@ -62,10 +63,7 @@ export default function Profile() {
 		import.meta.env.VITE_SERVER_API_URL || "http://localhost:5000";
 
 	// Fetch regions for dynamic district selection
-	const { data: regions } = useQuery("regions", async () => {
-		const { data } = await axios.get(`${apiBaseUrl}/regions`);
-		return data.regions;
-	});
+	const regions = useRegions();
 
 	// Helper function to format address object to string
 	const formatAddress = (addressObj) => {
@@ -422,7 +420,7 @@ export default function Profile() {
 		}
 	};
 
-	const roleConfig = getRoleConfig(currentUser?.DBUser?.role);
+	const roleConfig = getRoleConfig(currentRole);
 
 	return (
 		<div className="py-6">
@@ -582,9 +580,9 @@ export default function Profile() {
 									>
 										{roleConfig.icon}
 										<span className="capitalize">
-											{typeof currentUser?.DBUser?.role === "string"
-												? currentUser.DBUser.role
-												: "Consumer"}
+											{typeof currentRole === "string"
+												? currentRole
+												: "loading..."}
 										</span>
 									</div>
 								</div>

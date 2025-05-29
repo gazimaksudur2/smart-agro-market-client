@@ -68,15 +68,19 @@ export default function RoleBasedRoute({
 
 		// Redirect to appropriate dashboard based on user role
 		let redirectPath = redirectTo;
-		if (userRole === "admin") {
-			redirectPath = "/dashboard/profile";
-		} else if (userRole === "agent") {
-			redirectPath = "/dashboard/agent";
-		} else if (userRole === "seller") {
-			redirectPath = "/dashboard/seller";
-		} else if (userRole === "consumer") {
-			redirectPath = "/dashboard/consumer";
+		// if (userRole === "admin") {
+		// 	redirectPath = "/dashboard/profile";
+		// } else if (userRole === "agent") {
+		// 	redirectPath = "/dashboard/profile";
+		// } else if (userRole === "seller") {
+		// 	redirectPath = "/dashboard/profile";
+		// } else if (userRole === "consumer") {
+		// 	redirectPath = "/dashboard/profile";
+		// }
+		if (userRole) {
+			redirectPath = `/dashboard/profile`;
 		}
+
 
 		return (
 			<Navigate
