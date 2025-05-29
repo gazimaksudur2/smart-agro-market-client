@@ -5,7 +5,7 @@ import { FaFacebook, FaUpload, FaCamera } from "react-icons/fa";
 import { FcGoogle } from "react-icons/fc";
 import { useAuth } from "../../contexts/AuthContext";
 import toast from "react-hot-toast";
-import axios from "axios";
+import { uploadImageToCloudinary } from "../../services/imageUploadService";
 
 export default function Register() {
 	const {
@@ -13,11 +13,9 @@ export default function Register() {
 		handleSubmit,
 		formState: { errors },
 		watch,
-		setValue,
 	} = useForm();
 	const [loading, setLoading] = useState(false);
 	const { registerWithEmail, loginWithGoogle, loginWithFacebook } = useAuth();
-	const [selectedRole, setSelectedRole] = useState("consumer");
 	const [selectedImage, setSelectedImage] = useState(null);
 	const [previewUrl, setPreviewUrl] = useState("");
 	const fileInputRef = useRef(null);
@@ -30,16 +28,36 @@ export default function Register() {
 	const handleImageChange = (e) => {
 		const file = e.target.files[0];
 
-		if (!file) return;
-
-		// Size validation (2MB)
-		if (file.size > 2 * 1024 * 1024) {
-			toast.error("Image size must be less than 2MB");
-			fileInputRef.current.value = "";
+		if (!file) {
+			setSelectedImage(null);
+			setPreviewUrl("");
 			return;
 		}
 
-		setSelectedImage(file);
+		// Basic client-side preview validation (service does more robust checks)
+		const allowedPreviewTypes = [
+			"image/jpeg",
+			"image/png",
+			"image/gif",
+			"image/jpg",
+		];
+		if (!allowedPreviewTypes.includes(file.type)) {
+			toast.error("Please select a valid image file (JPEG, PNG, GIF).");
+			fileInputRef.current.value = ""; // Clear the input
+			setSelectedImage(null);
+			setPreviewUrl("");
+			return;
+		}
+		if (file.size > 2 * 1024 * 1024) {
+			// 2MB limit, consistent with service default
+			toast.error("Image size must be less than 2MB.");
+			fileInputRef.current.value = "";
+			setSelectedImage(null);
+			setPreviewUrl("");
+			return;
+		}
+
+		setSelectedImage(file); // Store the File object
 
 		// Create preview URL
 		const reader = new FileReader();
@@ -49,49 +67,21 @@ export default function Register() {
 		reader.readAsDataURL(file);
 	};
 
-	// Upload image to Cloudinary
-	const uploadImageToCloudinary = async (image) => {
-		if (!image) return null;
-
-		const cloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
-		const uploadPreset = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET;
-
-		if (!cloudName || !uploadPreset) {
-			toast.error("Cloudinary configuration is missing");
-			return null;
-		}
-
-		const formData = new FormData();
-		formData.append("file", image);
-		formData.append("upload_preset", uploadPreset);
-
-		try {
-			const response = await axios.post(
-				`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`,
-				formData,
-				{
-					withCredentials: false, // explicitly disable credentials
-					headers: { "Content-Type": "multipart/form-data" },
-				}
-			);
-
-			return response.data.secure_url;
-		} catch (error) {
-			console.error("Error uploading image:", error);
-			return null;
-		}
-	};
-
 	// Handle registration with email/password
 	const onSubmit = async (data) => {
 		setLoading(true);
 		try {
-			// Upload image if selected, otherwise use default
 			let profileImageUrl = "https://i.ibb.co/MBtjqXQ/no-avatar.gif";
 			if (selectedImage) {
-				const uploadedImageUrl = await uploadImageToCloudinary(selectedImage);
-				if (uploadedImageUrl) {
-					profileImageUrl = uploadedImageUrl;
+				const uploadedUrl = await uploadImageToCloudinary(selectedImage, {
+					maxSizeMB: 2,
+				});
+				if (uploadedUrl) {
+					profileImageUrl = uploadedUrl;
+				} else {
+					// uploadImageToCloudinary service already shows a toast on failure
+					setLoading(false);
+					return; // Stop registration if image upload fails
 				}
 			}
 
@@ -116,7 +106,7 @@ export default function Register() {
 			);
 			toast.success("Registration successful! Please complete your profile.");
 			navigate("/dashboard/profile", {
-				state: { newUser: true, role: selectedRole },
+				state: { newUser: true, role: "consumer" }, // Assuming role is consumer by default
 			});
 		} catch (error) {
 			toast.error(error.message || "Registration failed. Please try again.");
@@ -132,7 +122,7 @@ export default function Register() {
 			await loginWithGoogle();
 			toast.success("Registration successful! Please complete your profile.");
 			navigate("/dashboard/profile", {
-				state: { newUser: true, role: selectedRole },
+				state: { newUser: true, role: "consumer" },
 			});
 		} catch (error) {
 			toast.error(
@@ -150,7 +140,7 @@ export default function Register() {
 			await loginWithFacebook();
 			toast.success("Registration successful! Please complete your profile.");
 			navigate("/dashboard/profile", {
-				state: { newUser: true, role: selectedRole },
+				state: { newUser: true, role: "consumer" },
 			});
 		} catch (error) {
 			toast.error(
@@ -229,7 +219,10 @@ export default function Register() {
 			<div className="mt-8 px-4 sm:mx-auto sm:w-full sm:max-w-lg lg:max-w-2xl">
 				<div className="bg-white py-4 md:py-8 px-4 shadow-lg sm:px-10 border border-gray-200 daisy-card rounded-lg">
 					<div className="pb-4 md:pb-10 flex justify-center">
-						<Link to="/" className="flex items-center text-lg sm:text-2xl lg:text-3xl">
+						<Link
+							to="/"
+							className="flex items-center text-lg sm:text-2xl lg:text-3xl"
+						>
 							<span className="font-display font-bold text-primary-600">
 								SmartAgro
 							</span>

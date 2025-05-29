@@ -29,9 +29,16 @@ import {
 	FaSpinner,
 } from "react-icons/fa";
 import { toast } from "react-hot-toast";
+import { uploadImageToCloudinary } from "../../../services/imageUploadService";
 
 export default function Profile() {
-	const { currentUser, changePassword, logout, updateUserProfile } = useAuth();
+	const {
+		currentUser,
+		changePassword,
+		logout,
+		updateUserProfilePicture,
+		getDBUser,
+	} = useAuth();
 	const [isEditing, setIsEditing] = useState(false);
 	const [districts, setDistricts] = useState([]);
 	const [showPasswordForm, setShowPasswordForm] = useState(false);
@@ -130,13 +137,51 @@ export default function Profile() {
 
 	const handleLogout = () => {
 		logout();
-		navigate("/login");
+		// navigate("/login"); // Consider if navigate is available or needed here
 	};
 
-	const handleSave = () => {
-		// TODO: Implement profile update API call
-		console.log("Saving profile data:", formData);
-		setIsEditing(false);
+	const handleSave = async () => {
+		// TODO: Implement profile update API call for text fields
+		console.log("Saving profile data (excluding image):", formData);
+		try {
+			const user = currentUser?.FirebaseUser;
+			if (!user) throw new Error("User not authenticated");
+
+			// Prepare data for update (only send changed fields, or all editable fields)
+			const updateData = {
+				displayName: formData.displayName,
+				phone: formData.phone,
+				address: formData.address, // Assuming address string is fine, or re-parse if needed by backend
+				region: formData.region,
+				district: formData.district,
+			};
+
+			// API call to update user data in your backend
+			const response = await axios.patch(
+				`${apiBaseUrl}/users/${user.email}`,
+				updateData,
+				{
+					withCredentials: true,
+					headers: {
+						Authorization: `Bearer ${
+							localStorage.getItem("token") || sessionStorage.getItem("token")
+						}`,
+					},
+				}
+			);
+
+			if (response.data.success) {
+				toast.success("Profile updated successfully!");
+				setIsEditing(false);
+				// Optionally refresh DBUser data if not handled by AuthContext
+				await getDBUser(user.email);
+			} else {
+				throw new Error(response.data.message || "Failed to update profile");
+			}
+		} catch (error) {
+			console.error("Error saving profile data:", error);
+			toast.error(error.message || "Failed to save profile. Please try again.");
+		}
 	};
 
 	const handleCancel = () => {
@@ -225,69 +270,45 @@ export default function Profile() {
 		setShowPasswordForm(false);
 	};
 
-	// Handle image selection
+	// Handle image selection (relies on service for robust validation)
 	const handleImageChange = (e) => {
 		const file = e.target.files[0];
+		if (!file) {
+			setSelectedImage(null);
+			setPreviewUrl("");
+			return;
+		}
 
-		if (!file) return;
-
-		// Size validation (2MB)
+		// Basic client-side preview validation (service does more robust checks)
+		const allowedPreviewTypes = [
+			"image/jpeg",
+			"image/png",
+			"image/gif",
+			"image/jpg",
+		];
+		if (!allowedPreviewTypes.includes(file.type)) {
+			toast.error("Please select a valid image file (JPEG, PNG, GIF).");
+			fileInputRef.current.value = ""; // Clear the input
+			setSelectedImage(null);
+			setPreviewUrl("");
+			return;
+		}
 		if (file.size > 2 * 1024 * 1024) {
-			toast.error("Image size must be less than 2MB");
+			// 2MB limit
+			toast.error("Image size must be less than 2MB.");
 			fileInputRef.current.value = "";
+			setSelectedImage(null);
+			setPreviewUrl("");
 			return;
 		}
 
-		// File type validation
-		const allowedTypes = ["image/jpeg", "image/jpg", "image/png", "image/gif"];
-		if (!allowedTypes.includes(file.type)) {
-			toast.error("Please select a valid image file (JPEG, PNG, or GIF)");
-			fileInputRef.current.value = "";
-			return;
-		}
+		setSelectedImage(file); // Store File object
 
-		setSelectedImage(file);
-
-		// Create preview URL
 		const reader = new FileReader();
 		reader.onloadend = () => {
 			setPreviewUrl(reader.result);
 		};
 		reader.readAsDataURL(file);
-	};
-
-	// Upload image to Cloudinary
-	const uploadImageToCloudinary = async (image) => {
-		if (!image) return null;
-
-		const cloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
-		const uploadPreset = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET;
-
-		if (!cloudName || !uploadPreset) {
-			toast.error("Cloudinary configuration is missing");
-			return null;
-		}
-
-		const formData = new FormData();
-		formData.append("file", image);
-		formData.append("upload_preset", uploadPreset);
-
-		try {
-			const response = await axios.post(
-				`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`,
-				formData,
-				{
-					withCredentials: false,
-					headers: { "Content-Type": "multipart/form-data" },
-				}
-			);
-
-			return response.data.secure_url;
-		} catch (error) {
-			console.error("Error uploading image:", error);
-			toast.error("Failed to upload image. Please try again.");
-			return null;
-		}
 	};
 
 	// Handle profile picture update
@@ -299,20 +320,24 @@ export default function Profile() {
 
 		setImageUploading(true);
 		try {
-			// Upload image to Cloudinary
-			const uploadedImageUrl = await uploadImageToCloudinary(selectedImage);
+			const uploadedImageUrl = await uploadImageToCloudinary(selectedImage, {
+				maxSizeMB: 2,
+			});
+
 			if (!uploadedImageUrl) {
-				throw new Error("Failed to upload image");
+				// Service shows toast, but we might want to prevent further execution explicitly
+				setImageUploading(false);
+				return;
 			}
 
 			const user = currentUser?.FirebaseUser;
 			if (!user) {
-				throw new Error("User not authenticated");
+				throw new Error("User not authenticated for profile update.");
 			}
 
-			// Update profile picture in database
+			// Update profile picture in your backend database
 			const response = await axios.patch(
-				`${apiBaseUrl}/users/${user.email}`,
+				`${apiBaseUrl}/users/${user.email}/profile-picture`, // Ensure this endpoint exists in your backend
 				{ profilePicture: uploadedImageUrl },
 				{
 					withCredentials: true,
@@ -325,8 +350,10 @@ export default function Profile() {
 			);
 
 			if (response.data.success) {
-				// Update Firebase profile and refresh user data
-				await updateUserProfile(null, uploadedImageUrl);
+				// Update Firebase profile (via AuthContext method)
+				await updateUserProfilePicture(uploadedImageUrl);
+				// The updateUserProfilePicture in AuthContext should handle refreshing getDBUser if necessary,
+				// or we can call it explicitly here if needed: await getDBUser(user.email);
 
 				// Reset image selection
 				setSelectedImage(null);
@@ -338,7 +365,8 @@ export default function Profile() {
 				toast.success("Profile picture updated successfully!");
 			} else {
 				throw new Error(
-					response.data.message || "Failed to update profile picture"
+					response.data.message ||
+						"Failed to update profile picture in database"
 				);
 			}
 		} catch (error) {

@@ -260,7 +260,7 @@ export default function RequestedOrders() {
 	}
 
 	return (
-		<div className="py-6">
+		<div className="">
 			<DashboardTitle title="Requested Orders" />
 
 			{/* Stats Cards */}

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../../../contexts/AuthContext";
 import {
@@ -7,14 +7,19 @@ import {
 	FaMapMarkerAlt,
 	FaSave,
 	FaTimes,
+	FaUpload,
+	FaTrash,
+	FaSpinner,
 } from "react-icons/fa";
 import DashboardTitle from "../../DashboardTitle";
 import useAPI from "../../../../hooks/useAPI";
+import { uploadImageToCloudinary } from "../../../../services/imageUploadService";
+import { toast } from "react-hot-toast";
 
 export default function AddProduct() {
 	const { currentUser } = useAuth();
 	const navigate = useNavigate();
-	const { apiCall, loading } = useAPI();
+	const { apiCall, loading: formLoading } = useAPI();
 
 	const [formData, setFormData] = useState({
 		title: "",
@@ -26,8 +31,13 @@ export default function AddProduct() {
 		stock: "",
 		region: "",
 		district: "",
-		image: "",
+		images: [],
 	});
+
+	const [selectedFiles, setSelectedFiles] = useState([]);
+	const [previews, setPreviews] = useState([]);
+	const [imageUploadLoading, setImageUploadLoading] = useState(false);
+	const fileInputRef = useRef(null);
 
 	const [errors, setErrors] = useState({});
 
@@ -56,6 +66,41 @@ export default function AddProduct() {
 	];
 
 	const units = ["kg", "gram", "liter", "piece", "dozen", "bundle"];
+
+	const handleFileSelect = async (event) => {
+		const file = event.target.files[0];
+		if (!file) return;
+
+		// Validate file before adding to preview (using a simplified check here, full validation is in the service)
+		if (file.size > 3 * 1024 * 1024) {
+			// 3MB limit for product images
+			toast.error("Image size must be less than 3MB.");
+			return;
+		}
+
+		setSelectedFiles((prevFiles) => [...prevFiles, file]);
+
+		// Create a preview URL
+		const reader = new FileReader();
+		reader.onloadend = () => {
+			setPreviews((prevPreviews) => [...prevPreviews, reader.result]);
+		};
+		reader.readAsDataURL(file);
+
+		// Clear the file input for next selection
+		if (fileInputRef.current) {
+			fileInputRef.current.value = "";
+		}
+	};
+
+	const removeImage = (indexToRemove) => {
+		setSelectedFiles((prevFiles) =>
+			prevFiles.filter((_, index) => index !== indexToRemove)
+		);
+		setPreviews((prevPreviews) =>
+			prevPreviews.filter((_, index) => index !== indexToRemove)
+		);
+	};
 
 	const handleInputChange = (e) => {
 		const { name, value } = e.target;
@@ -112,8 +157,8 @@ export default function AddProduct() {
 			newErrors.district = "District is required";
 		}
 
-		if (!formData.image.trim()) {
-			newErrors.image = "Product image URL is required";
+		if (formData.images.length === 0) {
+			newErrors.images = "At least one product image is required";
 		}
 
 		setErrors(newErrors);
@@ -128,8 +173,24 @@ export default function AddProduct() {
 		}
 
 		try {
+			setImageUploadLoading(true);
+			const uploadedImageUrls = [];
+			for (const file of selectedFiles) {
+				const imageUrl = await uploadImageToCloudinary(file, { maxSizeMB: 3 });
+				if (imageUrl) {
+					uploadedImageUrls.push(imageUrl);
+				} else {
+					// If any image fails to upload, stop the process
+					toast.error(`Failed to upload ${file.name}. Product not added.`);
+					setImageUploadLoading(false);
+					return;
+				}
+			}
+			setImageUploadLoading(false);
+
 			const productData = {
 				...formData,
+				images: uploadedImageUrls, // Use the array of uploaded URLs
 				price: parseFloat(formData.price),
 				minimumOrderQuantity: parseInt(formData.minimumOrderQuantity),
 				stock: parseInt(formData.stock),
@@ -155,8 +216,8 @@ export default function AddProduct() {
 	};
 
 	return (
-		<div className="py-6">
-			<DashboardTitle title="Add New Product" />
+		<div className="">
+			<DashboardTitle title="Add A New Product" />
 
 			<div className="mt-6 bg-white shadow-sm rounded-lg">
 				<form onSubmit={handleSubmit} className="p-6 space-y-6">
@@ -207,6 +268,58 @@ export default function AddProduct() {
 							</div>
 
 							<div>
+								<label className="block text-sm font-medium text-gray-700 mb-2">
+									<FaImage className="inline mr-1" />
+									Product Images (Max 3MB each) *
+								</label>
+								<div className="mb-4 p-4 border-2 border-dashed border-gray-300 rounded-lg text-center">
+									<input
+										type="file"
+										accept="image/jpeg, image/png, image/gif, image/jpg"
+										onChange={handleFileSelect}
+										ref={fileInputRef}
+										className="hidden"
+										id="imageUploadInput"
+									/>
+									<label
+										htmlFor="imageUploadInput"
+										className="cursor-pointer inline-flex items-center px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 transition"
+									>
+										<FaUpload className="mr-2" />
+										{imageUploadLoading ? "Uploading..." : "Choose Image(s)"}
+									</label>
+									{imageUploadLoading && (
+										<FaSpinner className="animate-spin ml-2 text-primary-500" />
+									)}
+								</div>
+
+								{previews.length > 0 && (
+									<div className="mt-4 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+										{previews.map((previewUrl, index) => (
+											<div key={index} className="relative group aspect-square">
+												<img
+													src={previewUrl}
+													alt={`Preview ${index + 1}`}
+													className="w-full h-full object-cover rounded-md shadow-md"
+												/>
+												<button
+													type="button"
+													onClick={() => removeImage(index)}
+													className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200 hover:bg-red-600"
+													title="Remove image"
+												>
+													<FaTrash className="h-3 w-3" />
+												</button>
+											</div>
+										))}
+									</div>
+								)}
+								{errors.images && (
+									<p className="mt-1 text-sm text-red-600">{errors.images}</p>
+								)}
+							</div>
+
+							<div>
 								<label className="block text-sm font-medium text-gray-700 mb-1">
 									Category *
 								</label>
@@ -227,26 +340,6 @@ export default function AddProduct() {
 								</select>
 								{errors.category && (
 									<p className="mt-1 text-sm text-red-600">{errors.category}</p>
-								)}
-							</div>
-
-							<div>
-								<label className="block text-sm font-medium text-gray-700 mb-1">
-									<FaImage className="inline mr-1" />
-									Product Image URL *
-								</label>
-								<input
-									type="url"
-									name="image"
-									value={formData.image}
-									onChange={handleInputChange}
-									className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 ${
-										errors.image ? "border-red-500" : "border-gray-300"
-									}`}
-									placeholder="https://example.com/image.jpg"
-								/>
-								{errors.image && (
-									<p className="mt-1 text-sm text-red-600">{errors.image}</p>
 								)}
 							</div>
 						</div>
@@ -407,11 +500,11 @@ export default function AddProduct() {
 						</button>
 						<button
 							type="submit"
-							disabled={loading}
+							disabled={formLoading}
 							className="btn btn-primary flex items-center"
 						>
 							<FaSave className="mr-2 h-4 w-4" />
-							{loading ? "Adding Product..." : "Add Product"}
+							{formLoading ? "Adding Product..." : "Add Product"}
 						</button>
 					</div>
 				</form>

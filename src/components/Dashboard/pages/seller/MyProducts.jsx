@@ -205,7 +205,7 @@ export default function MyProducts() {
 	}
 
 	return (
-		<div className="py-6">
+		<div className="">
 			<div className="flex items-center justify-between mb-6">
 				<DashboardTitle title={`My Products (${displayProducts.length})`} />
 				<Link to="/dashboard/add-product" className="btn btn-primary">
