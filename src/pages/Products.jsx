@@ -9,17 +9,18 @@ import {
 	FaSortAmountUpAlt,
 } from "react-icons/fa";
 import Select from "react-select";
-import { ConfigProvider, InputNumber, Slider } from "antd";
+import { ConfigProvider, InputNumber, Slider, Pagination } from "antd";
 import useRegions from "../hooks/useRegions";
+import useProducts from "../hooks/useProducts";
+import useCropTypes from "../hooks/useCropTypes";
 
 export default function Products() {
 	const [sortBy, setSortBy] = useState("latest");
 	const [showFilters, setShowFilters] = useState(false);
 	const [districts, setDistricts] = useState([]);
 	const [searchTerm, setSearchTerm] = useState("");
-	const [appliedSearchTerm, setAppliedSearchTerm] = useState("");
-	const [curMax, setCurMax] = useState(1000);
-	const [products, setProducts] = useState([]);
+	const [currentPage, setCurrentPage] = useState(1);
+	const [pageSize, setPageSize] = useState(9);
 	const [filters, setFilters] = useState({
 		cropType: "",
 		region: "",
@@ -34,16 +35,24 @@ export default function Products() {
 		minPrice: 1,
 		maxPrice: 1000000,
 	});
+	const [appliedSearchTerm, setAppliedSearchTerm] = useState("");
 	const regions = useRegions();
 
-	const apiBaseUrl =
-		import.meta.env.VITE_SERVER_API_URL || "http://localhost:5000";
+	// Use the useProducts hook with applied filters and pagination
+	const { products, total, maxPrice, isLoading, error } = useProducts({
+		page: currentPage,
+		limit: pageSize,
+		cropType: appliedFilters.cropType,
+		region: appliedFilters.region,
+		district: appliedFilters.district,
+		minPrice: appliedFilters.minPrice,
+		maxPrice: appliedFilters.maxPrice,
+		search: appliedSearchTerm,
+		sortBy: sortBy,
+	});
 
 	// Fetch all available crop types
-	const { data: cropTypes } = useQuery("cropTypes", async () => {
-		const { data } = await axios.get(`${apiBaseUrl}/products/crop-types`);
-		return data.data;
-	});
+	const { cropTypes } = useCropTypes();
 
 	// Filter options for select components
 	const regionOptions =
@@ -77,60 +86,21 @@ export default function Products() {
 	}, [filters.region, regions]);
 
 	useEffect(() => {
-		setFilters({ ...filters, maxPrice: curMax });
-	}, []);
+		setFilters({ ...filters, maxPrice: maxPrice });
+	}, [maxPrice]);
 
-	// Fetch products with applied filters only
-	const {
-		data: productsData,
-		isLoading,
-		refetch,
-	} = useQuery(
-		["products", appliedFilters, sortBy, appliedSearchTerm],
-		async () => {
-			const params = { ...appliedFilters };
-
-			if (appliedSearchTerm) {
-				params.search = appliedSearchTerm;
-			}
-
-			if (sortBy) {
-				params.sortBy = sortBy;
-			}
-
-			// if(appliedFilters?.district?.split(" ").length > 1) {
-			// 	params.district = appliedFilters.district.split(" ").join("%20");
-			// }
-
-			const { data } = await axios.get(`${apiBaseUrl}/products`, { params });
-			return data;
-		},
-		{
-			// Don't refetch on window focus
-			refetchOnWindowFocus: false,
-			// Don't enable automatic refetching
-			enabled: false,
-		}
-	);
-
-	// Initial load of products
+	// Ensure initial data loads by applying filters on mount
 	useEffect(() => {
-		// Load products with default filters on component mount
-		setTimeout(() => {
-			refetch();
-		}, 100);
-	}, [refetch]);
+		// Apply initial empty filters to load all products
+		handleFilterApply();
+	}, []); // Run once on mount
 
 	// Apply filters
 	const handleFilterApply = () => {
 		// Apply current filter selections
 		setAppliedFilters({ ...filters });
 		setAppliedSearchTerm(searchTerm);
-
-		// Trigger refetch with new applied filters
-		setTimeout(() => {
-			refetch();
-		}, 0);
+		setCurrentPage(1); // Reset to first page when applying filters
 
 		// Hide filters on mobile after applying
 		if (window.innerWidth < 768) {
@@ -145,40 +115,21 @@ export default function Products() {
 			region: "",
 			district: "",
 			minPrice: 1,
-			maxPrice: curMax,
+			maxPrice: maxPrice,
 		};
 
 		setFilters(resetFilters);
 		setAppliedFilters(resetFilters);
 		setSearchTerm("");
 		setAppliedSearchTerm("");
-
-		// After resetting, apply the filters
-		setTimeout(() => {
-			refetch();
-		}, 0);
+		setCurrentPage(1); // Reset to first page when resetting filters
 	};
 
 	// Handle sort change
 	const handleSortChange = (value) => {
 		setSortBy(value);
-		// Immediately apply sort change if filters have been applied before
-		if (
-			appliedFilters.cropType !== "" ||
-			appliedFilters.region !== "" ||
-			appliedFilters.district !== "" ||
-			appliedSearchTerm !== ""
-		) {
-			setTimeout(() => {
-				refetch();
-			}, 0);
-		}
+		setCurrentPage(1); // Reset to first page when changing sort
 	};
-
-	useEffect(() => {
-		setProducts(productsData?.products);
-		productsData?.products && setCurMax(productsData?.maxPrice);
-	}, [productsData]);
 
 	return (
 		<div className="bg-gray-50 min-h-screen">
@@ -239,7 +190,7 @@ export default function Products() {
 									options={cropTypeOptions}
 									isClearable
 									placeholder="All Crop Types"
-									className="text-sm"
+									className="text-sm capitalize"
 									value={
 										filters.cropType
 											? { value: filters.cropType, label: filters.cropType }
@@ -347,7 +298,7 @@ export default function Products() {
 										<InputNumber
 											size="small"
 											min={filters.minPrice + 1}
-											max={curMax}
+											max={maxPrice}
 											value={filters.maxPrice}
 											onChange={(value) =>
 												setFilters({ ...filters, maxPrice: value })
@@ -360,7 +311,7 @@ export default function Products() {
 											value={[filters.minPrice, filters.maxPrice]}
 											tooltip={{ open: false }}
 											min={1}
-											max={curMax}
+											max={maxPrice}
 											onChange={(value) => {
 												setFilters({
 													...filters,
@@ -491,55 +442,45 @@ export default function Products() {
 							</div>
 						)}
 
-						{/* Pagination - would be implemented with real backend pagination */}
-						{products?.length > 0 && (
+						{/* Pagination */}
+						{total > 0 && (
 							<div className="mt-8 flex justify-center">
-								<nav
-									className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px"
-									aria-label="Pagination"
+								<ConfigProvider
+									theme={{
+										components: {
+											Pagination: {
+												colorPrimary: "#16a34a",
+												colorPrimaryHover: "#16a34a",
+												colorPrimaryBorder: "#16a34a",
+												colorPrimaryBorderHover: "#16a34a",
+											},
+										},
+									}}
 								>
-									<button className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
-										<span className="sr-only">Previous</span>
-										<svg
-											className="h-5 w-5"
-											xmlns="http://www.w3.org/2000/svg"
-											viewBox="0 0 20 20"
-											fill="currentColor"
-											aria-hidden="true"
-										>
-											<path
-												fillRule="evenodd"
-												d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z"
-												clipRule="evenodd"
-											/>
-										</svg>
-									</button>
-									<button className="relative inline-flex items-center px-4 py-2 border border-primary-500 bg-primary-50 text-sm font-medium text-primary-600">
-										1
-									</button>
-									<button className="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50">
-										2
-									</button>
-									<button className="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50">
-										3
-									</button>
-									<button className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
-										<span className="sr-only">Next</span>
-										<svg
-											className="h-5 w-5"
-											xmlns="http://www.w3.org/2000/svg"
-											viewBox="0 0 20 20"
-											fill="currentColor"
-											aria-hidden="true"
-										>
-											<path
-												fillRule="evenodd"
-												d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z"
-												clipRule="evenodd"
-											/>
-										</svg>
-									</button>
-								</nav>
+									<Pagination
+										current={currentPage}
+										total={total}
+										pageSize={pageSize}
+										showSizeChanger
+										pageSizeOptions={[9, 18, 36, 72]}
+										showTotal={(total, range) =>
+											total > 0
+												? `${range[0]}-${range[1]} of ${total} items`
+												: "No items"
+										}
+										onChange={(page, size) => {
+											if (size !== pageSize) {
+												// Page size changed, reset to page 1
+												setCurrentPage(1);
+												setPageSize(size);
+											} else {
+												// Page changed, keep same page size
+												setCurrentPage(page);
+											}
+											window.scrollTo({ top: 0, behavior: "smooth" });
+										}}
+									/>
+								</ConfigProvider>
 							</div>
 						)}
 					</div>

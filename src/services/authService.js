@@ -1,5 +1,5 @@
 import axios from "axios";
-import { setCookie, removeCookie, getCookie } from "../utils/cookieUtils";
+import { removeCookie } from "../utils/cookieUtils";
 
 const JWT_TOKEN_KEY = "jwt_token";
 const API_BASE_URL =
@@ -10,16 +10,50 @@ const API_BASE_URL =
  */
 const authService = {
 	/**
-	 * Get JWT token from server
+	 * Check if current token is valid by decoding and checking expiration
 	 */
-	getToken: async (user) => {
+	isTokenValid: (token) => {
+		if (!token) return false;
+
 		try {
+			// Decode JWT payload (simple base64 decode)
+			const payload = JSON.parse(atob(token.split(".")[1]));
+			const currentTime = Date.now() / 1000;
+
+			// Check if token is expired (with 5 minute buffer)
+			return payload.exp && payload.exp > currentTime + 300;
+		} catch (error) {
+			console.error("Error validating token:", error);
+			return false;
+		}
+	},
+
+	/**
+	 * Get current stored token
+	 */
+	getCurrentToken: () => {
+		return localStorage.getItem(JWT_TOKEN_KEY);
+	},
+
+	/**
+	 * Get JWT token from server (only if needed)
+	 */
+	getToken: async (user, password = null) => {
+		try {
+			// Check if we already have a valid token
+			const existingToken = authService.getCurrentToken();
+			if (existingToken && authService.isTokenValid(existingToken)) {
+				console.log("Using existing valid token");
+				return existingToken;
+			}
+
+			console.log("Fetching new token from server");
 			const response = await axios.post(
-				`${API_BASE_URL}/jwt/token`,
+				`${API_BASE_URL}/users/login`,
 				{
 					uid: user.uid,
 					email: user.email,
-					role: user.role || "consumer",
+					...(password && { password }),
 				},
 				{ withCredentials: true }
 			);
@@ -35,12 +69,12 @@ const authService = {
 	},
 
 	/**
-	 * Store token in both cookie and localStorage
+	 * Store token in localStorage and set axios headers
 	 */
 	storeToken: (token) => {
 		if (!token) return false;
 
-		// Always set in localStorage as backup
+		// Store in localStorage
 		localStorage.setItem(JWT_TOKEN_KEY, token);
 
 		// Set token in axios headers
@@ -56,7 +90,7 @@ const authService = {
 		try {
 			// Clear from server
 			await axios.post(
-				`${API_BASE_URL}/jwt/clear`,
+				`${API_BASE_URL}/users/logout`,
 				{},
 				{ withCredentials: true }
 			);
@@ -67,7 +101,7 @@ const authService = {
 		// Clear localStorage
 		localStorage.removeItem(JWT_TOKEN_KEY);
 
-		// Clear cookie
+		// Clear cookie (if any exists)
 		removeCookie("jwt");
 
 		// Clear from axios headers
@@ -77,21 +111,26 @@ const authService = {
 	},
 
 	/**
-	 * Check if token exists
+	 * Check if token exists and is valid
 	 */
-	hasToken: () => {
-		return getCookie("jwt") || localStorage.getItem(JWT_TOKEN_KEY);
+	hasValidToken: () => {
+		const token = authService.getCurrentToken();
+		return token && authService.isTokenValid(token);
 	},
 
 	/**
-	 * Initialize token from localStorage if cookie not set
+	 * Initialize token from localStorage on app start
 	 */
 	initializeToken: () => {
-		// If we don't have a cookie but have localStorage token
-		if (!getCookie("jwt") && localStorage.getItem(JWT_TOKEN_KEY)) {
-			const token = localStorage.getItem(JWT_TOKEN_KEY);
+		const token = authService.getCurrentToken();
+		if (token && authService.isTokenValid(token)) {
 			axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
+			return true;
+		} else if (token) {
+			// Remove invalid token
+			authService.clearToken();
 		}
+		return false;
 	},
 };
 

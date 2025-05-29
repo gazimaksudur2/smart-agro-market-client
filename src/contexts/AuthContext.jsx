@@ -41,6 +41,9 @@ export default function AuthProvider({ children }) {
 		setUsingCookies(cookiesEnabled);
 		console.log("Cookies enabled:", cookiesEnabled);
 
+		// Initialize token from localStorage if available
+		authService.initializeToken();
+
 		// If in production and cookies aren't working, show a warning
 		if (!cookiesEnabled && process.env.NODE_ENV === "production") {
 			toast.error("Please enable cookies for full functionality");
@@ -114,7 +117,7 @@ export default function AuthProvider({ children }) {
 			const user = userCredential.user;
 
 			// Then get token from backend
-			const token = await authService.getToken(user);
+			const token = await authService.getToken(user, password);
 			await handleToken(token);
 
 			return user;
@@ -142,7 +145,7 @@ export default function AuthProvider({ children }) {
 				await createUserInDatabase(user, null, "google");
 			}
 
-			// Get JWT token
+			// Get JWT token (will use existing valid token if available)
 			const token = await authService.getToken(user);
 			await handleToken(token);
 
@@ -170,7 +173,7 @@ export default function AuthProvider({ children }) {
 				await createUserInDatabase(user, null, "facebook");
 			}
 
-			// Get JWT token
+			// Get JWT token (will use existing valid token if available)
 			const token = await authService.getToken(user);
 			await handleToken(token);
 
@@ -262,6 +265,11 @@ export default function AuthProvider({ children }) {
 	// Check if user is Consumer
 	const isConsumer = () => currentUser?.DBUser?.role === "consumer";
 
+	// Check if user is authenticated with valid token
+	const isAuthenticated = () => {
+		return currentUser?.FirebaseUser && authService.hasValidToken();
+	};
+
 	// Change password
 	const changePassword = async (currentPassword, newPassword) => {
 		try {
@@ -351,9 +359,16 @@ export default function AuthProvider({ children }) {
 			if (user) {
 				setCurrentUser({ FirebaseUser: user, DBUser: null });
 				try {
-					// Get token from backend
-					const token = await authService.getToken(user);
-					await handleToken(token);
+					// Check if we already have a valid token before making API call
+					let token = authService.getCurrentToken();
+					if (!token || !authService.isTokenValid(token)) {
+						console.log("Getting new token for user:", user.email);
+						token = await authService.getToken(user);
+						await handleToken(token);
+					} else {
+						console.log("Using existing valid token for user:", user.email);
+						setAccessToken(token);
+					}
 
 					// Get user role
 					await getDBUser(user.email);
@@ -394,6 +409,7 @@ export default function AuthProvider({ children }) {
 		isAgent,
 		isSeller,
 		isConsumer,
+		isAuthenticated,
 		getDBUser,
 	};
 

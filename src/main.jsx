@@ -14,7 +14,7 @@ import store, { persistor } from "./redux/store";
 import authService from "./services/authService";
 import "./utils/axiosConfig";
 
-// Initialize token from localStorage if cookie not available
+// Initialize authentication on app start
 authService.initializeToken();
 
 const queryClient = new QueryClient({

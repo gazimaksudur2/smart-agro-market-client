@@ -4,90 +4,79 @@ import { useAuth } from "../../../../contexts/AuthContext";
 import {
 	FaBoxOpen,
 	FaImage,
-	FaMapMarkerAlt,
 	FaSave,
 	FaTimes,
 	FaUpload,
 	FaTrash,
 	FaSpinner,
+	FaCalendarAlt,
+	FaTags,
 } from "react-icons/fa";
 import DashboardTitle from "../../DashboardTitle";
 import useAPI from "../../../../hooks/useAPI";
 import { uploadImageToCloudinary } from "../../../../services/imageUploadService";
 import { toast } from "react-hot-toast";
+import useCropTypes from "../../../../hooks/useCropTypes";
 
 export default function AddProduct() {
 	const { currentUser } = useAuth();
 	const navigate = useNavigate();
-	const { apiCall, loading: formLoading } = useAPI();
+	const { apiCall } = useAPI();
 
 	const [formData, setFormData] = useState({
 		title: "",
 		description: "",
-		category: "",
-		price: "",
+		cropType: "",
+		pricePerUnit: "",
 		unit: "kg",
 		minimumOrderQuantity: "",
 		stock: "",
-		region: "",
-		district: "",
 		images: [],
+		harvestedOn: "",
+		tags: [],
 	});
 
+	const [customCropType, setCustomCropType] = useState("");
 	const [selectedFiles, setSelectedFiles] = useState([]);
 	const [previews, setPreviews] = useState([]);
-	const [imageUploadLoading, setImageUploadLoading] = useState(false);
+	const [isSubmitting, setIsSubmitting] = useState(false);
+	const [uploadProgress, setUploadProgress] = useState(0); // Track upload progress
+	const [tagInput, setTagInput] = useState("");
 	const fileInputRef = useRef(null);
 
 	const [errors, setErrors] = useState({});
+	const { cropTypes } = useCropTypes();
 
-	const categories = [
-		"Grains",
-		"Vegetables",
-		"Fruits",
-		"Dairy",
-		"Meat & Poultry",
-		"Fish & Seafood",
-		"Spices & Herbs",
-		"Pulses & Legumes",
-		"Oil & Ghee",
-		"Others",
+	const categories = cropTypes ? [...cropTypes, "Others"] : ["Others"];
+
+	const units = [
+		"gram",
+		"kg",
+		"quintal",
+		"liter",
+		"piece",
+		"dozen",
+		"bundle",
+		"feet",
 	];
-
-	const regions = [
-		"Dhaka",
-		"Chittagong",
-		"Rajshahi",
-		"Khulna",
-		"Barisal",
-		"Sylhet",
-		"Rangpur",
-		"Mymensingh",
-	];
-
-	const units = ["kg", "gram", "liter", "piece", "dozen", "bundle"];
 
 	const handleFileSelect = async (event) => {
 		const file = event.target.files[0];
 		if (!file) return;
 
-		// Validate file before adding to preview (using a simplified check here, full validation is in the service)
 		if (file.size > 3 * 1024 * 1024) {
-			// 3MB limit for product images
 			toast.error("Image size must be less than 3MB.");
 			return;
 		}
 
 		setSelectedFiles((prevFiles) => [...prevFiles, file]);
 
-		// Create a preview URL
 		const reader = new FileReader();
 		reader.onloadend = () => {
 			setPreviews((prevPreviews) => [...prevPreviews, reader.result]);
 		};
 		reader.readAsDataURL(file);
 
-		// Clear the file input for next selection
 		if (fileInputRef.current) {
 			fileInputRef.current.value = "";
 		}
@@ -116,6 +105,32 @@ export default function AddProduct() {
 				[name]: "",
 			}));
 		}
+
+		// Reset custom cropType when cropType changes to something other than "Others"
+		if (name === "cropType" && value !== "Others") {
+			setCustomCropType("");
+		}
+	};
+
+	const handleTagInput = (e) => {
+		if (e.key === "Enter" || e.key === ",") {
+			e.preventDefault();
+			const newTag = tagInput.trim().toLowerCase();
+			if (newTag && !formData.tags.includes(newTag)) {
+				setFormData((prev) => ({
+					...prev,
+					tags: [...prev.tags, newTag],
+				}));
+				setTagInput("");
+			}
+		}
+	};
+
+	const removeTag = (tagToRemove) => {
+		setFormData((prev) => ({
+			...prev,
+			tags: prev.tags.filter((tag) => tag !== tagToRemove),
+		}));
 	};
 
 	const validateForm = () => {
@@ -129,12 +144,16 @@ export default function AddProduct() {
 			newErrors.description = "Product description is required";
 		}
 
-		if (!formData.category) {
-			newErrors.category = "Category is required";
+		if (!formData.cropType) {
+			newErrors.cropType = "Crop type is required";
 		}
 
-		if (!formData.price || parseFloat(formData.price) <= 0) {
-			newErrors.price = "Valid price is required";
+		if (formData.cropType === "Others" && !customCropType.trim()) {
+			newErrors.customCropType = "Please specify your crop type";
+		}
+
+		if (!formData.pricePerUnit || parseFloat(formData.pricePerUnit) <= 0) {
+			newErrors.pricePerUnit = "Valid price per unit is required";
 		}
 
 		if (
@@ -149,16 +168,12 @@ export default function AddProduct() {
 			newErrors.stock = "Valid stock quantity is required";
 		}
 
-		if (!formData.region) {
-			newErrors.region = "Region is required";
-		}
-
-		if (!formData.district.trim()) {
-			newErrors.district = "District is required";
-		}
-
-		if (formData.images.length === 0) {
+		if (previews.length === 0) {
 			newErrors.images = "At least one product image is required";
+		}
+
+		if (!formData.harvestedOn) {
+			newErrors.harvestedOn = "Harvest date is required";
 		}
 
 		setErrors(newErrors);
@@ -167,47 +182,67 @@ export default function AddProduct() {
 
 	const handleSubmit = async (e) => {
 		e.preventDefault();
+		console.log(formData);
 
 		if (!validateForm()) {
 			return;
 		}
 
 		try {
-			setImageUploadLoading(true);
+			setIsSubmitting(true);
+			setUploadProgress(0);
+
+			// Upload images
 			const uploadedImageUrls = [];
-			for (const file of selectedFiles) {
+			const totalFiles = selectedFiles.length;
+
+			for (let i = 0; i < selectedFiles.length; i++) {
+				const file = selectedFiles[i];
 				const imageUrl = await uploadImageToCloudinary(file, { maxSizeMB: 3 });
+
 				if (imageUrl) {
 					uploadedImageUrls.push(imageUrl);
+					setUploadProgress(((i + 1) / totalFiles) * 100);
 				} else {
-					// If any image fails to upload, stop the process
 					toast.error(`Failed to upload ${file.name}. Product not added.`);
-					setImageUploadLoading(false);
+					setIsSubmitting(false);
 					return;
 				}
 			}
-			setImageUploadLoading(false);
 
 			const productData = {
 				...formData,
-				images: uploadedImageUrls, // Use the array of uploaded URLs
-				price: parseFloat(formData.price),
+				cropType:
+					formData.cropType === "Others"
+						? customCropType.trim().toLowerCase()
+						: formData.cropType.toLowerCase(),
+				images: uploadedImageUrls,
+				pricePerUnit: parseFloat(formData.pricePerUnit),
 				minimumOrderQuantity: parseInt(formData.minimumOrderQuantity),
-				stock: parseInt(formData.stock),
-				sellerId: currentUser?.FirebaseUser?.uid,
-				status: "pending", // Products need agent approval
+				availableStock: parseInt(formData.stock),
+				harvestedOn: new Date(formData.harvestedOn).toISOString(),
+				tags: formData.tags,
+				sellerInfo: {
+					_id: currentUser.DBUser?._id,
+					name: currentUser?.DBUser?.name,
+					email: currentUser?.DBUser?.email,
+					phone: currentUser?.DBUser?.phoneNumber,
+					operationalArea: currentUser?.DBUser?.operationalArea,
+				},
+				status: "pending",
 			};
 
-			await apiCall("/products", "POST", productData);
-
-			// Show success message and redirect
-			alert(
+			await apiCall("/products/add-product", "POST", productData);
+			toast.success(
 				"Product added successfully! It will be reviewed by an agent before going live."
 			);
 			navigate("/dashboard/my-products");
 		} catch (error) {
 			console.error("Error adding product:", error);
-			alert("Failed to add product. Please try again.");
+			toast.error("Failed to add product. Please try again.");
+		} finally {
+			setIsSubmitting(false);
+			setUploadProgress(0);
 		}
 	};
 
@@ -286,11 +321,8 @@ export default function AddProduct() {
 										className="cursor-pointer inline-flex items-center px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 transition"
 									>
 										<FaUpload className="mr-2" />
-										{imageUploadLoading ? "Uploading..." : "Choose Image(s)"}
+										Choose Image(s)
 									</label>
-									{imageUploadLoading && (
-										<FaSpinner className="animate-spin ml-2 text-primary-500" />
-									)}
 								</div>
 
 								{previews.length > 0 && (
@@ -319,28 +351,127 @@ export default function AddProduct() {
 								)}
 							</div>
 
-							<div>
-								<label className="block text-sm font-medium text-gray-700 mb-1">
-									Category *
-								</label>
-								<select
-									name="category"
-									value={formData.category}
-									onChange={handleInputChange}
-									className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 ${
-										errors.category ? "border-red-500" : "border-gray-300"
-									}`}
-								>
-									<option value="">Select Category</option>
-									{categories.map((category) => (
-										<option key={category} value={category}>
-											{category}
-										</option>
-									))}
-								</select>
-								{errors.category && (
-									<p className="mt-1 text-sm text-red-600">{errors.category}</p>
+							<div className=" flex flex-col gap-4">
+								<div>
+									<label className="block text-sm font-medium text-gray-700 mb-1">
+										Crop-Type *
+									</label>
+									<select
+										name="cropType"
+										value={formData.cropType}
+										onChange={handleInputChange}
+										className={`w-full px-3 py-2 border rounded-md capitalize focus:outline-none focus:ring-2 focus:ring-primary-500 ${
+											errors.cropType ? "border-red-500" : "border-gray-300"
+										}`}
+									>
+										<option value="">Select Crop-Type</option>
+										{categories.map((cropType) => (
+											<option
+												className="capitalize"
+												key={cropType}
+												value={cropType}
+											>
+												{cropType}
+											</option>
+										))}
+									</select>
+									{errors.cropType && (
+										<p className="mt-1 text-sm text-red-600">
+											{errors.cropType}
+										</p>
+									)}
+								</div>
+
+								{formData.cropType === "Others" && (
+									<div>
+										<label className="block text-sm font-medium text-gray-700 mb-1">
+											Mention your Crop-Type *
+										</label>
+										<input
+											type="text"
+											value={customCropType}
+											onChange={(e) => setCustomCropType(e.target.value)}
+											className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 ${
+												errors.customCropType
+													? "border-red-500"
+													: "border-gray-300"
+											}`}
+											placeholder="Enter your Crop-Type"
+										/>
+										{errors.customCropType && (
+											<p className="mt-1 text-sm text-red-600">
+												{errors.customCropType}
+											</p>
+										)}
+									</div>
 								)}
+							</div>
+
+							{/* Harvest Date */}
+							<div>
+								<label className="block text-sm font-medium text-gray-700 mb-2">
+									<FaCalendarAlt className="inline mr-2" />
+									Harvested On *
+								</label>
+								<input
+									type="date"
+									name="harvestedOn"
+									value={formData.harvestedOn}
+									onChange={handleInputChange}
+									max={new Date().toISOString().split("T")[0]}
+									className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 ${
+										errors.harvestedOn ? "border-red-500" : "border-gray-300"
+									}`}
+								/>
+								{errors.harvestedOn && (
+									<p className="mt-1 text-sm text-red-600">
+										{errors.harvestedOn}
+									</p>
+								)}
+							</div>
+
+							{/* Tags */}
+							<div className="md:col-span-2">
+								<label className="block text-sm font-medium text-gray-700 mb-2">
+									<FaTags className="inline mr-2" />
+									Your Product Tags
+								</label>
+								<div
+									className={
+										formData?.tags?.length > 0
+											? `flex flex-wrap gap-2 p-2 border rounded-md bg-gray-50 mb-2`
+											: "hidden"
+									}
+								>
+									{formData?.tags?.map((tag, index) => (
+										<span
+											key={index}
+											className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-primary-100 text-primary-700"
+										>
+											{tag}
+											<button
+												type="button"
+												onClick={() => removeTag(tag)}
+												className="ml-2 inline-flex items-center justify-center w-4 h-4 rounded-full bg-primary-200 hover:bg-primary-300 transition-colors"
+											>
+												×
+											</button>
+										</span>
+									))}
+								</div>
+								<div className="flex items-center">
+									<input
+										type="text"
+										value={tagInput}
+										onChange={(e) => setTagInput(e.target.value)}
+										onKeyDown={handleTagInput}
+										className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 border-gray-300"
+										placeholder="Type tag and press Enter or comma (,)"
+									/>
+								</div>
+								<p className="mt-1 text-xs text-gray-500">
+									Example tags: rice, boro, aromatic, kalijira
+								</p>
 							</div>
 						</div>
 					</div>
@@ -357,18 +488,20 @@ export default function AddProduct() {
 								</label>
 								<input
 									type="number"
-									name="price"
-									value={formData.price}
+									name="pricePerUnit"
+									value={formData.pricePerUnit}
 									onChange={handleInputChange}
 									min="0"
 									step="0.01"
-									className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 ${
-										errors.price ? "border-red-500" : "border-gray-300"
+									className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 no-spinner ${
+										errors.pricePerUnit ? "border-red-500" : "border-gray-300"
 									}`}
 									placeholder="0.00"
 								/>
-								{errors.price && (
-									<p className="mt-1 text-sm text-red-600">{errors.price}</p>
+								{errors.pricePerUnit && (
+									<p className="mt-1 text-sm text-red-600">
+										{errors.pricePerUnit}
+									</p>
 								)}
 							</div>
 
@@ -392,7 +525,7 @@ export default function AddProduct() {
 
 							<div>
 								<label className="block text-sm font-medium text-gray-700 mb-1">
-									Minimum Order Quantity *
+									Minimum Order Quantity in Selected Unit*
 								</label>
 								<input
 									type="number"
@@ -400,7 +533,7 @@ export default function AddProduct() {
 									value={formData.minimumOrderQuantity}
 									onChange={handleInputChange}
 									min="1"
-									className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 ${
+									className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 no-spinner ${
 										errors.minimumOrderQuantity
 											? "border-red-500"
 											: "border-gray-300"
@@ -416,7 +549,7 @@ export default function AddProduct() {
 
 							<div>
 								<label className="block text-sm font-medium text-gray-700 mb-1">
-									Available Stock *
+									Available Stock in Selected Unit*
 								</label>
 								<input
 									type="number"
@@ -424,7 +557,7 @@ export default function AddProduct() {
 									value={formData.stock}
 									onChange={handleInputChange}
 									min="1"
-									className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 ${
+									className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 no-spinner ${
 										errors.stock ? "border-red-500" : "border-gray-300"
 									}`}
 									placeholder="100"
@@ -436,77 +569,67 @@ export default function AddProduct() {
 						</div>
 					</div>
 
-					{/* Location */}
-					<div>
-						<h3 className="text-lg font-medium text-gray-900 mb-4">
-							<FaMapMarkerAlt className="inline mr-2" />
-							Location
-						</h3>
-						<div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-							<div>
-								<label className="block text-sm font-medium text-gray-700 mb-1">
-									Region *
-								</label>
-								<select
-									name="region"
-									value={formData.region}
-									onChange={handleInputChange}
-									className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 ${
-										errors.region ? "border-red-500" : "border-gray-300"
-									}`}
-								>
-									<option value="">Select Region</option>
-									{regions.map((region) => (
-										<option key={region} value={region}>
-											{region}
-										</option>
-									))}
-								</select>
-								{errors.region && (
-									<p className="mt-1 text-sm text-red-600">{errors.region}</p>
-								)}
-							</div>
-
-							<div>
-								<label className="block text-sm font-medium text-gray-700 mb-1">
-									District *
-								</label>
-								<input
-									type="text"
-									name="district"
-									value={formData.district}
-									onChange={handleInputChange}
-									className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 ${
-										errors.district ? "border-red-500" : "border-gray-300"
-									}`}
-									placeholder="Enter district name"
-								/>
-								{errors.district && (
-									<p className="mt-1 text-sm text-red-600">{errors.district}</p>
-								)}
-							</div>
-						</div>
-					</div>
-
 					{/* Form Actions */}
 					<div className="flex items-center justify-end space-x-4 pt-6 border-t border-gray-200">
 						<button
 							type="button"
 							onClick={handleCancel}
-							className="btn btn-outline-secondary flex items-center"
+							disabled={isSubmitting}
+							className="btn btn-outline flex items-center disabled:opacity-50"
 						>
 							<FaTimes className="mr-2 h-4 w-4" />
 							Cancel
 						</button>
 						<button
 							type="submit"
-							disabled={formLoading}
-							className="btn btn-primary flex items-center"
+							disabled={isSubmitting}
+							className="btn btn-primary flex items-center min-w-[150px] justify-center disabled:opacity-50"
 						>
-							<FaSave className="mr-2 h-4 w-4" />
-							{formLoading ? "Adding Product..." : "Add Product"}
+							{isSubmitting ? (
+								<>
+									<FaSpinner className="mr-2 h-4 w-4 animate-spin" />
+									{uploadProgress < 100
+										? "Uploading Images..."
+										: "Adding Product..."}
+								</>
+							) : (
+								<>
+									<FaSave className="mr-2 h-4 w-4" />
+									Add Product
+								</>
+							)}
 						</button>
 					</div>
+
+					{/* Submission Overlay */}
+					{isSubmitting && (
+						<div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+							<div className="bg-white p-6 rounded-lg shadow-xl flex flex-col items-center">
+								<FaSpinner className="h-8 w-8 animate-spin text-primary-600 mb-4" />
+								<p className="text-lg font-medium text-gray-900">
+									{uploadProgress < 100
+										? "Uploading Images..."
+										: "Adding Your Product..."}
+								</p>
+								{uploadProgress < 100 && (
+									<div className="w-full mt-3">
+										<div className="h-2 bg-gray-200 rounded-full overflow-hidden">
+											<div
+												className="h-full bg-primary-600 transition-all duration-300"
+												style={{ width: `${uploadProgress}%` }}
+											></div>
+										</div>
+										<p className="text-sm text-gray-500 text-center mt-2">
+											{Math.round(uploadProgress)}% Complete
+										</p>
+									</div>
+								)}
+								<p className="text-sm text-gray-500 mt-2">
+									Please wait, this may take a moment.
+								</p>
+							</div>
+						</div>
+					)}
 				</form>
 
 				{/* Information Notice */}

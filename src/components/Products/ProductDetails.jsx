@@ -226,13 +226,14 @@ export default function ProductDetails() {
 						<div className="flex items-center text-gray-600">
 							<FaMapMarkerAlt className="mr-2" />
 							<span>
-								{product?.sellerInfo?.district}, {product?.sellerInfo?.region}
+								{product?.sellerInfo?.operationalArea?.district},{" "}
+								{product?.sellerInfo?.operationalArea?.region}
 							</span>
 						</div>
 						<div className="flex items-center text-gray-600">
 							<FaCalendarAlt className="mr-2" />
 							<span>
-								Harvested:{" "}
+								Harvested on:{" "}
 								{product?.harvestDate &&
 									format(new Date(product?.harvestDate), "dd MMM yyyy")}
 							</span>
