@@ -1,7 +1,13 @@
 import { useState, useRef, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
-import { FaFacebook, FaUpload, FaCamera } from "react-icons/fa";
+import {
+	FaFacebook,
+	FaUpload,
+	FaCamera,
+	FaEye,
+	FaEyeSlash,
+} from "react-icons/fa";
 import { FcGoogle } from "react-icons/fc";
 import { useAuth } from "../../contexts/AuthContext";
 import toast from "react-hot-toast";
@@ -15,6 +21,8 @@ export default function Register() {
 		watch,
 	} = useForm();
 	const [loading, setLoading] = useState(false);
+	const [showPassword, setShowPassword] = useState(false);
+	const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 	const { registerWithEmail, loginWithGoogle, loginWithFacebook } = useAuth();
 	const [selectedImage, setSelectedImage] = useState(null);
 	const [previewUrl, setPreviewUrl] = useState("");
@@ -461,12 +469,12 @@ export default function Register() {
 						<div>
 							<fieldset className="fieldset">
 								<legend className="fieldset-legend">Password</legend>
-								<div className="mt-1">
+								<div className="mt-1 relative">
 									<input
 										id="password"
-										type="password"
+										type={showPassword ? "text" : "password"}
 										autoComplete="new-password"
-										className="input validator w-full"
+										className="input validator w-full pr-10"
 										{...register("password", {
 											required: "Password is required",
 											minLength: {
@@ -476,6 +484,17 @@ export default function Register() {
 										})}
 										onKeyDown={handleKeyDown}
 									/>
+									<button
+										type="button"
+										className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-500 hover:text-gray-700 cursor-pointer"
+										onClick={() => setShowPassword(!showPassword)}
+									>
+										{showPassword ? (
+											<FaEyeSlash className="h-5 w-5" />
+										) : (
+											<FaEye className="h-5 w-5" />
+										)}
+									</button>
 									{errors.password && (
 										<p className="form-error text-xs text-red-400">
 											{errors.password.message}
@@ -489,11 +508,11 @@ export default function Register() {
 						<div>
 							<fieldset className="fieldset">
 								<legend className="fieldset-legend">Confirm Password</legend>
-								<div className="mt-1">
+								<div className="mt-1 relative">
 									<input
 										id="confirmPassword"
-										type="password"
-										className="input validator w-full"
+										type={showConfirmPassword ? "text" : "password"}
+										className="input validator w-full pr-10"
 										{...register("confirmPassword", {
 											required: "Please confirm your password",
 											validate: (value) =>
@@ -501,6 +520,17 @@ export default function Register() {
 										})}
 										onKeyDown={handleKeyDown}
 									/>
+									<button
+										type="button"
+										className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-500 hover:text-gray-700 cursor-pointer"
+										onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+									>
+										{showConfirmPassword ? (
+											<FaEyeSlash className="h-5 w-5" />
+										) : (
+											<FaEye className="h-5 w-5" />
+										)}
+									</button>
 									{errors.confirmPassword && (
 										<p className="form-error text-xs text-red-400">
 											{errors.confirmPassword.message}

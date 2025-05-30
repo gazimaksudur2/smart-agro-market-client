@@ -36,7 +36,7 @@ export default function Profile() {
 		currentUser,
 		changePassword,
 		logout,
-		updateUserProfilePicture,
+		updateUserProfile,
 		getDBUser,
 		currentRole,
 	} = useAuth();
@@ -83,10 +83,10 @@ export default function Profile() {
 	const [formData, setFormData] = useState({
 		displayName: currentUser?.FirebaseUser?.displayName || "",
 		email: currentUser?.FirebaseUser?.email || "",
-		phone: currentUser?.DBUser?.phone || "",
-		address: formatAddress(currentUser?.DBUser?.address) || "",
-		region: currentUser?.DBUser?.region || "",
-		district: currentUser?.DBUser?.district || "",
+		phoneNumber: currentUser?.DBUser?.phoneNumber || "",
+		address: currentUser?.DBUser?.fullAddress || formatAddress(currentUser?.DBUser?.address) || "",
+		region: currentUser?.DBUser?.operationalArea?.region || "",
+		district: currentUser?.DBUser?.operationalArea?.district || "",
 	});
 
 	// Update available districts when region changes
@@ -140,7 +140,6 @@ export default function Profile() {
 
 	const handleSave = async () => {
 		// TODO: Implement profile update API call for text fields
-		console.log("Saving profile data (excluding image):", formData);
 		try {
 			const user = currentUser?.FirebaseUser;
 			if (!user) throw new Error("User not authenticated");
@@ -148,10 +147,12 @@ export default function Profile() {
 			// Prepare data for update (only send changed fields, or all editable fields)
 			const updateData = {
 				displayName: formData.displayName,
-				phone: formData.phone,
-				address: formData.address, // Assuming address string is fine, or re-parse if needed by backend
-				region: formData.region,
-				district: formData.district,
+				phoneNumber: formData.phoneNumber,
+				fullAddress: formData.address, // Assuming address string is fine, or re-parse if needed by backend
+				operationalArea: {
+					region: formData.region,
+					district: formData.district,
+				},
 			};
 
 			// API call to update user data in your backend
@@ -162,13 +163,15 @@ export default function Profile() {
 					withCredentials: true,
 					headers: {
 						Authorization: `Bearer ${
-							localStorage.getItem("token") || sessionStorage.getItem("token")
+							localStorage.getItem("JWT_TOKEN_KEY") ||
+							sessionStorage.getItem("JWT_TOKEN_KEY")
 						}`,
 					},
 				}
 			);
 
 			if (response.data.success) {
+				(currentUser?.FirebaseUser?.displayName !== formData.displayName) && await updateUserProfile(formData.displayName, null);
 				toast.success("Profile updated successfully!");
 				setIsEditing(false);
 				// Optionally refresh DBUser data if not handled by AuthContext
@@ -186,7 +189,7 @@ export default function Profile() {
 		setFormData({
 			displayName: currentUser?.FirebaseUser?.displayName || "",
 			email: currentUser?.FirebaseUser?.email || "",
-			phone: currentUser?.DBUser?.phone || "",
+			phoneNumber: currentUser?.DBUser?.phoneNumber || "",
 			address: formatAddress(currentUser?.DBUser?.address) || "",
 			region: currentUser?.DBUser?.region || "",
 			district: currentUser?.DBUser?.district || "",
@@ -335,13 +338,14 @@ export default function Profile() {
 
 			// Update profile picture in your backend database
 			const response = await axios.patch(
-				`${apiBaseUrl}/users/${user.email}/profile-picture`, // Ensure this endpoint exists in your backend
+				`${apiBaseUrl}/users/${user.email}`, // Ensure this endpoint exists in your backend
 				{ profilePicture: uploadedImageUrl },
 				{
 					withCredentials: true,
 					headers: {
 						Authorization: `Bearer ${
-							localStorage.getItem("token") || sessionStorage.getItem("token")
+							localStorage.getItem("JWT_TOKEN_KEY") ||
+							sessionStorage.getItem("JWT_TOKEN_KEY")
 						}`,
 					},
 				}
@@ -349,7 +353,7 @@ export default function Profile() {
 
 			if (response.data.success) {
 				// Update Firebase profile (via AuthContext method)
-				await updateUserProfilePicture(uploadedImageUrl);
+				await updateUserProfile(null, uploadedImageUrl);
 				// The updateUserProfilePicture in AuthContext should handle refreshing getDBUser if necessary,
 				// or we can call it explicitly here if needed: await getDBUser(user.email);
 
@@ -714,8 +718,8 @@ export default function Profile() {
 							{isEditing ? (
 								<input
 									type="tel"
-									name="phone"
-									value={formData.phone || ""}
+									name="phoneNumber"
+									value={formData.phoneNumber || ""}
 									onChange={handleInputChange}
 									className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200"
 									placeholder="+880 1XXXXXXXXX"
@@ -723,7 +727,7 @@ export default function Profile() {
 							) : (
 								<div className="bg-gray-50 px-4 py-3 rounded-lg">
 									<p className="text-gray-900 font-medium">
-										{formData.phone || "Not provided"}
+										{formData.phoneNumber || "Not provided"}
 									</p>
 								</div>
 							)}
@@ -799,7 +803,7 @@ export default function Profile() {
 							) : (
 								<div className="bg-gray-50 px-4 py-3 rounded-lg">
 									<p className="text-gray-900 font-medium">
-										{formData.district || "Not provided"}
+										{formData?.district || "Not provided"}
 									</p>
 								</div>
 							)}
@@ -822,7 +826,7 @@ export default function Profile() {
 							) : (
 								<div className="bg-gray-50 px-4 py-3 rounded-lg min-h-[80px]">
 									<p className="text-gray-900 font-medium">
-										{formData.address || "Not provided"}
+										{ formData.address || "Not provided" }
 									</p>
 								</div>
 							)}

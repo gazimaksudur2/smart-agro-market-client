@@ -31,7 +31,6 @@ export default function AuthProvider({ children }) {
 	const [loading, setLoading] = useState(true);
 	const [accessToken, setAccessToken] = useState("");
 	const [usingCookies, setUsingCookies] = useState(true);
-	console.log(currentUser);
 
 	// Create API base URL
 	const apiBaseUrl =

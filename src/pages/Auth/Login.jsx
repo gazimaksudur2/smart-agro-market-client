@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useForm } from "react-hook-form";
-import { FaFacebook, FaLock } from "react-icons/fa";
+import { FaFacebook, FaLock, FaEye, FaEyeSlash } from "react-icons/fa";
 import { FcGoogle } from "react-icons/fc";
 import { useAuth } from "../../contexts/AuthContext";
 import toast from "react-hot-toast";
@@ -13,6 +13,7 @@ export default function Login() {
 		formState: { errors },
 	} = useForm();
 	const [loading, setLoading] = useState(false);
+	const [showPassword, setShowPassword] = useState(false);
 	const { loginWithEmail, loginWithGoogle, loginWithFacebook } = useAuth();
 
 	const navigate = useNavigate();
@@ -200,17 +201,28 @@ export default function Login() {
 						<div>
 							<fieldset className="fieldset">
 								<legend className="fieldset-legend">Password</legend>
-								<div className="mt-1">
+								<div className="mt-1 relative">
 									<input
-										className="input validator w-full"
+										className="input validator w-full pr-10"
 										id="password"
-										type="password"
+										type={showPassword ? "text" : "password"}
 										autoComplete="current-password"
 										{...register("password", {
 											required: "Password is required",
 										})}
 										onKeyDown={handleKeyDown}
 									/>
+									<button
+										type="button"
+										className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-500 hover:text-gray-700 cursor-pointer"
+										onClick={() => setShowPassword(!showPassword)}
+									>
+										{showPassword ? (
+											<FaEyeSlash className="h-5 w-5" />
+										) : (
+											<FaEye className="h-5 w-5" />
+										)}
+									</button>
 									{errors.password && (
 										<p className="form-error daisy-text-error">
 											{errors.password.message}

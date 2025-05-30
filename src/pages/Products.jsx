@@ -284,7 +284,7 @@ export default function Products() {
 							>
 								<div className="mb-4 space-y-4">
 									<label className="block text-sm font-medium text-gray-700 mb-1">
-										Price ( per kg ) Range (৳)
+										Price ( per unit ) Range (৳)
 									</label>
 									<div className="flex justify-between items-center">
 										<InputNumber
