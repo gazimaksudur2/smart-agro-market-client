@@ -12,7 +12,7 @@ import { useAuth } from "../contexts/AuthContext";
 export default function RoleBasedRoute({
 	children,
 	allowedRoles = [],
-	redirectTo = "/dashboard",
+	redirectTo = "/dashboard/profile",
 	requireAuth = true,
 }) {
 	const { currentUser, loading, isAdmin, isAgent, isSeller, isConsumer } =
@@ -68,15 +68,6 @@ export default function RoleBasedRoute({
 
 		// Redirect to appropriate dashboard based on user role
 		let redirectPath = redirectTo;
-		// if (userRole === "admin") {
-		// 	redirectPath = "/dashboard/profile";
-		// } else if (userRole === "agent") {
-		// 	redirectPath = "/dashboard/profile";
-		// } else if (userRole === "seller") {
-		// 	redirectPath = "/dashboard/profile";
-		// } else if (userRole === "consumer") {
-		// 	redirectPath = "/dashboard/profile";
-		// }
 		if (userRole) {
 			redirectPath = `/dashboard/profile`;
 		}

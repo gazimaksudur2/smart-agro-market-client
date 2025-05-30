@@ -13,7 +13,6 @@ import Register from "../pages/Auth/Register";
 import DashboardLayout from "../layouts/DashboardLayout";
 // Centralized Dashboard Components
 import {
-	DashboardHome,
 	Profile,
 	ConsumerMyCart,
 	ConsumerMyOrders,
@@ -56,6 +55,7 @@ import OrderSuccessPage from "../components/Checkout/OrderSuccessPage";
 import SellerApplicationPage from "../pages/SellerApplicationPage";
 import AgentApplicationPage from "../pages/AgentApplicationPage";
 import SystemSettings from "../components/Dashboard/pages/admin/SystemSettings";
+import DashboardNothing from "../components/Dashboard/pages/DashboardNothing";
 
 const Router = createBrowserRouter([
 	{
@@ -150,6 +150,10 @@ const Router = createBrowserRouter([
 		),
 		children: [
 			// Common Routes (Available to all authenticated users)
+			{
+				index: true,
+				element: <DashboardNothing />,
+			},
 			{
 				path: "profile",
 				element: <Profile />,

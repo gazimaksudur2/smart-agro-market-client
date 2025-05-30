@@ -1,6 +1,3 @@
-// Dashboard Home
-export { default as DashboardHome } from "./DashboardHome";
-
 // Profile
 export { default as Profile } from "./Profile";
 
