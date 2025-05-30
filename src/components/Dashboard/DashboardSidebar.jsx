@@ -82,9 +82,9 @@ export default function DashboardSidebar({ sidebarOpen, setSidebarOpen }) {
 				label: "Manage Users",
 			},
 			{
-				to: "/dashboard/manage-agents",
+				to: "/dashboard/manage-applications",
 				icon: <FaUserCheck className="mr-3 h-6 w-6" />,
-				label: "Manage Agents",
+				label: "Manage Applications",
 			},
 			{
 				to: "/dashboard/system-settings",

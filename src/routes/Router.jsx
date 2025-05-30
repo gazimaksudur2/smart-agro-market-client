@@ -29,7 +29,7 @@ import {
 	AdminManageProducts,
 	AdminManageOrders,
 	AdminManageUsers,
-	AdminManageAgents,
+	AdminManageApplications,
 	SellerSalesAnalytics,
 } from "../components/Dashboard/pages";
 
@@ -315,10 +315,10 @@ const Router = createBrowserRouter([
 				),
 			},
 			{
-				path: "manage-agents",
+				path: "manage-applications",
 				element: (
 					<AdminRoute>
-						<AdminManageAgents />
+						<AdminManageApplications />
 					</AdminRoute>
 				),
 			},

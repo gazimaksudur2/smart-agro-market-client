@@ -14,3 +14,4 @@ export { DataTable, Pagination } from "./DataTable";
 export * from "./ModernModal";
 export { ProductModal } from "./ProductModal";
 export { UserModal } from "./UserModal";
+export { ApplicationModal } from "./ApplicationModal";

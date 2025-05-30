@@ -11,6 +11,7 @@ import { ProductStatsCards } from "./components/StatsCards";
 import { ProductFiltersPanel } from "./components/FiltersPanel";
 import { DataTable, Pagination } from "./components/DataTable";
 import { ProductModal } from "./components/ProductModal";
+import { ReasonModal } from "../../../common/ReasonModal";
 import { StatusBadge, QualityBadge, CategoryBadge } from "./components/Badges";
 
 // Custom hook for debounced value
@@ -46,6 +47,8 @@ export default function ManageProducts() {
 	const [bulkSelected, setBulkSelected] = useState([]);
 	const [sortBy, setSortBy] = useState("createdAt");
 	const [sortOrder, setSortOrder] = useState("desc");
+	const [showBulkReasonModal, setShowBulkReasonModal] = useState(false);
+	const [bulkAction, setBulkAction] = useState(null);
 
 	// Debounce search term to avoid excessive API calls
 	const debouncedSearchTerm = useDebounce(searchTerm, 500);
@@ -116,7 +119,7 @@ export default function ManageProducts() {
 		try {
 			await apiCall(`/admin/products/${productId}/${action}`, "PATCH", {
 				reason,
-				adminId: currentUser?.FirebaseUser?.uid,
+				adminId: currentUser?.DBUser?._id,
 			});
 
 			toast.success(`Product ${action}d successfully!`);
@@ -127,32 +130,35 @@ export default function ManageProducts() {
 		}
 	};
 
-	// Handle bulk actions
-	const handleBulkAction = async (action) => {
+	// Handle bulk actions with reason
+	const handleBulkActionWithReason = (action) => {
 		if (bulkSelected.length === 0) {
 			toast.warning("Please select products first");
 			return;
 		}
 
-		const reason = prompt(`Please provide a reason for bulk ${action}:`);
-		if (!reason) return;
+		setBulkAction(action);
+		setShowBulkReasonModal(true);
+	};
 
+	// Execute bulk action
+	const executeBulkAction = async (reason) => {
 		try {
 			await Promise.all(
 				bulkSelected.map((productId) =>
-					apiCall(`/admin/products/${productId}/${action}`, "PATCH", {
+					apiCall(`/admin/products/${productId}/${bulkAction}`, "PATCH", {
 						reason,
-						adminId: currentUser?.FirebaseUser?.uid,
+						adminId: currentUser?.DBUser?._id,
 					})
 				)
 			);
 
-			toast.success(`Bulk ${action} completed successfully!`);
+			toast.success(`Bulk ${bulkAction} completed successfully!`);
 			setBulkSelected([]);
 			refetch();
 		} catch (error) {
-			console.error(`Error in bulk ${action}:`, error);
-			toast.error(`Failed to perform bulk ${action}`);
+			console.error(`Error in bulk ${bulkAction}:`, error);
+			toast.error(`Failed to perform bulk ${bulkAction}`);
 		}
 	};
 
@@ -333,7 +339,7 @@ export default function ManageProducts() {
 					setPageSize={setPageSize}
 					setCurrentPage={setCurrentPage}
 					bulkSelected={bulkSelected}
-					onBulkAction={handleBulkAction}
+					onBulkAction={handleBulkActionWithReason}
 					onClearBulkSelection={() => setBulkSelected([])}
 					isLoading={isLoading}
 				/>
@@ -375,6 +381,48 @@ export default function ManageProducts() {
 					setSelectedProduct(null);
 				}}
 				onProductAction={handleProductAction}
+				isLoading={apiLoading}
+			/>
+
+			{/* Bulk Action Reason Modal */}
+			<ReasonModal
+				isOpen={showBulkReasonModal}
+				onClose={() => {
+					setShowBulkReasonModal(false);
+					setBulkAction(null);
+				}}
+				onConfirm={executeBulkAction}
+				title={`Bulk ${
+					bulkAction === "approve"
+						? "Approve"
+						: bulkAction === "reject"
+						? "Reject"
+						: "Suspend"
+				} Products`}
+				description={`Please provide a reason for ${
+					bulkAction === "approve"
+						? "approving"
+						: bulkAction === "reject"
+						? "rejecting"
+						: "suspending"
+				} ${bulkSelected.length} selected product${
+					bulkSelected.length > 1 ? "s" : ""
+				}. This reason will be shared with all affected sellers.`}
+				placeholder={
+					bulkAction === "approve"
+						? "e.g., Quality verified, meets standards, batch approval..."
+						: bulkAction === "reject"
+						? "e.g., Poor quality, incomplete information, policy violation..."
+						: "e.g., Temporary quality concerns, policy review required..."
+				}
+				confirmText={`${
+					bulkAction === "approve"
+						? "Approve"
+						: bulkAction === "reject"
+						? "Reject"
+						: "Suspend"
+				} ${bulkSelected.length} Product${bulkSelected.length > 1 ? "s" : ""}`}
+				type={bulkAction === "approve" ? "info" : "danger"}
 				isLoading={apiLoading}
 			/>
 		</div>

@@ -1,16 +1,23 @@
 import { useState, useEffect, useMemo } from "react";
 import { useAuth } from "../../../../contexts/AuthContext";
 import { useQuery } from "react-query";
-import { FaSpinner, FaExclamationTriangle } from "react-icons/fa";
+import {
+	FaSpinner,
+	FaExclamationTriangle,
+	FaPause,
+	FaPlay,
+} from "react-icons/fa";
 import DashboardTitle from "../../DashboardTitle";
 import useAPI from "../../../../hooks/useAPI";
 import { toast } from "react-hot-toast";
+import useRegions from "../../../../hooks/useRegions";
 
 // Import modular components
 import { UserStatsCards } from "./components/StatsCards";
 import { UserFiltersPanel } from "./components/FiltersPanel";
 import { DataTable, Pagination } from "./components/DataTable";
 import { UserModal } from "./components/UserModal";
+import { ReasonModal } from "../../../common/ReasonModal";
 import { StatusBadge, RoleBadge, VerificationBadge } from "./components/Badges";
 
 // Custom hook for debounced value
@@ -33,6 +40,7 @@ const useDebounce = (value, delay) => {
 export default function ManageUsers() {
 	const { currentUser } = useAuth();
 	const { apiCall, loading: apiLoading } = useAPI();
+	const { regions } = useRegions();
 
 	// State management
 	const [searchTerm, setSearchTerm] = useState("");
@@ -45,6 +53,8 @@ export default function ManageUsers() {
 	const [bulkSelected, setBulkSelected] = useState([]);
 	const [sortBy, setSortBy] = useState("createdAt");
 	const [sortOrder, setSortOrder] = useState("desc");
+	const [showBulkReasonModal, setShowBulkReasonModal] = useState(false);
+	const [bulkAction, setBulkAction] = useState(null);
 
 	// Debounce search term to avoid excessive API calls
 	const debouncedSearchTerm = useDebounce(searchTerm, 500);
@@ -113,7 +123,7 @@ export default function ManageUsers() {
 		try {
 			await apiCall(`/admin/users/${userId}/${action}`, "PATCH", {
 				reason,
-				adminId: currentUser?.FirebaseUser?.uid,
+				adminId: currentUser?.DBUser?._id,
 			});
 
 			toast.success(`User ${action}d successfully!`);
@@ -124,32 +134,35 @@ export default function ManageUsers() {
 		}
 	};
 
-	// Handle bulk actions
-	const handleBulkAction = async (action) => {
+	// Handle bulk actions with reason
+	const handleBulkActionWithReason = (action) => {
 		if (bulkSelected.length === 0) {
 			toast.warning("Please select users first");
 			return;
 		}
 
-		const reason = prompt(`Please provide a reason for bulk ${action}:`);
-		if (!reason) return;
+		setBulkAction(action);
+		setShowBulkReasonModal(true);
+	};
 
+	// Execute bulk action
+	const executeBulkAction = async (reason) => {
 		try {
 			await Promise.all(
 				bulkSelected.map((userId) =>
-					apiCall(`/admin/users/${userId}/${action}`, "PATCH", {
+					apiCall(`/users/${userId}/${bulkAction}`, "PATCH", {
 						reason,
-						adminId: currentUser?.FirebaseUser?.uid,
+						adminId: currentUser?.DBUser?._id,
 					})
 				)
 			);
 
-			toast.success(`Bulk ${action} completed successfully!`);
+			toast.success(`Bulk ${bulkAction} completed successfully!`);
 			setBulkSelected([]);
 			refetch();
 		} catch (error) {
-			console.error(`Error in bulk ${action}:`, error);
-			toast.error(`Failed to perform bulk ${action}`);
+			console.error(`Error in bulk ${bulkAction}:`, error);
+			toast.error(`Failed to perform bulk ${bulkAction}`);
 		}
 	};
 
@@ -326,7 +339,7 @@ export default function ManageUsers() {
 					setPageSize={setPageSize}
 					setCurrentPage={setCurrentPage}
 					bulkSelected={bulkSelected}
-					onBulkAction={handleBulkAction}
+					onBulkAction={handleBulkActionWithReason}
 					onClearBulkSelection={() => setBulkSelected([])}
 					isLoading={isLoading}
 				/>
@@ -368,6 +381,34 @@ export default function ManageUsers() {
 					setSelectedUser(null);
 				}}
 				onUserAction={handleUserAction}
+				isLoading={apiLoading}
+			/>
+
+			{/* Bulk Action Reason Modal */}
+			<ReasonModal
+				isOpen={showBulkReasonModal}
+				onClose={() => {
+					setShowBulkReasonModal(false);
+					setBulkAction(null);
+				}}
+				onConfirm={executeBulkAction}
+				title={`Bulk ${
+					bulkAction === "suspend" ? "Suspend" : "Activate"
+				} Users`}
+				description={`Please provide a reason for ${
+					bulkAction === "suspend" ? "suspending" : "activating"
+				} ${bulkSelected.length} selected user${
+					bulkSelected.length > 1 ? "s" : ""
+				}. This reason will be shared with all affected users.`}
+				placeholder={
+					bulkAction === "suspend"
+						? "e.g., Policy violation, terms breach, security concerns..."
+						: "e.g., Account restoration, policy compliance achieved..."
+				}
+				confirmText={`${bulkAction === "suspend" ? "Suspend" : "Activate"} ${
+					bulkSelected.length
+				} User${bulkSelected.length > 1 ? "s" : ""}`}
+				type={bulkAction === "suspend" ? "danger" : "info"}
 				isLoading={apiLoading}
 			/>
 		</div>

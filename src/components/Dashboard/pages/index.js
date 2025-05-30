@@ -24,4 +24,4 @@ export { default as AdminAnalytics } from "./admin/Analytics";
 export { default as AdminManageProducts } from "./admin/ManageProducts";
 export { default as AdminManageOrders } from "./admin/ManageOrders";
 export { default as AdminManageUsers } from "./admin/ManageUsers";
-export { default as AdminManageAgents } from "./admin/ManageAgents";
+export { default as AdminManageApplications } from "./admin/ManageApplications";

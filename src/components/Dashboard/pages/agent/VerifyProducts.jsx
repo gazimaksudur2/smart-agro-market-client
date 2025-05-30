@@ -17,6 +17,7 @@ import {
 } from "react-icons/fa";
 import DashboardTitle from "../../DashboardTitle";
 import useAPI from "../../../../hooks/useAPI";
+import { ReasonModal } from "../../../common/ReasonModal";
 
 const StatusBadge = ({ status }) => {
 	const statusConfig = {
@@ -54,6 +55,9 @@ export default function VerifyProducts() {
 	const [categoryFilter, setCategoryFilter] = useState("all");
 	const [filteredProducts, setFilteredProducts] = useState([]);
 	const [selectedProduct, setSelectedProduct] = useState(null);
+	const [showReasonModal, setShowReasonModal] = useState(false);
+	const [currentAction, setCurrentAction] = useState(null);
+	const [currentProductId, setCurrentProductId] = useState(null);
 
 	// Fetch products for this agent's region
 	const {
@@ -245,16 +249,41 @@ export default function VerifyProducts() {
 	}, [displayProducts, searchTerm, statusFilter, categoryFilter]);
 
 	const handleProductAction = async (productId, action, reason = "") => {
+		if (action === "reject" || action === "suspend") {
+			setCurrentProductId(productId);
+			setCurrentAction(action);
+			setShowReasonModal(true);
+			return;
+		}
+
 		try {
 			await apiCall(`/agent/products/${productId}/${action}`, "PATCH", {
 				reason,
-				agentId: currentUser?.FirebaseUser?.uid,
+				agentId: currentUser?.DBUser?._id,
 			});
 			refetch();
 			alert(`Product ${action} successfully!`);
 		} catch (error) {
 			console.error(`Error ${action} product:`, error);
 			alert(`Failed to ${action} product. Please try again.`);
+		}
+	};
+
+	const handleReasonConfirm = async (reason) => {
+		try {
+			await apiCall(
+				`/agent/products/${currentProductId}/${currentAction}`,
+				"PATCH",
+				{
+					reason,
+					agentId: currentUser?.DBUser?._id,
+				}
+			);
+			refetch();
+			alert(`Product ${currentAction} successfully!`);
+		} catch (error) {
+			console.error(`Error ${currentAction} product:`, error);
+			alert(`Failed to ${currentAction} product. Please try again.`);
 		}
 	};
 
@@ -584,18 +613,9 @@ export default function VerifyProducts() {
 														Approve Product
 													</button>
 													<button
-														onClick={() => {
-															const reason = prompt(
-																"Please provide a reason for rejection:"
-															);
-															if (reason) {
-																handleProductAction(
-																	product.id,
-																	"reject",
-																	reason
-																);
-															}
-														}}
+														onClick={() =>
+															handleProductAction(product.id, "reject")
+														}
 														disabled={apiLoading}
 														className="btn btn-outline-red btn-sm"
 													>
@@ -607,18 +627,9 @@ export default function VerifyProducts() {
 
 											{product.status === "approved" && (
 												<button
-													onClick={() => {
-														const reason = prompt(
-															"Please provide a reason for suspension:"
-														);
-														if (reason) {
-															handleProductAction(
-																product.id,
-																"suspend",
-																reason
-															);
-														}
-													}}
+													onClick={() =>
+														handleProductAction(product.id, "suspend")
+													}
 													disabled={apiLoading}
 													className="btn btn-outline-red btn-sm"
 												>
@@ -684,6 +695,31 @@ export default function VerifyProducts() {
 					</div>
 				</div>
 			)}
+
+			{/* Reason Modal */}
+			<ReasonModal
+				isOpen={showReasonModal}
+				onClose={() => {
+					setShowReasonModal(false);
+					setCurrentAction(null);
+					setCurrentProductId(null);
+				}}
+				onConfirm={handleReasonConfirm}
+				title={`${currentAction === "reject" ? "Reject" : "Suspend"} Product`}
+				description={`Please provide a reason for ${
+					currentAction === "reject" ? "rejecting" : "suspending"
+				} this product. This will help the seller understand the decision.`}
+				placeholder={
+					currentAction === "reject"
+						? "e.g., Poor quality images, incomplete description, price issues..."
+						: "e.g., Policy violation, quality concerns, temporary restriction..."
+				}
+				confirmText={`${
+					currentAction === "reject" ? "Reject" : "Suspend"
+				} Product`}
+				type="danger"
+				isLoading={apiLoading}
+			/>
 		</div>
 	);
 }

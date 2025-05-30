@@ -21,6 +21,7 @@ import {
 	TabPanel,
 } from "./ModernModal";
 import { StatusBadge, RoleBadge, VerificationBadge } from "./Badges";
+import { ReasonModal } from "../../../../common/ReasonModal";
 
 export const UserModal = ({
 	user,
@@ -30,6 +31,7 @@ export const UserModal = ({
 	isLoading = false,
 }) => {
 	const [activeTab, setActiveTab] = useState("overview");
+	const [showSuspendReasonModal, setShowSuspendReasonModal] = useState(false);
 
 	if (!user) return null;
 
@@ -49,14 +51,16 @@ export const UserModal = ({
 
 	const handleAction = async (action, reason = "") => {
 		if (action === "suspend") {
-			const userReason = prompt(
-				"Please provide a reason for suspending this user:"
-			);
-			if (!userReason) return;
-			reason = userReason;
+			setShowSuspendReasonModal(true);
+			return;
 		}
 
 		await onUserAction(user._id, action, reason);
+		onClose();
+	};
+
+	const handleSuspend = async (reason) => {
+		await onUserAction(user._id, "suspend", reason);
 		onClose();
 	};
 
@@ -355,14 +359,33 @@ export const UserModal = ({
 	];
 
 	return (
-		<ModernModal
-			isOpen={isOpen}
-			onClose={onClose}
-			title={`User Details - ${user.name}`}
-			size="xlarge"
-			actions={modalActions}
-		>
-			<TabPanel tabs={tabs} activeTab={activeTab} setActiveTab={setActiveTab} />
-		</ModernModal>
+		<>
+			<ModernModal
+				isOpen={isOpen}
+				onClose={onClose}
+				title={`User Details - ${user.name}`}
+				size="xlarge"
+				actions={modalActions}
+			>
+				<TabPanel
+					tabs={tabs}
+					activeTab={activeTab}
+					setActiveTab={setActiveTab}
+				/>
+			</ModernModal>
+
+			{/* Suspend Reason Modal */}
+			<ReasonModal
+				isOpen={showSuspendReasonModal}
+				onClose={() => setShowSuspendReasonModal(false)}
+				onConfirm={handleSuspend}
+				title="Suspend User"
+				description={`Please provide a reason for suspending ${user.name}'s account. The user will be notified and their account will be temporarily disabled.`}
+				placeholder="e.g., Violation of terms of service, suspicious activity, temporary restriction..."
+				confirmText="Suspend User"
+				type="danger"
+				isLoading={isLoading}
+			/>
+		</>
 	);
 };

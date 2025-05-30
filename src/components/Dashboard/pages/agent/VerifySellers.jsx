@@ -18,6 +18,7 @@ import {
 } from "react-icons/fa";
 import DashboardTitle from "../../DashboardTitle";
 import useAPI from "../../../../hooks/useAPI";
+import { ReasonModal } from "../../../common/ReasonModal";
 
 const StatusBadge = ({ status }) => {
 	const statusConfig = {
@@ -45,6 +46,11 @@ export default function VerifySellers() {
 	const [statusFilter, setStatusFilter] = useState("all");
 	const [filteredSellers, setFilteredSellers] = useState([]);
 	const [selectedSeller, setSelectedSeller] = useState(null);
+
+	// ReasonModal state
+	const [showReasonModal, setShowReasonModal] = useState(false);
+	const [currentAction, setCurrentAction] = useState("");
+	const [currentSellerId, setCurrentSellerId] = useState("");
 
 	// Fetch seller applications for this agent's region
 	const {
@@ -215,7 +221,7 @@ export default function VerifySellers() {
 				"PATCH",
 				{
 					reason,
-					agentId: currentUser?.FirebaseUser?.uid,
+					agentId: currentUser?.DBUser?._id,
 				}
 			);
 			refetch();
@@ -224,6 +230,19 @@ export default function VerifySellers() {
 			console.error(`Error ${action} seller:`, error);
 			alert(`Failed to ${action} seller application. Please try again.`);
 		}
+	};
+
+	const handleReasonConfirm = (reason) => {
+		handleSellerAction(currentSellerId, currentAction, reason);
+		setShowReasonModal(false);
+		setCurrentAction("");
+		setCurrentSellerId("");
+	};
+
+	const handleReasonCancel = () => {
+		setShowReasonModal(false);
+		setCurrentAction("");
+		setCurrentSellerId("");
 	};
 
 	const getSellerStats = () => {
@@ -559,12 +578,9 @@ export default function VerifySellers() {
 											</button>
 											<button
 												onClick={() => {
-													const reason = prompt(
-														"Please provide a reason for rejection:"
-													);
-													if (reason) {
-														handleSellerAction(seller.id, "reject", reason);
-													}
+													setCurrentSellerId(seller.id);
+													setCurrentAction("reject");
+													setShowReasonModal(true);
 												}}
 												disabled={apiLoading}
 												className="btn btn-outline-red btn-sm"
@@ -578,12 +594,9 @@ export default function VerifySellers() {
 									{seller.status === "verified" && (
 										<button
 											onClick={() => {
-												const reason = prompt(
-													"Please provide a reason for suspension:"
-												);
-												if (reason) {
-													handleSellerAction(seller.id, "suspend", reason);
-												}
+												setCurrentSellerId(seller.id);
+												setCurrentAction("suspend");
+												setShowReasonModal(true);
 											}}
 											disabled={apiLoading}
 											className="btn btn-outline-red btn-sm"
@@ -631,6 +644,29 @@ export default function VerifySellers() {
 					</div>
 				</div>
 			)}
+
+			{/* ReasonModal */}
+			<ReasonModal
+				isOpen={showReasonModal}
+				onClose={handleReasonCancel}
+				onConfirm={handleReasonConfirm}
+				title={`${
+					currentAction === "reject" ? "Reject" : "Suspend"
+				} Seller Application`}
+				description={`Please provide a reason for ${
+					currentAction === "reject" ? "rejecting" : "suspending"
+				} this seller application. This will help the seller understand the decision and improve future applications.`}
+				placeholder={
+					currentAction === "reject"
+						? "e.g., Incomplete documentation, insufficient experience, location restrictions..."
+						: "e.g., Policy violation, suspicious activity, verification concerns..."
+				}
+				confirmText={`${
+					currentAction === "reject" ? "Reject" : "Suspend"
+				} Application`}
+				type="danger"
+				isLoading={apiLoading}
+			/>
 		</div>
 	);
 }

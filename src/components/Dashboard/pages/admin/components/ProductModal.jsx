@@ -23,7 +23,13 @@ import {
 	DetailRow,
 	TabPanel,
 } from "./ModernModal";
-import { StatusBadge, QualityBadge, CategoryBadge } from "./Badges";
+import {
+	StatusBadge,
+	CategoryBadge,
+	QualityBadge,
+	VerificationBadge,
+} from "./Badges";
+import { ReasonModal } from "../../../../common/ReasonModal";
 
 export const ProductModal = ({
 	product,
@@ -33,6 +39,8 @@ export const ProductModal = ({
 	isLoading = false,
 }) => {
 	const [activeTab, setActiveTab] = useState("overview");
+	const [showReasonModal, setShowReasonModal] = useState(false);
+	const [currentAction, setCurrentAction] = useState(null);
 
 	if (!product) return null;
 
@@ -41,14 +49,17 @@ export const ProductModal = ({
 
 	const handleAction = async (action, reason = "") => {
 		if (action === "reject" || action === "suspend") {
-			const userReason = prompt(
-				`Please provide a reason for ${action}ing this product:`
-			);
-			if (!userReason) return;
-			reason = userReason;
+			setCurrentAction(action);
+			setShowReasonModal(true);
+			return;
 		}
 
 		await onProductAction(product._id, action, reason);
+		onClose();
+	};
+
+	const handleReasonConfirm = async (reason) => {
+		await onProductAction(product._id, currentAction, reason);
 		onClose();
 	};
 
@@ -280,14 +291,46 @@ export const ProductModal = ({
 	];
 
 	return (
-		<ModernModal
-			isOpen={isOpen}
-			onClose={onClose}
-			title={`Product Details - ${product.title}`}
-			size="xlarge"
-			actions={modalActions}
-		>
-			<TabPanel tabs={tabs} activeTab={activeTab} setActiveTab={setActiveTab} />
-		</ModernModal>
+		<>
+			<ModernModal
+				isOpen={isOpen}
+				onClose={onClose}
+				title={`Product Details - ${product.title}`}
+				size="xlarge"
+				actions={modalActions}
+			>
+				<TabPanel
+					tabs={tabs}
+					activeTab={activeTab}
+					setActiveTab={setActiveTab}
+				/>
+			</ModernModal>
+
+			{/* Reason Modal */}
+			<ReasonModal
+				isOpen={showReasonModal}
+				onClose={() => {
+					setShowReasonModal(false);
+					setCurrentAction(null);
+				}}
+				onConfirm={handleReasonConfirm}
+				title={`${currentAction === "reject" ? "Reject" : "Suspend"} Product`}
+				description={`Please provide a reason for ${
+					currentAction === "reject" ? "rejecting" : "suspending"
+				} "${
+					product.title
+				}". This will help the seller understand the decision.`}
+				placeholder={
+					currentAction === "reject"
+						? "e.g., Poor quality images, incomplete description, price issues..."
+						: "e.g., Policy violation, quality concerns, temporary restriction..."
+				}
+				confirmText={`${
+					currentAction === "reject" ? "Reject" : "Suspend"
+				} Product`}
+				type="danger"
+				isLoading={isLoading}
+			/>
+		</>
 	);
 };
