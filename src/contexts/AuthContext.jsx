@@ -326,8 +326,8 @@ export default function AuthProvider({ children }) {
 
 			// Update password in database
 			await axios.patch(
-				`${apiBaseUrl}/users/${user.email}/password`,
-				{ newPassword },
+				`${apiBaseUrl}/users/updatePassword/${user.email}`,
+				{ currentPassword, newPassword },
 				{ withCredentials: true }
 			);
 
@@ -336,20 +336,9 @@ export default function AuthProvider({ children }) {
 		} catch (error) {
 			console.error("Error changing password:", error);
 
-			// Handle specific error messages
-			if (error.code === "auth/wrong-password") {
-				toast.error("Current password is incorrect");
-			} else if (error.code === "auth/weak-password") {
-				toast.error(
-					"New password is too weak. Please choose a stronger password."
-				);
-			} else if (error.code === "auth/requires-recent-login") {
-				toast.error(
-					"Please log out and log in again before changing your password"
-				);
-			} else {
-				toast.error(error.message || "Failed to update password");
-			}
+			toast.error(
+				`${error.code}: ${error.message}` || "Failed to update password"
+			);
 			throw error;
 		}
 	};
@@ -357,34 +346,69 @@ export default function AuthProvider({ children }) {
 	// Update user profile
 	const updateUserProfile = async (displayName = null, photoURL = null) => {
 		try {
-			const user = currentUser?.FirebaseUser;
-			if (!user || !user.email) {
-				throw new Error("User not authenticated");
+			// Get the current user from Firebase Auth directly to ensure fresh state
+			const currentFirebaseUser = auth.currentUser;
+			if (!currentFirebaseUser || !currentFirebaseUser.email) {
+				throw new Error("User not authenticated or session expired");
 			}
 
-			// Update Firebase profile
-			await updateProfile(user, {
-				displayName: displayName || user.displayName,
-				photoURL: photoURL || user.photoURL,
+			// Check if we have valid current user state
+			const user = currentUser?.FirebaseUser;
+			if (!user || user.uid !== currentFirebaseUser.uid) {
+				throw new Error("User state is not synchronized");
+			}
+
+			// Only update if there are actual changes
+			const currentDisplayName = currentFirebaseUser.displayName;
+			const currentPhotoURL = currentFirebaseUser.photoURL;
+
+			const newDisplayName = displayName || currentDisplayName;
+			const newPhotoURL = photoURL || currentPhotoURL;
+
+			// Check if there are any changes to avoid unnecessary Firebase calls
+			if (
+				newDisplayName === currentDisplayName &&
+				newPhotoURL === currentPhotoURL
+			) {
+				console.log("No changes detected, skipping Firebase update");
+				return true;
+			}
+
+			await updateProfile(currentFirebaseUser, {
+				displayName: newDisplayName,
+				photoURL: newPhotoURL,
 			});
 
-			// Update current user state
+			// Wait a moment for Firebase to process the update
+			await new Promise((resolve) => setTimeout(resolve, 100));
+
+			// Update current user state with the fresh data
 			setCurrentUser((prevUser) => ({
 				...prevUser,
 				FirebaseUser: {
 					...prevUser.FirebaseUser,
-					photoURL: photoURL || user.photoURL,
-					displayName: displayName || user.displayName,
+					photoURL: newPhotoURL,
+					displayName: newDisplayName,
 				},
 			}));
 
 			// Refresh database user data
-			await getDBUser(user.email);
+			await getDBUser(currentFirebaseUser.email);
 
 			return true;
 		} catch (error) {
-			console.error("Error updating profile picture:", error);
-			toast.error("Failed to update profile picture");
+			console.error("Error updating profile:", error);
+
+			// Handle specific Firebase errors
+			if (error.code === "auth/user-token-expired") {
+				toast.error("Session expired. Please log in again.");
+				await logout();
+			} else if (error.message?.includes("getIdToken")) {
+				toast.error("Session error. Please try again or log in again.");
+			} else {
+				toast.error(error.message || "Failed to update profile");
+			}
+
 			throw error;
 		}
 	};

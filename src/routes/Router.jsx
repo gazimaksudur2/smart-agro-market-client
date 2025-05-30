@@ -149,12 +149,6 @@ const Router = createBrowserRouter([
 			</PrivateRoute>
 		),
 		children: [
-			// // Main Dashboard Route (role-based redirect)
-			// {
-			// 	index: true,
-			// 	element: <DashboardHome />,
-			// },
-
 			// Common Routes (Available to all authenticated users)
 			{
 				path: "profile",

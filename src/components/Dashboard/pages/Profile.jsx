@@ -84,7 +84,10 @@ export default function Profile() {
 		displayName: currentUser?.FirebaseUser?.displayName || "",
 		email: currentUser?.FirebaseUser?.email || "",
 		phoneNumber: currentUser?.DBUser?.phoneNumber || "",
-		address: currentUser?.DBUser?.fullAddress || formatAddress(currentUser?.DBUser?.address) || "",
+		address:
+			currentUser?.DBUser?.fullAddress ||
+			formatAddress(currentUser?.DBUser?.address) ||
+			"",
 		region: currentUser?.DBUser?.operationalArea?.region || "",
 		district: currentUser?.DBUser?.operationalArea?.district || "",
 	});
@@ -171,7 +174,8 @@ export default function Profile() {
 			);
 
 			if (response.data.success) {
-				(currentUser?.FirebaseUser?.displayName !== formData.displayName) && await updateUserProfile(formData.displayName, null);
+				currentUser?.FirebaseUser?.displayName !== formData.displayName &&
+					(await updateUserProfile(formData.displayName, null));
 				toast.success("Profile updated successfully!");
 				setIsEditing(false);
 				// Optionally refresh DBUser data if not handled by AuthContext
@@ -319,6 +323,12 @@ export default function Profile() {
 			return;
 		}
 
+		// Prevent multiple rapid updates
+		if (imageUploading) {
+			toast.warning("Upload already in progress, please wait...");
+			return;
+		}
+
 		setImageUploading(true);
 		try {
 			const uploadedImageUrl = await uploadImageToCloudinary(selectedImage, {
@@ -336,7 +346,7 @@ export default function Profile() {
 				throw new Error("User not authenticated for profile update.");
 			}
 
-			// Update profile picture in your backend database
+			// Update profile picture in your backend database first
 			const response = await axios.patch(
 				`${apiBaseUrl}/users/${user.email}`, // Ensure this endpoint exists in your backend
 				{ profilePicture: uploadedImageUrl },
@@ -352,19 +362,25 @@ export default function Profile() {
 			);
 
 			if (response.data.success) {
-				// Update Firebase profile (via AuthContext method)
-				await updateUserProfile(null, uploadedImageUrl);
-				// The updateUserProfilePicture in AuthContext should handle refreshing getDBUser if necessary,
-				// or we can call it explicitly here if needed: await getDBUser(user.email);
+				// Update Firebase profile (via AuthContext method) with debouncing
+				try {
+					await updateUserProfile(null, uploadedImageUrl);
 
-				// Reset image selection
-				setSelectedImage(null);
-				setPreviewUrl("");
-				if (fileInputRef.current) {
-					fileInputRef.current.value = "";
+					// Reset image selection only after successful update
+					setSelectedImage(null);
+					setPreviewUrl("");
+					if (fileInputRef.current) {
+						fileInputRef.current.value = "";
+					}
+
+					toast.success("Profile picture updated successfully!");
+				} catch (firebaseError) {
+					console.error("Firebase update error:", firebaseError);
+					// Even if Firebase update fails, the backend was successful
+					toast.warning(
+						"Profile updated in database, but there was an issue with Firebase sync. Please refresh the page."
+					);
 				}
-
-				toast.success("Profile picture updated successfully!");
 			} else {
 				throw new Error(
 					response.data.message ||
@@ -377,6 +393,7 @@ export default function Profile() {
 				error.message || "Failed to update profile picture. Please try again."
 			);
 		} finally {
+			// Always reset loading state
 			setImageUploading(false);
 		}
 	};
@@ -826,7 +843,7 @@ export default function Profile() {
 							) : (
 								<div className="bg-gray-50 px-4 py-3 rounded-lg min-h-[80px]">
 									<p className="text-gray-900 font-medium">
-										{ formData.address || "Not provided" }
+										{formData.address || "Not provided"}
 									</p>
 								</div>
 							)}
