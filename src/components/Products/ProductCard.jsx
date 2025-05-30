@@ -37,8 +37,8 @@ export default function ProductCard({ product }) {
 					<FaCalendarAlt className="mr-1" />
 					<span>
 						Harvested:{" "}
-						{product?.harvestDate
-							? format(new Date(product.harvestDate), "dd MMM yyyy")
+						{product?.harvestedOn
+							? format(new Date(product.harvestedOn), "dd MMM yyyy")
 							: "N/A"}
 					</span>
 				</div>

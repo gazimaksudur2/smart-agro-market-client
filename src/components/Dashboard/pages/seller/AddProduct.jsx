@@ -182,7 +182,6 @@ export default function AddProduct() {
 
 	const handleSubmit = async (e) => {
 		e.preventDefault();
-		console.log(formData);
 
 		if (!validateForm()) {
 			return;

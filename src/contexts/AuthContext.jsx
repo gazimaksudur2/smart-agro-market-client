@@ -31,6 +31,7 @@ export default function AuthProvider({ children }) {
 	const [loading, setLoading] = useState(true);
 	const [accessToken, setAccessToken] = useState("");
 	const [usingCookies, setUsingCookies] = useState(true);
+	console.log(currentUser);
 
 	// Create API base URL
 	const apiBaseUrl =
@@ -59,6 +60,27 @@ export default function AuthProvider({ children }) {
 			toast.error("Please enable cookies for full functionality");
 		}
 	}, []);
+
+	// Get user role from API
+	const getDBUser = async (email) => {
+		try {
+			const { data } = await axios.get(`${apiBaseUrl}/users/${email}`, {
+				withCredentials: true,
+			});
+
+			if (data.success) {
+				setCurrentUser((prevUser) => ({
+					...prevUser,
+					DBUser: data.user,
+				}));
+				return data.user.role;
+			}
+			return null; // Don't assign default role
+		} catch (error) {
+			console.error("Error getting user role:", error);
+			return null; // Don't assign default role
+		}
+	};
 
 	// Central token management
 	const handleToken = async (token) => {
@@ -103,11 +125,6 @@ export default function AuthProvider({ children }) {
 				address
 			);
 
-			// Get JWT token after registration
-			const { token, user: userFromToken } = await authService.getToken(user);
-			await handleToken(token);
-			setCurrentRole(userFromToken.role);
-
 			// Return user info
 			return user;
 		} catch (error) {
@@ -135,6 +152,12 @@ export default function AuthProvider({ children }) {
 			await handleToken(token);
 			setCurrentRole(userFromToken.role);
 
+			// Set current user immediately with Firebase user
+			setCurrentUser({ FirebaseUser: user, DBUser: null });
+
+			// Then get DB user info
+			await getDBUser(user.email);
+
 			return user;
 		} catch (error) {
 			await authService.clearToken();
@@ -150,6 +173,9 @@ export default function AuthProvider({ children }) {
 			const result = await signInWithPopup(auth, provider);
 			const user = result.user;
 
+			// Set current user immediately with Firebase user
+			setCurrentUser({ FirebaseUser: user, DBUser: null });
+
 			// Check if user exists in database
 			const { data: userInDatabase } = await axios.get(
 				`${apiBaseUrl}/users/verifyUser?email=${user?.email}`
@@ -158,6 +184,9 @@ export default function AuthProvider({ children }) {
 			// If user doesn't exist in the database, create a new user
 			if (!userInDatabase?.success) {
 				await createUserInDatabase(user, null, "google");
+			} else {
+				// If user exists, get their DB info
+				await getDBUser(user.email);
 			}
 
 			// Get JWT token (will use existing valid token if available)
@@ -179,6 +208,9 @@ export default function AuthProvider({ children }) {
 			const result = await signInWithPopup(auth, provider);
 			const user = result.user;
 
+			// Set current user immediately with Firebase user
+			setCurrentUser({ FirebaseUser: user, DBUser: null });
+
 			// Check if user exists in database
 			const { data: userInDatabase } = await axios.get(
 				`${apiBaseUrl}/users/verifyUser?email=${user?.email}`
@@ -187,6 +219,9 @@ export default function AuthProvider({ children }) {
 			// If user doesn't exist in the database, create a new user
 			if (!userInDatabase?.success) {
 				await createUserInDatabase(user, null, "facebook");
+			} else {
+				// If user exists, get their DB info
+				await getDBUser(user.email);
 			}
 
 			// Get JWT token (will use existing valid token if available)
@@ -244,31 +279,14 @@ export default function AuthProvider({ children }) {
 				{ withCredentials: true }
 			);
 			setCurrentRole(role);
+			setCurrentUser((prevUser) => ({
+				...prevUser,
+				DBUser: data?.success ? data.user : null,
+			}));
 			return data;
 		} catch (error) {
 			currentUser && logout();
 			throw error;
-		}
-	};
-
-	// Get user role from API
-	const getDBUser = async (email) => {
-		try {
-			const { data } = await axios.get(`${apiBaseUrl}/users/${email}`, {
-				withCredentials: true,
-			});
-
-			if (data.success) {
-				setCurrentUser((prevUser) => ({
-					...prevUser,
-					DBUser: data.user,
-				}));
-				return data.user.role;
-			}
-			return null; // Don't assign default role
-		} catch (error) {
-			console.error("Error getting user role:", error);
-			return null; // Don't assign default role
 		}
 	};
 
@@ -376,8 +394,9 @@ export default function AuthProvider({ children }) {
 	useEffect(() => {
 		const unsubscribe = onAuthStateChanged(auth, async (user) => {
 			if (user) {
+				// Set current user immediately with Firebase user
 				setCurrentUser({ FirebaseUser: user, DBUser: null });
-				setCurrentRole(getDBUser(user.email));
+
 				try {
 					// Check if we already have a valid token before making API call
 					let token = authService.getCurrentToken();
@@ -385,8 +404,7 @@ export default function AuthProvider({ children }) {
 						console.log("Getting new token for user:", user.email);
 						const { token: tokenValue, user: userFromToken } =
 							await authService.getToken(user);
-						token = tokenValue;
-						await handleToken(token);
+						await handleToken(tokenValue);
 						setCurrentRole(userFromToken.role);
 					} else {
 						console.log("Using existing valid token for user:", user.email);
@@ -401,11 +419,14 @@ export default function AuthProvider({ children }) {
 							// If we can't decode, fetch new token
 							const { token: tokenValue, user: userFromToken } =
 								await authService.getToken(user);
-							token = tokenValue;
-							await handleToken(token);
+							await handleToken(tokenValue);
 							setCurrentRole(userFromToken.role);
 						}
 					}
+
+					// Get DB user info and wait for it
+					const role = await getDBUser(user.email);
+					if (role) setCurrentRole(role);
 
 					// Merge cart from localStorage to database when user logs in
 					try {

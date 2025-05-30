@@ -234,8 +234,8 @@ export default function ProductDetails() {
 							<FaCalendarAlt className="mr-2" />
 							<span>
 								Harvested on:{" "}
-								{product?.harvestDate &&
-									format(new Date(product?.harvestDate), "dd MMM yyyy")}
+								{product?.harvestedOn &&
+									format(new Date(product?.harvestedOn), "dd MMM yyyy")}
 							</span>
 						</div>
 					</div>
