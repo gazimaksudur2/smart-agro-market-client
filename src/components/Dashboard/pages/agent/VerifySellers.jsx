@@ -19,6 +19,7 @@ import DashboardTitle from "../../DashboardTitle";
 import useAPI from "../../../../hooks/useAPI";
 import { ReasonModal } from "../../../common/ReasonModal";
 import { toast } from "react-hot-toast";
+import useScrollToTop from "../../../../hooks/useScrollToTop";
 
 const StatusBadge = ({ status }) => {
 	const statusConfig = {
@@ -63,6 +64,7 @@ const StatusBadge = ({ status }) => {
 };
 
 export default function VerifySellers() {
+	useScrollToTop();
 	const { currentUser } = useAuth();
 	const { apiCall, loading: apiLoading } = useAPI();
 	const [searchTerm, setSearchTerm] = useState("");

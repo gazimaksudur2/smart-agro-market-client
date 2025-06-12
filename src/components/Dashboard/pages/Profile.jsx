@@ -30,8 +30,10 @@ import {
 import { toast } from "react-hot-toast";
 import { uploadImageToCloudinary } from "../../../services/imageUploadService";
 import useRegions from "../../../hooks/useRegions";
+import useScrollToTop from "../../../hooks/useScrollToTop";
 
 export default function Profile() {
+	useScrollToTop();
 	const {
 		currentUser,
 		changePassword,

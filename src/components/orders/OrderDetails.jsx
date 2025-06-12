@@ -20,6 +20,7 @@ import {
 	FaEdit,
 } from "react-icons/fa";
 import useAPI from "../../hooks/useAPI";
+import useScrollToTop from "../../hooks/useScrollToTop";
 
 const StatusBadge = ({ status }) => {
 	const statusConfig = {
@@ -109,6 +110,7 @@ const OrderTimeline = ({
 };
 
 export default function OrderDetails() {
+	useScrollToTop();
 	const { id } = useParams();
 	const navigate = useNavigate();
 	const { currentUser, isConsumer, isSeller, isAgent, isAdmin } = useAuth();

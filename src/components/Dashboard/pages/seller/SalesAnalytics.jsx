@@ -24,6 +24,7 @@ import {
 	FaBoxOpen,
 	FaListAlt,
 } from "react-icons/fa";
+import useScrollToTop from "../../../../hooks/useScrollToTop";
 
 // Mock API call - replace with your actual API endpoint
 const fetchSalesData = async () => {
@@ -95,6 +96,7 @@ const fetchSalesData = async () => {
 const COLORS = ["#0088FE", "#00C49F", "#FFBB28", "#FF8042", "#AF19FF"];
 
 const SalesAnalytics = () => {
+	useScrollToTop();
 	const { data, isLoading, error } = useQuery("salesAnalytics", fetchSalesData);
 
 	if (isLoading) {

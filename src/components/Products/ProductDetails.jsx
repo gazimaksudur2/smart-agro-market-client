@@ -19,8 +19,10 @@ import { useAuth } from "../../contexts/AuthContext";
 import { useCart } from "../../hooks/useCart";
 import axios from "axios";
 import toast from "react-hot-toast";
+import useScrollToTop from "../../hooks/useScrollToTop";
 
 export default function ProductDetails() {
+	useScrollToTop();
 	const [selectedImage, setSelectedImage] = useState(0);
 	const [product, setProduct] = useState({});
 	const { currentUser } = useAuth();

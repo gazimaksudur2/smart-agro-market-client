@@ -8,8 +8,10 @@ import {
 	FaArrowRight,
 } from "react-icons/fa";
 import DashboardTitle from "../../DashboardTitle";
+import useScrollToTop from "../../../../hooks/useScrollToTop";
 
 export default function MyCart() {
+	useScrollToTop();
 	const navigate = useNavigate();
 	const {
 		cartItems,

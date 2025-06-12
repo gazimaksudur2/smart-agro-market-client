@@ -7,8 +7,10 @@ import {
 	FaShoppingCart,
 	FaArrowRight,
 } from "react-icons/fa";
+import useScrollToTop from "../../hooks/useScrollToTop";
 
 export default function CartPage() {
+	useScrollToTop();
 	const navigate = useNavigate();
 	const {
 		cartItems,

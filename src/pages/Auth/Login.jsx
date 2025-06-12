@@ -5,8 +5,10 @@ import { FaFacebook, FaLock, FaEye, FaEyeSlash } from "react-icons/fa";
 import { FcGoogle } from "react-icons/fc";
 import { useAuth } from "../../contexts/AuthContext";
 import toast from "react-hot-toast";
+import useScrollToTop from "../../hooks/useScrollToTop";
 
 export default function Login() {
+	useScrollToTop();
 	const {
 		register,
 		handleSubmit,

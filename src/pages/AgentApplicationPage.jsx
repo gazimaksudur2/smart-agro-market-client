@@ -1,7 +1,9 @@
 import AgentApplication from "../components/Applications/AgentApplication";
 import useApplicationAuth from "../hooks/useApplicationAuth";
+import useScrollToTop from "../hooks/useScrollToTop";
 
 export default function AgentApplicationPage() {
+	useScrollToTop(false); // Instant scroll at page level
 	const { loading, isAuthenticated } = useApplicationAuth();
 
 	if (loading) {

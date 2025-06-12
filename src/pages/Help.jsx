@@ -14,6 +14,7 @@ import {
 	FaTruck,
 	FaMoneyBillWave,
 } from "react-icons/fa";
+import useScrollToTop from "../hooks/useScrollToTop";
 
 const FAQItem = ({ question, answer, isOpen, onToggle }) => (
 	<div className="border border-gray-200 rounded-lg mb-4">
@@ -37,6 +38,7 @@ const FAQItem = ({ question, answer, isOpen, onToggle }) => (
 );
 
 export default function Help() {
+	useScrollToTop();
 	const [openFAQ, setOpenFAQ] = useState(null);
 	const [searchTerm, setSearchTerm] = useState("");
 

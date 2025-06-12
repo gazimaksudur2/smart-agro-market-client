@@ -17,8 +17,10 @@ import useAPI from "../../../../hooks/useAPI";
 import { uploadImageToCloudinary } from "../../../../services/imageUploadService";
 import { toast } from "react-hot-toast";
 import useCropTypes from "../../../../hooks/useCropTypes";
+import useScrollToTop from "../../../../hooks/useScrollToTop";
 
 export default function AddProduct() {
+	useScrollToTop();
 	const { currentUser } = useAuth();
 	const navigate = useNavigate();
 	const { apiCall } = useAPI();

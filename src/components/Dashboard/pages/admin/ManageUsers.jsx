@@ -1,16 +1,12 @@
 import { useState, useEffect, useMemo } from "react";
 import { useAuth } from "../../../../contexts/AuthContext";
 import { useQuery } from "react-query";
-import {
-	FaSpinner,
-	FaExclamationTriangle,
-	FaPause,
-	FaPlay,
-} from "react-icons/fa";
+import { FaSpinner, FaExclamationTriangle } from "react-icons/fa";
 import DashboardTitle from "../../DashboardTitle";
 import useAPI from "../../../../hooks/useAPI";
 import { toast } from "react-hot-toast";
 import useRegions from "../../../../hooks/useRegions";
+import useScrollToTop from "../../../../hooks/useScrollToTop";
 
 // Import modular components
 import { UserStatsCards } from "./components/StatsCards";
@@ -38,6 +34,7 @@ const useDebounce = (value, delay) => {
 };
 
 export default function ManageUsers() {
+	useScrollToTop();
 	const { currentUser } = useAuth();
 	const { apiCall, loading: apiLoading } = useAPI();
 	const { regions } = useRegions();

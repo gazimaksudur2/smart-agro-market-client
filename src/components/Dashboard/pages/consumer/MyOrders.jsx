@@ -11,6 +11,7 @@ import {
 } from "react-icons/fa";
 import DashboardTitle from "../../DashboardTitle";
 import useAPI from "../../../../hooks/useAPI";
+import useScrollToTop from "../../../../hooks/useScrollToTop";
 
 const OrderStatusBadge = ({ status }) => {
 	const statusConfig = {
@@ -54,6 +55,7 @@ const OrderStatusBadge = ({ status }) => {
 };
 
 export default function MyOrders() {
+	useScrollToTop();
 	const { currentUser } = useAuth();
 	const { apiCall } = useAPI();
 	const [selectedOrder, setSelectedOrder] = useState(null);

@@ -14,8 +14,10 @@ import { ConfigProvider, InputNumber, Slider, Pagination } from "antd";
 import useRegions from "../hooks/useRegions";
 import useProducts from "../hooks/useProducts";
 import useCropTypes from "../hooks/useCropTypes";
+import useScrollToTop from "../hooks/useScrollToTop";
 
 export default function Products() {
+	useScrollToTop();
 	const [sortBy, setSortBy] = useState("latest");
 	const [showFilters, setShowFilters] = useState(false);
 	const [districts, setDistricts] = useState([]);

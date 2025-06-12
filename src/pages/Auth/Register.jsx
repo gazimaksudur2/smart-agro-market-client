@@ -12,8 +12,10 @@ import { FcGoogle } from "react-icons/fc";
 import { useAuth } from "../../contexts/AuthContext";
 import toast from "react-hot-toast";
 import { uploadImageToCloudinary } from "../../services/imageUploadService";
+import useScrollToTop from "../../hooks/useScrollToTop";
 
 export default function Register() {
+	useScrollToTop();
 	const {
 		register,
 		handleSubmit,

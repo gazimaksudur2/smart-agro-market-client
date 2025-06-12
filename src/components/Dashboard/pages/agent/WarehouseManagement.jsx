@@ -22,6 +22,7 @@ import {
 } from "react-icons/fa";
 import DashboardTitle from "../../DashboardTitle";
 import useAPI from "../../../../hooks/useAPI";
+import useScrollToTop from "../../../../hooks/useScrollToTop";
 
 const StockStatusBadge = ({ status, quantity, minStock }) => {
 	let statusConfig;
@@ -77,6 +78,7 @@ const CategoryBadge = ({ category }) => {
 };
 
 export default function WarehouseManagement() {
+	useScrollToTop();
 	const { currentUser } = useAuth();
 	const { apiCall, loading: apiLoading } = useAPI();
 	const [searchTerm, setSearchTerm] = useState("");

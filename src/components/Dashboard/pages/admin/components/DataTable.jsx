@@ -151,9 +151,9 @@ export const DataTable = ({
 							<tr
 								key={item._id}
 								className={`hover:bg-gray-50 transition-colors duration-200 ${
-									selectedItems.includes(item._id) ? "bg-blue-50" : ""
-								} ${onRowClick ? "cursor-pointer" : ""}`}
-								onClick={() => onRowClick && onRowClick(item)}
+									selectedItems.includes(item._id) ? "bg-blue-50" : ""}`}
+								// } ${onRowClick ? "cursor-pointer" : ""}`}
+								// onClick={() => onRowClick && onRowClick(item)}
 							>
 								{selectable && (
 									<td className="px-6 py-4 whitespace-nowrap">
@@ -164,7 +164,7 @@ export const DataTable = ({
 												e.stopPropagation();
 												handleSelectItem(item._id, e.target.checked);
 											}}
-											className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded transition-colors duration-200"
+											className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded transition-colors duration-200 cursor-pointer"
 										/>
 									</td>
 								)}

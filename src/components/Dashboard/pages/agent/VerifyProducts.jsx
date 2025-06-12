@@ -18,6 +18,7 @@ import {
 import DashboardTitle from "../../DashboardTitle";
 import useAPI from "../../../../hooks/useAPI";
 import { ReasonModal } from "../../../common/ReasonModal";
+import useScrollToTop from "../../../../hooks/useScrollToTop";
 
 const StatusBadge = ({ status }) => {
 	const statusConfig = {
@@ -48,6 +49,7 @@ const CategoryBadge = ({ category }) => {
 };
 
 export default function VerifyProducts() {
+	useScrollToTop();
 	const { currentUser } = useAuth();
 	const { apiCall, loading: apiLoading } = useAPI();
 	const [searchTerm, setSearchTerm] = useState("");

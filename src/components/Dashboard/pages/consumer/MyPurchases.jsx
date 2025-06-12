@@ -14,6 +14,7 @@ import {
 } from "react-icons/fa";
 import DashboardTitle from "../../DashboardTitle";
 import useAPI from "../../../../hooks/useAPI";
+import useScrollToTop from "../../../../hooks/useScrollToTop";
 
 const StatusBadge = ({ status }) => {
 	const statusConfig = {
@@ -38,6 +39,7 @@ const StatusBadge = ({ status }) => {
 };
 
 export default function MyPurchases() {
+	useScrollToTop();
 	const { currentUser } = useAuth();
 	const { apiCall } = useAPI();
 	const [searchTerm, setSearchTerm] = useState("");

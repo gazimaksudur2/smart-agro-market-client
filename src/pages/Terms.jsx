@@ -6,6 +6,7 @@ import {
 	FaPrint,
 	FaDownload,
 } from "react-icons/fa";
+import useScrollToTop from "../hooks/useScrollToTop";
 
 const Section = ({ title, children, isOpen, onToggle }) => (
 	<div className="border border-gray-200 rounded-lg mb-4">
@@ -25,6 +26,7 @@ const Section = ({ title, children, isOpen, onToggle }) => (
 );
 
 export default function Terms() {
+	useScrollToTop();
 	const [openSection, setOpenSection] = useState("acceptance");
 
 	const handlePrint = () => {
@@ -46,9 +48,7 @@ export default function Terms() {
 					<p className="text-xl text-primary-100 mb-4">
 						SmartAgroConnect Platform Terms and Conditions
 					</p>
-					<p className="text-sm text-primary-200">
-						Last updated: May 25, 2025
-					</p>
+					<p className="text-sm text-primary-200">Last updated: May 25, 2025</p>
 				</div>
 			</div>
 

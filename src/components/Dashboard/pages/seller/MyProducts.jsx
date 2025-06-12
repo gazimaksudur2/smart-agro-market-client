@@ -187,14 +187,16 @@ export default function MyProducts() {
 									+{product.images.length - 1} more
 								</div>
 							)}
-							{(
+							{
 								<div className="absolute top-2 right-2 bg-amber-500 text-white text-xs px-2 py-1 rounded-full flex items-center shadow-lg">
 									<FaStar className="h-3 w-3 mr-1 text-white" />
 									<span className="font-medium">
-										{product.averageRating && product.averageRating > 0 && Number(product?.averageRating).toFixed(1)}
+										{product.averageRating &&
+											product.averageRating > 0 &&
+											Number(product?.averageRating).toFixed(1)}
 									</span>
 								</div>
-							)}
+							}
 						</div>
 
 						{/* Product Details */}

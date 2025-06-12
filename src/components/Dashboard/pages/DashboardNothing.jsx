@@ -5,8 +5,10 @@ import {
 	FaMapMarkerAlt,
 } from "react-icons/fa";
 import { Link, useNavigate } from "react-router-dom";
+import useScrollToTop from "../../../hooks/useScrollToTop";
 
 export default function DashboardNothing() {
+	useScrollToTop();
 	const navigate = useNavigate();
 
 	const handleGoHome = () => {

@@ -21,6 +21,7 @@ import {
 	useStripe,
 	useElements,
 } from "@stripe/react-stripe-js";
+import useScrollToTop from "../../hooks/useScrollToTop";
 
 // Load Stripe outside of component render to avoid recreating the Stripe object
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLIC_KEY);
@@ -177,6 +178,7 @@ function CheckoutForm({
 }
 
 export default function CheckoutPage() {
+	useScrollToTop();
 	const cartItems = useSelector(selectCartItems);
 	const subtotal = useSelector(selectCartSubtotal);
 	const initialDeliveryCharge = useSelector(selectCartDeliveryCharge);

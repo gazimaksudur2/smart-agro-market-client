@@ -16,6 +16,7 @@ import {
 } from "react-icons/fa";
 import DashboardTitle from "../../DashboardTitle";
 import useAPI from "../../../../hooks/useAPI";
+import useScrollToTop from "../../../../hooks/useScrollToTop";
 
 const StatusBadge = ({ status }) => {
 	const statusConfig = {
@@ -58,6 +59,7 @@ const PriorityBadge = ({ priority }) => {
 };
 
 export default function RequestedOrders() {
+	useScrollToTop();
 	const { currentUser } = useAuth();
 	const { apiCall, loading: apiLoading } = useAPI();
 	const [searchTerm, setSearchTerm] = useState("");

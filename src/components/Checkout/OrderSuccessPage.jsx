@@ -1,7 +1,10 @@
 import { Link } from "react-router-dom";
 import { FaCheckCircle, FaBox, FaHome, FaFileAlt } from "react-icons/fa";
+import useScrollToTop from "../../hooks/useScrollToTop";
 
 export default function OrderSuccessPage() {
+	useScrollToTop();
+
 	return (
 		<div className="max-w-3xl mx-auto px-4 py-16">
 			<div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8 text-center">

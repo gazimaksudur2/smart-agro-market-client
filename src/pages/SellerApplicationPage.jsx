@@ -1,7 +1,9 @@
 import SellerApplication from "../components/Applications/SellerApplication";
 import useApplicationAuth from "../hooks/useApplicationAuth";
+import useScrollToTop from "../hooks/useScrollToTop";
 
 export default function SellerApplicationPage() {
+	useScrollToTop(false); // Instant scroll at page level
 	const { loading, isAuthenticated } = useApplicationAuth();
 
 	if (loading) {

@@ -36,6 +36,7 @@ import {
 } from "recharts";
 import DashboardTitle from "../../DashboardTitle";
 import useAPI from "../../../../hooks/useAPI";
+import useScrollToTop from "../../../../hooks/useScrollToTop";
 
 const MetricCard = ({ title, value, change, changeType, icon, color }) => (
 	<div className="bg-white overflow-hidden shadow-lg rounded-xl border border-gray-200 hover:shadow-xl transition-all duration-300">
@@ -90,6 +91,7 @@ const CustomTooltip = ({ active, payload, label, formatValue }) => {
 };
 
 export default function Analytics() {
+	useScrollToTop();
 	const { currentUser } = useAuth();
 	const { apiCall } = useAPI();
 	const [timeRange, setTimeRange] = useState("30d");

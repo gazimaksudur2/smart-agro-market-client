@@ -24,6 +24,7 @@ import {
 import DashboardTitle from "../../DashboardTitle";
 import useAPI from "../../../../hooks/useAPI";
 import { toast } from "react-hot-toast";
+import useScrollToTop from "../../../../hooks/useScrollToTop";
 
 // Import modular components
 import { DataTable, Pagination } from "./components/DataTable";
@@ -120,6 +121,7 @@ const ApplicationTypeBadge = ({ type }) => {
 };
 
 export default function ManageApplications() {
+	useScrollToTop();
 	const { currentUser } = useAuth();
 	const { apiCall, loading: apiLoading } = useAPI();
 

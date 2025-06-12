@@ -8,7 +8,11 @@ import {
 	FaLock,
 	FaEye,
 	FaUserShield,
+	FaCookieBite,
+	FaPhone,
+	FaEnvelope,
 } from "react-icons/fa";
+import useScrollToTop from "../hooks/useScrollToTop";
 
 const Section = ({ title, children, isOpen, onToggle }) => (
 	<div className="border border-gray-200 rounded-lg mb-4">
@@ -28,6 +32,7 @@ const Section = ({ title, children, isOpen, onToggle }) => (
 );
 
 export default function Privacy() {
+	useScrollToTop();
 	const [openSection, setOpenSection] = useState("overview");
 
 	const handlePrint = () => {

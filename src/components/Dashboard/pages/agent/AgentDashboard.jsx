@@ -14,6 +14,7 @@ import {
 } from "react-icons/fa";
 import DashboardTitle from "../../DashboardTitle";
 import useAPI from "../../../../hooks/useAPI";
+import useScrollToTop from "../../../../hooks/useScrollToTop";
 
 const StatCard = ({ title, value, icon, color, trend, link }) => (
 	<div className="bg-white rounded-lg shadow p-6 hover:shadow-md transition-shadow">
@@ -45,6 +46,7 @@ const StatCard = ({ title, value, icon, color, trend, link }) => (
 );
 
 export default function AgentDashboard() {
+	useScrollToTop();
 	const { currentUser } = useAuth();
 	const { apiCall } = useAPI();
 	const [stats, setStats] = useState({});

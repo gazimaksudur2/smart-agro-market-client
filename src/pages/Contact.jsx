@@ -13,8 +13,10 @@ import {
 	FaQuestionCircle,
 	FaBug,
 } from "react-icons/fa";
+import useScrollToTop from "../hooks/useScrollToTop";
 
 export default function Contact() {
+	useScrollToTop();
 	const [formData, setFormData] = useState({
 		name: "",
 		email: "",

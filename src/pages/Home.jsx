@@ -5,12 +5,14 @@ import { FaLeaf, FaTractor, FaWarehouse, FaTruckMoving } from "react-icons/fa";
 import { BsShieldCheck, BsCashCoin } from "react-icons/bs";
 import ProductCard from "../components/Products/ProductCard";
 import { useAuth } from "../contexts/AuthContext";
+import useScrollToTop from "../hooks/useScrollToTop";
 
 export default function Home() {
+	useScrollToTop();
 	const apiBaseUrl =
 		import.meta.env.VITE_SERVER_API_URL || "http://localhost:5000";
 
-	const { currentUser } = useAuth();
+	const { currentUser, currentRole } = useAuth();
 
 	// Fetch featured products
 	const { data: featuredProducts, isLoading } = useQuery(
@@ -228,121 +230,125 @@ export default function Home() {
 			</section>
 
 			{/* Join Our Platform Section */}
-			<section className="py-16">
-				<div className="container mx-auto px-4">
-					<div className="text-center mb-16">
-						<h2 className="text-3xl font-bold text-gray-900 mb-4">
-							Join Our Platform
-						</h2>
-						<p className="text-gray-600 max-w-2xl mx-auto">
-							Become part of Bangladesh's leading agricultural marketplace.
-							Whether you're a farmer or an agent, we have opportunities for
-							you.
-						</p>
-					</div>
-
-					<div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-						{/* Seller Application Section */}
-						<div className="bg-green-50 rounded-lg p-8 border border-green-200">
-							<div className="flex items-center justify-center mb-6">
-								<img
-									src="https://images.unsplash.com/photo-1574943320219-553eb213f72d?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&h=300&q=80"
-									alt="Farmer with crops"
-									className="w-full h-48 object-cover rounded-lg shadow-md"
-								/>
-							</div>
-							<div className="text-center">
-								<div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-									<FaTractor className="w-8 h-8 text-green-600" />
-								</div>
-								<h3 className="text-2xl font-bold text-gray-900 mb-3">
-									Become a Seller
-								</h3>
-								<p className="text-gray-600 mb-6">
-									Join as a verified seller and connect directly with wholesale
-									buyers. Get fair prices for your crops without middlemen and
-									grow your agricultural business.
+			{(currentRole === "consumer" || !currentUser?.FirebaseUser) && (
+				<>
+					<section className="py-16">
+						<div className="container mx-auto px-4">
+							<div className="text-center mb-16">
+								<h2 className="text-3xl font-bold text-gray-900 mb-4">
+									Join Our Platform
+								</h2>
+								<p className="text-gray-600 max-w-2xl mx-auto">
+									Become part of Bangladesh's leading agricultural marketplace.
+									Whether you're a farmer or an agent, we have opportunities for
+									you.
 								</p>
-								<ul className="text-left text-gray-600 mb-6 space-y-2">
-									<li className="flex items-center">
-										<BsShieldCheck className="w-4 h-4 text-green-600 mr-2" />
-										Direct access to wholesale buyers
-									</li>
-									<li className="flex items-center">
-										<BsShieldCheck className="w-4 h-4 text-green-600 mr-2" />
-										Fair pricing and transparent transactions
-									</li>
-									<li className="flex items-center">
-										<BsShieldCheck className="w-4 h-4 text-green-600 mr-2" />
-										Agent support for verification
-									</li>
-									<li className="flex items-center">
-										<BsShieldCheck className="w-4 h-4 text-green-600 mr-2" />
-										Easy inventory management tools
-									</li>
-								</ul>
-								<Link
-									to="/seller-application"
-									className="btn bg-green-600 hover:bg-green-700 text-white py-3 px-6 font-medium rounded-button w-full"
-								>
-									Apply as Seller
-								</Link>
+							</div>
+
+							<div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+								{/* Seller Application Section */}
+								<div className="bg-green-50 rounded-lg p-8 border border-green-200">
+									<div className="flex items-center justify-center mb-6">
+										<img
+											src="https://images.pexels.com/photos/1595104/pexels-photo-1595104.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1"
+											alt="Harvesting crops"
+											className="w-full h-48 object-cover rounded-lg shadow-md"
+										/>
+									</div>
+									<div className="text-center">
+										<div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+											<FaTractor className="w-8 h-8 text-green-600" />
+										</div>
+										<h3 className="text-2xl font-bold text-gray-900 mb-3">
+											Become a Seller
+										</h3>
+										<p className="text-gray-600 mb-6">
+											Join as a verified seller and connect directly with
+											wholesale buyers. Get fair prices for your crops without
+											middlemen and grow your agricultural business.
+										</p>
+										<ul className="text-left text-gray-600 mb-6 space-y-2">
+											<li className="flex items-center">
+												<BsShieldCheck className="w-4 h-4 text-green-600 mr-2" />
+												Direct access to wholesale buyers
+											</li>
+											<li className="flex items-center">
+												<BsShieldCheck className="w-4 h-4 text-green-600 mr-2" />
+												Fair pricing and transparent transactions
+											</li>
+											<li className="flex items-center">
+												<BsShieldCheck className="w-4 h-4 text-green-600 mr-2" />
+												Agent support for verification
+											</li>
+											<li className="flex items-center">
+												<BsShieldCheck className="w-4 h-4 text-green-600 mr-2" />
+												Easy inventory management tools
+											</li>
+										</ul>
+										<Link
+											to="/seller-application"
+											className="btn bg-green-600 hover:bg-green-700 text-white py-3 px-6 font-medium rounded-button w-full"
+										>
+											Apply as Seller
+										</Link>
+									</div>
+								</div>
+
+								{/* Agent Application Section */}
+								<div className="bg-blue-50 rounded-lg p-8 border border-blue-200">
+									<div className="flex items-center justify-center mb-6">
+										<img
+											src="https://images.pexels.com/photos/221047/pexels-photo-221047.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1"
+											alt="Warehouse and logistics"
+											className="w-full h-48 object-cover rounded-lg shadow-md"
+										/>
+									</div>
+									<div className="text-center">
+										<div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+											<FaWarehouse className="w-8 h-8 text-blue-600" />
+										</div>
+										<h3 className="text-2xl font-bold text-gray-900 mb-3">
+											Become an Agent
+										</h3>
+										<p className="text-gray-600 mb-6">
+											Join as a regional agent and help connect farmers with
+											buyers. Manage logistics, verify sellers, and earn
+											commission on every successful transaction.
+										</p>
+										<ul className="text-left text-gray-600 mb-6 space-y-2">
+											<li className="flex items-center">
+												<BsShieldCheck className="w-4 h-4 text-blue-600 mr-2" />
+												Earn commission on transactions
+											</li>
+											<li className="flex items-center">
+												<BsShieldCheck className="w-4 h-4 text-blue-600 mr-2" />
+												Manage regional operations
+											</li>
+											<li className="flex items-center">
+												<BsShieldCheck className="w-4 h-4 text-blue-600 mr-2" />
+												Build agricultural business network
+											</li>
+											<li className="flex items-center">
+												<BsShieldCheck className="w-4 h-4 text-blue-600 mr-2" />
+												Access to platform analytics
+											</li>
+										</ul>
+										<Link
+											to="/agent-application"
+											className="btn bg-blue-600 hover:bg-blue-700 text-white py-3 px-6 font-medium rounded-button w-full"
+										>
+											Apply as Agent
+										</Link>
+									</div>
+								</div>
 							</div>
 						</div>
-
-						{/* Agent Application Section */}
-						<div className="bg-blue-50 rounded-lg p-8 border border-blue-200">
-							<div className="flex items-center justify-center mb-6">
-								<img
-									src="https://images.unsplash.com/photo-1606085130667-3c72b9e85cdc?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&h=300&q=80"
-									alt="Warehouse and logistics"
-									className="w-full h-48 object-cover rounded-lg shadow-md"
-								/>
-							</div>
-							<div className="text-center">
-								<div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
-									<FaWarehouse className="w-8 h-8 text-blue-600" />
-								</div>
-								<h3 className="text-2xl font-bold text-gray-900 mb-3">
-									Become an Agent
-								</h3>
-								<p className="text-gray-600 mb-6">
-									Join as a regional agent and help connect farmers with buyers.
-									Manage logistics, verify sellers, and earn commission on every
-									successful transaction.
-								</p>
-								<ul className="text-left text-gray-600 mb-6 space-y-2">
-									<li className="flex items-center">
-										<BsShieldCheck className="w-4 h-4 text-blue-600 mr-2" />
-										Earn commission on transactions
-									</li>
-									<li className="flex items-center">
-										<BsShieldCheck className="w-4 h-4 text-blue-600 mr-2" />
-										Manage regional operations
-									</li>
-									<li className="flex items-center">
-										<BsShieldCheck className="w-4 h-4 text-blue-600 mr-2" />
-										Build agricultural business network
-									</li>
-									<li className="flex items-center">
-										<BsShieldCheck className="w-4 h-4 text-blue-600 mr-2" />
-										Access to platform analytics
-									</li>
-								</ul>
-								<Link
-									to="/agent-application"
-									className="btn bg-blue-600 hover:bg-blue-700 text-white py-3 px-6 font-medium rounded-button w-full"
-								>
-									Apply as Agent
-								</Link>
-							</div>
-						</div>
-					</div>
-				</div>
-			</section>
+					</section>
+				</>
+			)}
 
 			{/* Call to Action */}
-			{(!!currentUser?.FirebaseUser) || (
+			{!!currentUser?.FirebaseUser || (
 				<>
 					<section className="py-16 bg-secondary-50">
 						<div className="container mx-auto px-4 text-center">

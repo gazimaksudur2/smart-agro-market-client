@@ -5,6 +5,7 @@ import { FaSpinner, FaExclamationTriangle } from "react-icons/fa";
 import DashboardTitle from "../../DashboardTitle";
 import useAPI from "../../../../hooks/useAPI";
 import { toast } from "react-hot-toast";
+import useScrollToTop from "../../../../hooks/useScrollToTop";
 
 // Import modular components
 import { ProductStatsCards } from "./components/StatsCards";
@@ -32,6 +33,7 @@ const useDebounce = (value, delay) => {
 };
 
 export default function ManageProducts() {
+	useScrollToTop();
 	const { currentUser } = useAuth();
 	const { apiCall, loading: apiLoading } = useAPI();
 
