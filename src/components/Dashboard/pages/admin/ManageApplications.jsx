@@ -196,6 +196,23 @@ export default function ManageApplications() {
 		}
 	);
 
+	// Fetch admin statistics
+	const { data: adminStats } = useQuery(
+		["adminStatistics"],
+		async () => {
+			try {
+				return await apiCall("/applications/statistics");
+			} catch (error) {
+				console.error("Error fetching admin statistics:", error);
+				return null;
+			}
+		},
+		{
+			enabled: !!currentUser?.DBUser?._id,
+			staleTime: 60000,
+		}
+	);
+
 	const regions = useRegions().map((region) => region.name);
 
 	// Handle application actions
@@ -207,7 +224,7 @@ export default function ManageApplications() {
 		try {
 			await apiCall(`/applications/${applicationId}/${action}`, "PATCH", {
 				reason,
-				adminId: currentUser?.DBUser?._id,
+				reviewedBy: currentUser?.DBUser?._id,
 			});
 
 			toast.success(`Application ${action}d successfully!`);
@@ -232,14 +249,12 @@ export default function ManageApplications() {
 	// Execute bulk action
 	const executeBulkAction = async (reason) => {
 		try {
-			await Promise.all(
-				bulkSelected.map((applicationId) =>
-					apiCall(`/applications/${applicationId}/${bulkAction}`, "PATCH", {
-						reason,
-						adminId: currentUser?.DBUser?._id,
-					})
-				)
-			);
+			await apiCall("/applications/bulk-action", "PATCH", {
+				applicationIds: bulkSelected,
+				action: bulkAction,
+				reason,
+				reviewedBy: currentUser?.DBUser?._id,
+			});
 
 			toast.success(`Bulk ${bulkAction} completed successfully!`);
 			setBulkSelected([]);
@@ -262,8 +277,13 @@ export default function ManageApplications() {
 		setShowApplicationModal(true);
 	};
 
-	// Get statistics
+	// Get statistics - use backend stats if available, fallback to frontend calculation
 	const getStats = () => {
+		if (adminStats) {
+			return adminStats;
+		}
+
+		// Fallback calculation if backend stats are not available
 		if (!applicationsData?.applications) {
 			return {
 				total: 0,

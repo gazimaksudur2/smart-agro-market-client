@@ -11,29 +11,52 @@ import {
 	FaClock,
 	FaUser,
 	FaMapMarkerAlt,
-	FaPhone,
-	FaEnvelope,
-	FaIdCard,
 	FaStore,
+	FaSpinner,
+	FaExclamationTriangle,
 } from "react-icons/fa";
 import DashboardTitle from "../../DashboardTitle";
 import useAPI from "../../../../hooks/useAPI";
 import { ReasonModal } from "../../../common/ReasonModal";
+import { toast } from "react-hot-toast";
 
 const StatusBadge = ({ status }) => {
 	const statusConfig = {
-		pending: { color: "yellow", text: "Pending Review" },
-		verified: { color: "green", text: "Verified" },
-		rejected: { color: "red", text: "Rejected" },
-		suspended: { color: "gray", text: "Suspended" },
+		pending: {
+			text: "Pending Review",
+			bgColor: "bg-yellow-100",
+			textColor: "text-yellow-800",
+			dotColor: "bg-yellow-400",
+		},
+		approved: {
+			text: "Approved",
+			bgColor: "bg-green-100",
+			textColor: "text-green-800",
+			dotColor: "bg-green-400",
+		},
+		rejected: {
+			text: "Rejected",
+			bgColor: "bg-red-100",
+			textColor: "text-red-800",
+			dotColor: "bg-red-400",
+		},
+		"in-review": {
+			text: "In Review",
+			bgColor: "bg-blue-100",
+			textColor: "text-blue-800",
+			dotColor: "bg-blue-400",
+		},
 	};
 
 	const config = statusConfig[status] || statusConfig.pending;
 
 	return (
 		<span
-			className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-${config.color}-100 text-${config.color}-800`}
+			className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${config.bgColor} ${config.textColor} transition-all duration-200 hover:shadow-sm`}
 		>
+			<span
+				className={`w-2 h-2 rounded-full ${config.dotColor} mr-2 animate-pulse`}
+			></span>
 			{config.text}
 		</span>
 	);
@@ -44,7 +67,8 @@ export default function VerifySellers() {
 	const { apiCall, loading: apiLoading } = useAPI();
 	const [searchTerm, setSearchTerm] = useState("");
 	const [statusFilter, setStatusFilter] = useState("all");
-	const [filteredSellers, setFilteredSellers] = useState([]);
+	const [currentPage, setCurrentPage] = useState(1);
+	const [pageSize, setPageSize] = useState(10);
 	const [selectedSeller, setSelectedSeller] = useState(null);
 
 	// ReasonModal state
@@ -52,183 +76,90 @@ export default function VerifySellers() {
 	const [currentAction, setCurrentAction] = useState("");
 	const [currentSellerId, setCurrentSellerId] = useState("");
 
-	// Fetch seller applications for this agent's region
+	// Build query parameters for agent-specific applications
+	const queryParams = new URLSearchParams({
+		page: currentPage.toString(),
+		limit: pageSize.toString(),
+	});
+
+	if (statusFilter !== "all") queryParams.append("status", statusFilter);
+	if (searchTerm.trim()) queryParams.append("search", searchTerm.trim());
+
+	// Fetch agent's seller applications using agent-specific endpoint
 	const {
-		data: sellers,
+		data: applicationsData,
 		isLoading,
 		error,
 		refetch,
 	} = useQuery(
-		["sellerApplications", currentUser?.FirebaseUser?.uid],
+		["agentApplications", queryParams.toString()],
 		async () => {
-			if (!currentUser?.FirebaseUser?.uid) return [];
 			try {
-				return await apiCall(
-					`/agent/seller-applications/${currentUser.FirebaseUser.uid}`
+				const response = await apiCall(
+					`/applications/agent/applications?${queryParams}`
 				);
+				return response;
 			} catch (error) {
-				console.error("Error fetching seller applications:", error);
-				return [];
+				console.error("Error fetching agent applications:", error);
+				throw error;
 			}
 		},
 		{
-			enabled: !!currentUser?.FirebaseUser?.uid,
+			enabled: !!currentUser?.DBUser?._id,
+			keepPreviousData: true,
+			staleTime: 30000,
+			refetchOnWindowFocus: false,
 		}
 	);
 
-	// Mock data for demo
-	const mockSellers = [
-		{
-			id: "SELLER-2024-001",
-			applicationDate: "2024-01-20",
-			personalInfo: {
-				name: "Rahman Ahmed",
-				email: "rahman.ahmed@example.com",
-				phone: "+8801712345678",
-				nid: "1234567890123",
-				address: "Village: Savar, Upazila: Savar, Dhaka",
-			},
-			businessInfo: {
-				farmName: "Green Valley Organic Farm",
-				farmSize: "5 acres",
-				farmType: "Organic Vegetables",
-				experience: "8 years",
-				specialization: "Organic vegetables, rice, and seasonal fruits",
-				certifications: "Organic Certification from BSTI",
-			},
-			location: {
-				region: "Dhaka",
-				district: "Dhaka",
-				upazila: "Savar",
-				village: "Savar",
-			},
-			documents: {
-				nidCopy: "https://example.com/nid.jpg",
-				farmPhotos: [
-					"https://example.com/farm1.jpg",
-					"https://example.com/farm2.jpg",
-				],
-				certifications: ["https://example.com/cert1.jpg"],
-			},
-			status: "pending",
-			submittedAt: "2024-01-20T10:30:00Z",
+	// Fetch agent statistics
+	const { data: agentStats } = useQuery(
+		["agentStatistics"],
+		async () => {
+			try {
+				return await apiCall("/applications/agent/statistics");
+			} catch (error) {
+				console.error("Error fetching agent statistics:", error);
+				return null;
+			}
 		},
 		{
-			id: "SELLER-2024-002",
-			applicationDate: "2024-01-18",
-			personalInfo: {
-				name: "Fatima Begum",
-				email: "fatima.begum@example.com",
-				phone: "+8801812345678",
-				nid: "9876543210987",
-				address: "Village: Keraniganj, Upazila: Keraniganj, Dhaka",
-			},
-			businessInfo: {
-				farmName: "Sunrise Poultry & Dairy",
-				farmSize: "3 acres",
-				farmType: "Poultry & Dairy",
-				experience: "12 years",
-				specialization: "Chicken, eggs, milk, and dairy products",
-				certifications: "Halal Certification, Veterinary License",
-			},
-			location: {
-				region: "Dhaka",
-				district: "Dhaka",
-				upazila: "Keraniganj",
-				village: "Keraniganj",
-			},
-			documents: {
-				nidCopy: "https://example.com/nid2.jpg",
-				farmPhotos: ["https://example.com/farm3.jpg"],
-				certifications: ["https://example.com/cert2.jpg"],
-			},
-			status: "verified",
-			submittedAt: "2024-01-18T14:20:00Z",
-			verifiedAt: "2024-01-19T09:15:00Z",
-		},
-		{
-			id: "SELLER-2024-003",
-			applicationDate: "2024-01-15",
-			personalInfo: {
-				name: "Karim Uddin",
-				email: "karim.uddin@example.com",
-				phone: "+8801912345678",
-				nid: "5555666677778",
-				address: "Village: Manikganj, Upazila: Manikganj, Dhaka",
-			},
-			businessInfo: {
-				farmName: "Golden Harvest Fish Farm",
-				farmSize: "2 acres",
-				farmType: "Fish Farming",
-				experience: "6 years",
-				specialization: "Rohu, Katla, Tilapia, and other freshwater fish",
-				certifications: "Aquaculture License",
-			},
-			location: {
-				region: "Dhaka",
-				district: "Manikganj",
-				upazila: "Manikganj",
-				village: "Manikganj",
-			},
-			documents: {
-				nidCopy: "https://example.com/nid3.jpg",
-				farmPhotos: [
-					"https://example.com/farm4.jpg",
-					"https://example.com/farm5.jpg",
-				],
-				certifications: ["https://example.com/cert3.jpg"],
-			},
-			status: "pending",
-			submittedAt: "2024-01-15T11:45:00Z",
-		},
-	];
-
-	const displaySellers = sellers || mockSellers;
-
-	// Filter sellers
-	useEffect(() => {
-		let filtered = displaySellers;
-
-		// Search filter
-		if (searchTerm) {
-			filtered = filtered.filter(
-				(seller) =>
-					seller.personalInfo.name
-						.toLowerCase()
-						.includes(searchTerm.toLowerCase()) ||
-					seller.personalInfo.email
-						.toLowerCase()
-						.includes(searchTerm.toLowerCase()) ||
-					seller.businessInfo.farmName
-						.toLowerCase()
-						.includes(searchTerm.toLowerCase()) ||
-					seller.id.toLowerCase().includes(searchTerm.toLowerCase())
-			);
+			enabled: !!currentUser?.DBUser?._id,
+			staleTime: 60000,
 		}
+	);
 
-		// Status filter
-		if (statusFilter !== "all") {
-			filtered = filtered.filter((seller) => seller.status === statusFilter);
+	// Fetch agent operational area info
+	const { data: operationalInfo } = useQuery(
+		["agentOperationalArea"],
+		async () => {
+			try {
+				return await apiCall("/applications/agent/operational-area");
+			} catch (error) {
+				console.error("Error fetching operational area:", error);
+				return null;
+			}
+		},
+		{
+			enabled: !!currentUser?.DBUser?._id,
+			staleTime: 300000, // 5 minutes - rarely changes
 		}
+	);
 
-		setFilteredSellers(filtered);
-	}, [displaySellers, searchTerm, statusFilter]);
+	const applications = applicationsData?.applications || [];
 
-	const handleSellerAction = async (sellerId, action, reason = "") => {
+	const handleSellerAction = async (applicationId, action, reason = "") => {
 		try {
-			await apiCall(
-				`/agent/seller-applications/${sellerId}/${action}`,
-				"PATCH",
-				{
-					reason,
-					agentId: currentUser?.DBUser?._id,
-				}
-			);
+			await apiCall(`/applications/${applicationId}/${action}`, "PATCH", {
+				reason,
+				reviewedBy: currentUser?.DBUser?._id,
+			});
+
+			toast.success(`Application ${action}d successfully!`);
 			refetch();
-			alert(`Seller application ${action} successfully!`);
 		} catch (error) {
-			console.error(`Error ${action} seller:`, error);
-			alert(`Failed to ${action} seller application. Please try again.`);
+			console.error(`Error ${action}ing application:`, error);
+			toast.error(`Failed to ${action} application. Please try again.`);
 		}
 	};
 
@@ -245,26 +176,58 @@ export default function VerifySellers() {
 		setCurrentSellerId("");
 	};
 
+	// Use backend statistics if available, fallback to frontend calculation
 	const getSellerStats = () => {
+		if (agentStats) {
+			return agentStats;
+		}
+
+		// Fallback calculation
 		return {
-			total: filteredSellers.length,
-			pending: filteredSellers.filter((seller) => seller.status === "pending")
-				.length,
-			verified: filteredSellers.filter((seller) => seller.status === "verified")
-				.length,
-			rejected: filteredSellers.filter((seller) => seller.status === "rejected")
-				.length,
+			total: applications.length,
+			pending: applications.filter((app) => app.status === "pending").length,
+			approved: applications.filter((app) => app.status === "approved").length,
+			rejected: applications.filter((app) => app.status === "rejected").length,
+			inReview: applications.filter((app) => app.status === "in-review").length,
 		};
 	};
 
 	const stats = getSellerStats();
 
-	if (isLoading) {
+	// Loading state
+	if (isLoading && !applicationsData) {
 		return (
 			<div className="py-6">
 				<DashboardTitle title="Verify Sellers" />
-				<div className="mt-6 flex justify-center">
-					<div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary-600"></div>
+				<div className="mt-6 flex justify-center items-center h-64">
+					<FaSpinner className="animate-spin h-8 w-8 text-primary-600" />
+					<span className="ml-2 text-lg text-gray-600">
+						Loading seller applications...
+					</span>
+				</div>
+			</div>
+		);
+	}
+
+	// Error state
+	if (error) {
+		return (
+			<div className="py-6">
+				<DashboardTitle title="Verify Sellers" />
+				<div className="mt-6 bg-red-50 border border-red-200 rounded-lg p-6 text-center">
+					<FaExclamationTriangle className="mx-auto h-12 w-12 text-red-600 mb-4" />
+					<h3 className="text-lg font-medium text-red-800 mb-2">
+						Error Loading Applications
+					</h3>
+					<p className="text-red-600 mb-4">
+						{error?.message || "An unexpected error occurred"}
+					</p>
+					<button
+						onClick={() => refetch()}
+						className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors duration-200"
+					>
+						Try Again
+					</button>
 				</div>
 			</div>
 		);
@@ -274,193 +237,219 @@ export default function VerifySellers() {
 		<div className="py-6">
 			<DashboardTitle title="Verify Sellers" />
 
+			{/* Operational Area Info */}
+			{operationalInfo && (
+				<div className="mt-6 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-xl p-4">
+					<div className="flex items-center">
+						<FaMapMarkerAlt className="h-5 w-5 text-blue-600 mr-2" />
+						<span className="text-sm font-medium text-blue-800">
+							Your Operational Area: {operationalInfo.region}
+							{operationalInfo.district && ` - ${operationalInfo.district}`}
+						</span>
+					</div>
+				</div>
+			)}
+
 			{/* Stats Cards */}
-			<div className="mt-6 grid grid-cols-1 gap-5 sm:grid-cols-4">
-				<div className="bg-white overflow-hidden shadow rounded-lg">
-					<div className="p-5">
-						<div className="flex items-center">
-							<div className="flex-shrink-0">
+			<div className="mt-6 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
+				<div className="bg-white overflow-hidden shadow-lg rounded-xl p-6 border border-gray-200 hover:shadow-xl transition-all duration-300 hover:scale-105">
+					<div className="flex items-center">
+						<div className="flex-shrink-0">
+							<div className="p-3 rounded-full bg-primary-100">
 								<FaUser className="h-6 w-6 text-primary-600" />
 							</div>
-							<div className="ml-5 w-0 flex-1">
-								<dl>
-									<dt className="text-sm font-medium text-gray-500 truncate">
-										Total Applications
-									</dt>
-									<dd className="text-lg font-medium text-gray-900">
-										{stats.total}
-									</dd>
-								</dl>
-							</div>
+						</div>
+						<div className="ml-5 w-0 flex-1">
+							<dl>
+								<dt className="text-sm font-medium text-gray-500 truncate">
+									Total Applications
+								</dt>
+								<dd className="text-3xl font-bold text-gray-900">
+									{stats.total}
+								</dd>
+							</dl>
 						</div>
 					</div>
 				</div>
 
-				<div className="bg-white overflow-hidden shadow rounded-lg">
-					<div className="p-5">
-						<div className="flex items-center">
-							<div className="flex-shrink-0">
+				<div className="bg-white overflow-hidden shadow-lg rounded-xl p-6 border border-gray-200 hover:shadow-xl transition-all duration-300 hover:scale-105">
+					<div className="flex items-center">
+						<div className="flex-shrink-0">
+							<div className="p-3 rounded-full bg-yellow-100">
 								<FaClock className="h-6 w-6 text-yellow-600" />
 							</div>
-							<div className="ml-5 w-0 flex-1">
-								<dl>
-									<dt className="text-sm font-medium text-gray-500 truncate">
-										Pending Review
-									</dt>
-									<dd className="text-lg font-medium text-gray-900">
-										{stats.pending}
-									</dd>
-								</dl>
-							</div>
+						</div>
+						<div className="ml-5 w-0 flex-1">
+							<dl>
+								<dt className="text-sm font-medium text-gray-500 truncate">
+									Pending Review
+								</dt>
+								<dd className="text-3xl font-bold text-gray-900">
+									{stats.pending}
+								</dd>
+							</dl>
 						</div>
 					</div>
 				</div>
 
-				<div className="bg-white overflow-hidden shadow rounded-lg">
-					<div className="p-5">
-						<div className="flex items-center">
-							<div className="flex-shrink-0">
+				<div className="bg-white overflow-hidden shadow-lg rounded-xl p-6 border border-gray-200 hover:shadow-xl transition-all duration-300 hover:scale-105">
+					<div className="flex items-center">
+						<div className="flex-shrink-0">
+							<div className="p-3 rounded-full bg-green-100">
 								<FaUserCheck className="h-6 w-6 text-green-600" />
 							</div>
-							<div className="ml-5 w-0 flex-1">
-								<dl>
-									<dt className="text-sm font-medium text-gray-500 truncate">
-										Verified
-									</dt>
-									<dd className="text-lg font-medium text-gray-900">
-										{stats.verified}
-									</dd>
-								</dl>
-							</div>
+						</div>
+						<div className="ml-5 w-0 flex-1">
+							<dl>
+								<dt className="text-sm font-medium text-gray-500 truncate">
+									Approved
+								</dt>
+								<dd className="text-3xl font-bold text-gray-900">
+									{stats.approved}
+								</dd>
+							</dl>
 						</div>
 					</div>
 				</div>
 
-				<div className="bg-white overflow-hidden shadow rounded-lg">
-					<div className="p-5">
-						<div className="flex items-center">
-							<div className="flex-shrink-0">
+				<div className="bg-white overflow-hidden shadow-lg rounded-xl p-6 border border-gray-200 hover:shadow-xl transition-all duration-300 hover:scale-105">
+					<div className="flex items-center">
+						<div className="flex-shrink-0">
+							<div className="p-3 rounded-full bg-red-100">
 								<FaTimes className="h-6 w-6 text-red-600" />
 							</div>
-							<div className="ml-5 w-0 flex-1">
-								<dl>
-									<dt className="text-sm font-medium text-gray-500 truncate">
-										Rejected
-									</dt>
-									<dd className="text-lg font-medium text-gray-900">
-										{stats.rejected}
-									</dd>
-								</dl>
-							</div>
+						</div>
+						<div className="ml-5 w-0 flex-1">
+							<dl>
+								<dt className="text-sm font-medium text-gray-500 truncate">
+									Rejected
+								</dt>
+								<dd className="text-3xl font-bold text-gray-900">
+									{stats.rejected}
+								</dd>
+							</dl>
 						</div>
 					</div>
 				</div>
 			</div>
 
 			{/* Filters */}
-			<div className="mt-6 bg-white shadow rounded-lg p-6">
-				<div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-					<div>
-						<label className="block text-sm font-medium text-gray-700 mb-1">
-							<FaSearch className="inline mr-1" />
+			<div className="mt-6 bg-white shadow-lg rounded-xl p-6 border border-gray-200">
+				<div className="grid grid-cols-1 gap-6 sm:grid-cols-3">
+					<div className="space-y-2">
+						<label className="block text-sm font-medium text-gray-700">
+							<FaSearch className="inline mr-2 h-4 w-4" />
 							Search Applications
 						</label>
 						<input
 							type="text"
 							value={searchTerm}
 							onChange={(e) => setSearchTerm(e.target.value)}
-							placeholder="Search by name, email, farm name, or ID..."
-							className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+							placeholder="Search by name, email, farm name..."
+							className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200"
 						/>
 					</div>
 
-					<div>
-						<label className="block text-sm font-medium text-gray-700 mb-1">
-							<FaFilter className="inline mr-1" />
+					<div className="space-y-2">
+						<label className="block text-sm font-medium text-gray-700">
+							<FaFilter className="inline mr-2 h-4 w-4" />
 							Status
 						</label>
 						<select
 							value={statusFilter}
 							onChange={(e) => setStatusFilter(e.target.value)}
-							className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+							className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200"
 						>
 							<option value="all">All Status</option>
-							<option value="pending">Pending Review</option>
-							<option value="verified">Verified</option>
-							<option value="rejected">Rejected</option>
-							<option value="suspended">Suspended</option>
+							<option value="pending">⏳ Pending Review</option>
+							<option value="in-review">👁️ In Review</option>
+							<option value="approved">✅ Approved</option>
+							<option value="rejected">❌ Rejected</option>
+						</select>
+					</div>
+
+					<div className="space-y-2">
+						<label className="block text-sm font-medium text-gray-700">
+							Items Per Page
+						</label>
+						<select
+							value={pageSize}
+							onChange={(e) => {
+								setPageSize(Number(e.target.value));
+								setCurrentPage(1);
+							}}
+							className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200"
+						>
+							<option value={10}>10 per page</option>
+							<option value={20}>20 per page</option>
+							<option value={50}>50 per page</option>
 						</select>
 					</div>
 				</div>
 			</div>
 
 			{/* Seller Applications List */}
-			<div className="mt-6 bg-white shadow overflow-hidden rounded-lg">
-				<div className="px-6 py-4 border-b border-gray-200">
+			<div className="mt-6 bg-white shadow-lg overflow-hidden rounded-xl border border-gray-200">
+				<div className="px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-primary-50 to-primary-100">
 					<h3 className="text-lg font-medium text-gray-900">
 						Seller Applications
+						{applicationsData?.totalApplications && (
+							<span className="ml-2 text-sm text-gray-600">
+								({applicationsData.totalApplications} total)
+							</span>
+						)}
 					</h3>
 				</div>
 
-				{filteredSellers.length === 0 ? (
+				{applications.length === 0 ? (
 					<div className="p-6 text-center text-gray-500">
 						<FaUser className="mx-auto h-12 w-12 text-gray-400 mb-4" />
 						<p>No seller applications found matching your criteria.</p>
 					</div>
 				) : (
 					<div className="divide-y divide-gray-200">
-						{filteredSellers.map((seller) => (
-							<div key={seller.id} className="p-6 hover:bg-gray-50">
+						{applications.map((application) => (
+							<div
+								key={application._id}
+								className="p-6 hover:bg-gray-50 transition-colors duration-200"
+							>
 								<div className="flex items-center justify-between mb-4">
-									<div>
-										<h4 className="text-lg font-medium text-gray-900">
-											{seller.personalInfo.name}
-										</h4>
-										<p className="text-sm text-gray-500">
-											Application ID: {seller.id}
-										</p>
-										<p className="text-sm text-gray-500">
-											Submitted on{" "}
-											{new Date(seller.submittedAt).toLocaleDateString()}
-										</p>
+									<div className="flex items-center">
+										<img
+											src={
+												application.applicantImg ||
+												`https://ui-avatars.com/api/?name=${encodeURIComponent(
+													application.applicantName
+												)}&background=6366f1&color=fff&size=48`
+											}
+											alt={application.applicantName}
+											className="h-12 w-12 rounded-full object-cover mr-4"
+											onError={(e) => {
+												e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(
+													application.applicantName
+												)}&background=6366f1&color=fff&size=48`;
+											}}
+										/>
+										<div>
+											<h4 className="text-lg font-medium text-gray-900">
+												{application.applicantName}
+											</h4>
+											<p className="text-sm text-gray-500">
+												{application.applicantEmail}
+											</p>
+											<p className="text-sm text-gray-500">
+												Applied on{" "}
+												{new Date(application.createdAt).toLocaleDateString()}
+											</p>
+										</div>
 									</div>
 									<div className="text-right">
-										<StatusBadge status={seller.status} />
+										<StatusBadge status={application.status} />
 									</div>
 								</div>
 
-								{/* Personal Information */}
+								{/* Application Information */}
 								<div className="mb-4 p-4 bg-gray-50 rounded-lg">
-									<h5 className="font-medium text-gray-900 mb-2">
-										<FaUser className="inline mr-1" />
-										Personal Information
-									</h5>
-									<div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-										<div>
-											<p>
-												<FaEnvelope className="inline mr-1" />
-												<strong>Email:</strong> {seller.personalInfo.email}
-											</p>
-											<p>
-												<FaPhone className="inline mr-1" />
-												<strong>Phone:</strong> {seller.personalInfo.phone}
-											</p>
-										</div>
-										<div>
-											<p>
-												<FaIdCard className="inline mr-1" />
-												<strong>NID:</strong> {seller.personalInfo.nid}
-											</p>
-											<p>
-												<FaMapMarkerAlt className="inline mr-1" />
-												<strong>Address:</strong> {seller.personalInfo.address}
-											</p>
-										</div>
-									</div>
-								</div>
-
-								{/* Business Information */}
-								<div className="mb-4 p-4 bg-blue-50 rounded-lg">
 									<h5 className="font-medium text-gray-900 mb-2">
 										<FaStore className="inline mr-1" />
 										Business Information
@@ -469,29 +458,25 @@ export default function VerifySellers() {
 										<div>
 											<p>
 												<strong>Farm Name:</strong>{" "}
-												{seller.businessInfo.farmName}
-											</p>
-											<p>
-												<strong>Farm Size:</strong>{" "}
-												{seller.businessInfo.farmSize}
+												{application.formData?.farmName || "Not provided"}
 											</p>
 											<p>
 												<strong>Farm Type:</strong>{" "}
-												{seller.businessInfo.farmType}
+												{application.formData?.farmType || "Not provided"}
+											</p>
+											<p>
+												<strong>Farm Size:</strong>{" "}
+												{application.formData?.farmSize || "Not provided"}
 											</p>
 										</div>
 										<div>
 											<p>
 												<strong>Experience:</strong>{" "}
-												{seller.businessInfo.experience}
+												{application.formData?.experience || "Not provided"}
 											</p>
 											<p>
 												<strong>Specialization:</strong>{" "}
-												{seller.businessInfo.specialization}
-											</p>
-											<p>
-												<strong>Certifications:</strong>{" "}
-												{seller.businessInfo.certifications}
+												{application.formData?.specialization || "Not provided"}
 											</p>
 										</div>
 									</div>
@@ -503,106 +488,73 @@ export default function VerifySellers() {
 										<FaMapMarkerAlt className="inline mr-1" />
 										Location Details
 									</h5>
-									<div className="grid grid-cols-1 md:grid-cols-4 gap-4 text-sm">
+									<div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
 										<p>
-											<strong>Region:</strong> {seller.location.region}
+											<strong>Region:</strong>{" "}
+											{application.operationalArea?.region || "Not provided"}
 										</p>
 										<p>
-											<strong>District:</strong> {seller.location.district}
-										</p>
-										<p>
-											<strong>Upazila:</strong> {seller.location.upazila}
-										</p>
-										<p>
-											<strong>Village:</strong> {seller.location.village}
+											<strong>District:</strong>{" "}
+											{application.operationalArea?.district || "Not provided"}
 										</p>
 									</div>
 								</div>
 
-								{/* Documents */}
-								<div className="mb-4">
-									<h5 className="font-medium text-gray-900 mb-2">Documents</h5>
-									<div className="flex flex-wrap gap-2">
-										<a
-											href={seller.documents.nidCopy}
-											target="_blank"
-											rel="noopener noreferrer"
-											className="btn btn-outline-primary btn-sm"
-										>
-											View NID Copy
-										</a>
-										{seller.documents.farmPhotos.map((photo, index) => (
-											<a
-												key={index}
-												href={photo}
-												target="_blank"
-												rel="noopener noreferrer"
-												className="btn btn-outline-secondary btn-sm"
-											>
-												Farm Photo {index + 1}
-											</a>
-										))}
-										{seller.documents.certifications.map((cert, index) => (
-											<a
-												key={index}
-												href={cert}
-												target="_blank"
-												rel="noopener noreferrer"
-												className="btn btn-outline-accent btn-sm"
-											>
-												Certificate {index + 1}
-											</a>
-										))}
+								{/* Review Information */}
+								{application.reviewedAt && (
+									<div className="mb-4 p-4 bg-blue-50 rounded-lg">
+										<h5 className="font-medium text-gray-900 mb-2">
+											Review Information
+										</h5>
+										<div className="text-sm">
+											<p>
+												<strong>Reviewed on:</strong>{" "}
+												{new Date(application.reviewedAt).toLocaleDateString()}
+											</p>
+											{application.reviewNotes && (
+												<p>
+													<strong>Notes:</strong> {application.reviewNotes}
+												</p>
+											)}
+										</div>
 									</div>
-								</div>
+								)}
 
 								{/* Action Buttons */}
 								<div className="flex items-center space-x-3">
 									<button
-										onClick={() => setSelectedSeller(seller)}
-										className="btn btn-outline-primary btn-sm"
+										onClick={() => setSelectedSeller(application)}
+										className="flex items-center px-4 py-2 text-sm font-medium text-primary-700 bg-primary-100 border border-primary-200 rounded-lg hover:bg-primary-200 transition-all duration-200"
 									>
-										<FaEye className="mr-1 h-4 w-4" />
+										<FaEye className="mr-2 h-4 w-4" />
 										View Details
 									</button>
 
-									{seller.status === "pending" && (
+									{application.status === "pending" && (
 										<>
 											<button
-												onClick={() => handleSellerAction(seller.id, "verify")}
+												onClick={() =>
+													handleSellerAction(application._id, "approve")
+												}
 												disabled={apiLoading}
-												className="btn btn-success btn-sm"
+												className="flex items-center px-4 py-2 text-sm font-medium text-green-700 bg-green-100 border border-green-200 rounded-lg hover:bg-green-200 transition-all duration-200 disabled:opacity-50"
 											>
-												<FaCheck className="mr-1 h-4 w-4" />
-												Verify Seller
+												<FaCheck className="mr-2 h-4 w-4" />
+												Approve
 											</button>
 											<button
 												onClick={() => {
-													setCurrentSellerId(seller.id);
+													setCurrentSellerId(application._id);
 													setCurrentAction("reject");
 													setShowReasonModal(true);
 												}}
 												disabled={apiLoading}
-												className="btn btn-outline-red btn-sm"
+												className="flex items-center px-4 py-2 text-sm font-medium text-red-700 bg-red-100 border border-red-200 rounded-lg hover:bg-red-200 transition-all duration-200 disabled:opacity-50"
 											>
-												<FaTimes className="mr-1 h-4 w-4" />
-												Reject Application
+												<FaTimes className="mr-2 h-4 w-4" />
+												Reject
 											</button>
 										</>
-									)}
-
-									{seller.status === "verified" && (
-										<button
-											onClick={() => {
-												setCurrentSellerId(seller.id);
-												setCurrentAction("suspend");
-												setShowReasonModal(true);
-											}}
-											disabled={apiLoading}
-											className="btn btn-outline-red btn-sm"
-										>
-											Suspend Seller
-										</button>
 									)}
 								</div>
 							</div>
@@ -611,6 +563,79 @@ export default function VerifySellers() {
 				)}
 			</div>
 
+			{/* Pagination */}
+			{applicationsData && applicationsData.totalPages > 1 && (
+				<div className="mt-6 bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6 rounded-lg shadow">
+					<div className="flex-1 flex justify-between sm:hidden">
+						<button
+							onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+							disabled={currentPage === 1}
+							className="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50"
+						>
+							Previous
+						</button>
+						<button
+							onClick={() =>
+								setCurrentPage(
+									Math.min(applicationsData.totalPages, currentPage + 1)
+								)
+							}
+							disabled={currentPage === applicationsData.totalPages}
+							className="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50"
+						>
+							Next
+						</button>
+					</div>
+					<div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+						<div>
+							<p className="text-sm text-gray-700">
+								Showing{" "}
+								<span className="font-medium">
+									{(currentPage - 1) * pageSize + 1}
+								</span>{" "}
+								to{" "}
+								<span className="font-medium">
+									{Math.min(
+										currentPage * pageSize,
+										applicationsData.totalApplications
+									)}
+								</span>{" "}
+								of{" "}
+								<span className="font-medium">
+									{applicationsData.totalApplications}
+								</span>{" "}
+								results
+							</p>
+						</div>
+						<div>
+							<nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px">
+								<button
+									onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+									disabled={currentPage === 1}
+									className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50"
+								>
+									Previous
+								</button>
+								<span className="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700">
+									Page {currentPage} of {applicationsData.totalPages}
+								</span>
+								<button
+									onClick={() =>
+										setCurrentPage(
+											Math.min(applicationsData.totalPages, currentPage + 1)
+										)
+									}
+									disabled={currentPage === applicationsData.totalPages}
+									className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50"
+								>
+									Next
+								</button>
+							</nav>
+						</div>
+					</div>
+				</div>
+			)}
+
 			{/* Seller Detail Modal */}
 			{selectedSeller && (
 				<div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
@@ -618,8 +643,7 @@ export default function VerifySellers() {
 						<div className="mt-3">
 							<div className="flex items-center justify-between mb-4">
 								<h3 className="text-lg font-medium text-gray-900">
-									Seller Application Details -{" "}
-									{selectedSeller.personalInfo.name}
+									Seller Application Details - {selectedSeller.applicantName}
 								</h3>
 								<button
 									onClick={() => setSelectedSeller(null)}
@@ -629,16 +653,49 @@ export default function VerifySellers() {
 								</button>
 							</div>
 
-							{/* Detailed modal content would go here */}
-							<div className="text-sm text-gray-600">
-								<p>
-									Detailed seller application information would be displayed
-									here...
-								</p>
-								<p>
-									This would include all documents, verification history, and
-									detailed business information.
-								</p>
+							{/* Detailed application content */}
+							<div className="space-y-4">
+								<div className="bg-gray-50 p-4 rounded-lg">
+									<h4 className="font-medium text-gray-900 mb-2">
+										Personal Information
+									</h4>
+									<div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+										<p>
+											<strong>Email:</strong> {selectedSeller.applicantEmail}
+										</p>
+										<p>
+											<strong>NID:</strong>{" "}
+											{selectedSeller.formData?.nidNumber || "Not provided"}
+										</p>
+									</div>
+								</div>
+
+								<div className="bg-gray-50 p-4 rounded-lg">
+									<h4 className="font-medium text-gray-900 mb-2">
+										Farm Details
+									</h4>
+									<div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+										<p>
+											<strong>Farm Address:</strong>{" "}
+											{selectedSeller.formData?.farmAddress || "Not provided"}
+										</p>
+										<p>
+											<strong>Certifications:</strong>{" "}
+											{selectedSeller.formData?.certifications || "None"}
+										</p>
+									</div>
+								</div>
+
+								{selectedSeller.formData?.motivation && (
+									<div className="bg-gray-50 p-4 rounded-lg">
+										<h4 className="font-medium text-gray-900 mb-2">
+											Motivation
+										</h4>
+										<p className="text-sm">
+											{selectedSeller.formData.motivation}
+										</p>
+									</div>
+								)}
 							</div>
 						</div>
 					</div>
@@ -650,20 +707,10 @@ export default function VerifySellers() {
 				isOpen={showReasonModal}
 				onClose={handleReasonCancel}
 				onConfirm={handleReasonConfirm}
-				title={`${
-					currentAction === "reject" ? "Reject" : "Suspend"
-				} Seller Application`}
-				description={`Please provide a reason for ${
-					currentAction === "reject" ? "rejecting" : "suspending"
-				} this seller application. This will help the seller understand the decision and improve future applications.`}
-				placeholder={
-					currentAction === "reject"
-						? "e.g., Incomplete documentation, insufficient experience, location restrictions..."
-						: "e.g., Policy violation, suspicious activity, verification concerns..."
-				}
-				confirmText={`${
-					currentAction === "reject" ? "Reject" : "Suspend"
-				} Application`}
+				title="Reject Seller Application"
+				description="Please provide a reason for rejecting this seller application. This will help the seller understand the decision and improve future applications."
+				placeholder="e.g., Incomplete documentation, insufficient experience, location restrictions..."
+				confirmText="Reject Application"
 				type="danger"
 				isLoading={apiLoading}
 			/>

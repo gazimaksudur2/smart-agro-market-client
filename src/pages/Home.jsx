@@ -4,10 +4,13 @@ import axios from "axios";
 import { FaLeaf, FaTractor, FaWarehouse, FaTruckMoving } from "react-icons/fa";
 import { BsShieldCheck, BsCashCoin } from "react-icons/bs";
 import ProductCard from "../components/Products/ProductCard";
+import { useAuth } from "../contexts/AuthContext";
 
 export default function Home() {
 	const apiBaseUrl =
 		import.meta.env.VITE_SERVER_API_URL || "http://localhost:5000";
+
+	const { currentUser } = useAuth();
 
 	// Fetch featured products
 	const { data: featuredProducts, isLoading } = useQuery(
@@ -339,28 +342,35 @@ export default function Home() {
 			</section>
 
 			{/* Call to Action */}
-			<section className="py-16 bg-secondary-50">
-				<div className="container mx-auto px-4 text-center">
-					<h2 className="text-3xl font-bold text-gray-900 mb-4">
-						Ready to Get Started?
-					</h2>
-					<p className="text-gray-600 max-w-2xl mx-auto mb-8">
-						Join thousands of farmers and buyers already using SmartAgro Connect
-						to streamline their agricultural trade.
-					</p>
-					<div className="flex flex-col sm:flex-row justify-center gap-4">
-						<Link
-							to="/register"
-							className="btn btn-primary py-3 px-8 font-medium"
-						>
-							Create an Account
-						</Link>
-						<Link to="/about" className="btn btn-outline py-3 px-8 font-medium">
-							Learn More
-						</Link>
-					</div>
-				</div>
-			</section>
+			{(!!currentUser?.FirebaseUser) || (
+				<>
+					<section className="py-16 bg-secondary-50">
+						<div className="container mx-auto px-4 text-center">
+							<h2 className="text-3xl font-bold text-gray-900 mb-4">
+								Ready to Get Started?
+							</h2>
+							<p className="text-gray-600 max-w-2xl mx-auto mb-8">
+								Join thousands of farmers and buyers already using SmartAgro
+								Connect to streamline their agricultural trade.
+							</p>
+							<div className="flex flex-col sm:flex-row justify-center gap-4">
+								<Link
+									to="/register"
+									className="btn btn-primary py-3 px-8 font-medium"
+								>
+									Create an Account
+								</Link>
+								<Link
+									to="/about"
+									className="btn btn-outline py-3 px-8 font-medium"
+								>
+									Learn More
+								</Link>
+							</div>
+						</div>
+					</section>
+				</>
+			)}
 		</div>
 	);
 }
