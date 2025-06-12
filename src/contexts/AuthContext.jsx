@@ -55,7 +55,7 @@ export default function AuthProvider({ children }) {
 		}
 
 		// If in production and cookies aren't working, show a warning
-		if (!cookiesEnabled && process.env.NODE_ENV === "production") {
+		if (!cookiesEnabled && import.meta.env.VITE_PROD == "production") {
 			toast.error("Please enable cookies for full functionality");
 		}
 	}, []);
@@ -337,7 +337,7 @@ export default function AuthProvider({ children }) {
 			console.error("Error changing password:", error);
 
 			toast.error(
-				`${error.code}: ${error.message}` || "Failed to update password"
+				(error?.code) ? `${error.code}: ${error.message}` : "Failed to update password"
 			);
 			throw error;
 		}
