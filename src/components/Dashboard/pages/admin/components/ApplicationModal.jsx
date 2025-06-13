@@ -27,6 +27,10 @@ import {
 	FaFile,
 	FaUsers,
 	FaHeart,
+	FaImages,
+	FaCertificate,
+	FaExclamationTriangle,
+	FaExternalLinkAlt,
 } from "react-icons/fa";
 import { ModernModal, ActionButton, InfoCard, DetailRow } from "./ModernModal";
 import { ReasonModal } from "../../../../common/ReasonModal";
@@ -377,67 +381,166 @@ export const ApplicationModal = ({
 						</TabContent>
 
 						<TabContent isActive={activeTab === "documents"}>
-							<div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-								<InfoCard title="Uploaded Documents" color="blue" icon={FaFile}>
-									<div className="space-y-3">
-										<DetailRow
-											label="NID Copy"
-											value={
-												formData.nidCopy ? (
-													<a
-														href={formData.nidCopy}
-														target="_blank"
-														rel="noopener noreferrer"
-														className="text-blue-600 hover:text-blue-800"
-													>
-														View Document
-													</a>
-												) : (
-													"Not uploaded"
-												)
-											}
-										/>
-										<DetailRow
-											label={
-												isSellerApplication ? "Farm Photos" : "Warehouse Images"
-											}
-											value={
-												formData.farmPhotos || formData.warehouseImages ? (
-													<a
-														href={
-															formData.farmPhotos || formData.warehouseImages
+							<div className="space-y-6">
+								{/* NID Copy Section */}
+								<InfoCard
+									title="National ID Document"
+									color="blue"
+									icon={FaIdCard}
+								>
+									{formData.nidCopy ? (
+										<div className="space-y-3">
+											<div className="relative group">
+												<img
+													src={formData.nidCopy}
+													alt="National ID Copy"
+													className="w-full max-w-md h-32 object-cover rounded-lg border border-gray-200 shadow-sm hover:shadow-md transition-shadow duration-200 cursor-pointer"
+													onClick={() =>
+														window.open(formData.nidCopy, "_blank")
+													}
+												/>
+												<div className="absolute inset-0 bg-black bg-opacity-0 hover:bg-opacity-10 rounded-lg transition-all duration-200 flex items-center justify-center cursor-pointer group-hover:bg-opacity-20">
+													<FaEye className="text-white opacity-0 group-hover:opacity-100 text-xl transition-opacity duration-200" />
+												</div>
+											</div>
+											<button
+												onClick={() => window.open(formData.nidCopy, "_blank")}
+												className="inline-flex items-center text-sm text-blue-600 hover:text-blue-800 font-medium"
+											>
+												<FaExternalLinkAlt className="mr-1.5" size={12} />
+												View Full Document
+											</button>
+										</div>
+									) : (
+										<div className="flex items-center justify-center h-32 bg-gray-50 border-2 border-dashed border-gray-300 rounded-lg">
+											<div className="text-center">
+												<FaExclamationTriangle className="mx-auto h-8 w-8 text-gray-400 mb-2" />
+												<p className="text-sm text-gray-500">
+													No NID copy uploaded
+												</p>
+											</div>
+										</div>
+									)}
+								</InfoCard>
+
+								{/* Business License Section (Agent only) */}
+								{!isSellerApplication && (
+									<InfoCard
+										title="Business License"
+										color="green"
+										icon={FaCertificate}
+									>
+										{formData.businessLicense ? (
+											<div className="space-y-3">
+												<div className="relative group">
+													<img
+														src={formData.businessLicense}
+														alt="Business License"
+														className="w-full max-w-md h-32 object-cover rounded-lg border border-gray-200 shadow-sm hover:shadow-md transition-shadow duration-200 cursor-pointer"
+														onClick={() =>
+															window.open(formData.businessLicense, "_blank")
 														}
-														target="_blank"
-														rel="noopener noreferrer"
-														className="text-blue-600 hover:text-blue-800"
-													>
-														View Images
-													</a>
-												) : (
-													"Not uploaded"
-												)
-											}
-										/>
-										{!isSellerApplication && (
-											<DetailRow
-												label="Business License"
-												value={
-													formData.businessLicense ? (
-														<a
-															href={formData.businessLicense}
-															target="_blank"
-															rel="noopener noreferrer"
-															className="text-blue-600 hover:text-blue-800"
-														>
-															View License
-														</a>
-													) : (
-														"Not uploaded"
-													)
-												}
-											/>
+													/>
+													<div className="absolute inset-0 bg-black bg-opacity-0 hover:bg-opacity-10 rounded-lg transition-all duration-200 flex items-center justify-center cursor-pointer group-hover:bg-opacity-20">
+														<FaEye className="text-white opacity-0 group-hover:opacity-100 text-xl transition-opacity duration-200" />
+													</div>
+												</div>
+												<button
+													onClick={() =>
+														window.open(formData.businessLicense, "_blank")
+													}
+													className="inline-flex items-center text-sm text-blue-600 hover:text-blue-800 font-medium"
+												>
+													<FaExternalLinkAlt className="mr-1.5" size={12} />
+													View Full License
+												</button>
+											</div>
+										) : (
+											<div className="flex items-center justify-center h-32 bg-gray-50 border-2 border-dashed border-gray-300 rounded-lg">
+												<div className="text-center">
+													<FaExclamationTriangle className="mx-auto h-8 w-8 text-gray-400 mb-2" />
+													<p className="text-sm text-gray-500">
+														No business license uploaded
+													</p>
+												</div>
+											</div>
 										)}
-									</div>
+									</InfoCard>
+								)}
+
+								{/* Photos/Images Section */}
+								<InfoCard
+									title={
+										isSellerApplication ? "Farm Photos" : "Warehouse Images"
+									}
+									color="purple"
+									icon={FaImages}
+								>
+									{(() => {
+										const images =
+											formData.farmPhotos || formData.warehouseImages;
+										if (images && images.length > 0) {
+											return (
+												<div className="space-y-4">
+													<div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+														{images.map((image, index) => (
+															<div key={index} className="relative group">
+																<img
+																	src={image}
+																	alt={`${
+																		isSellerApplication ? "Farm" : "Warehouse"
+																	} photo ${index + 1}`}
+																	className="w-full h-24 object-cover rounded-lg border border-gray-200 shadow-sm hover:shadow-md transition-shadow duration-200 cursor-pointer"
+																	onClick={() => window.open(image, "_blank")}
+																/>
+																<div className="absolute inset-0 bg-black bg-opacity-0 hover:bg-opacity-20 rounded-lg transition-all duration-200 flex items-center justify-center cursor-pointer">
+																	<FaEye className="text-white opacity-0 group-hover:opacity-100 text-lg transition-opacity duration-200" />
+																</div>
+																<div className="absolute top-1 right-1 bg-blue-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-medium">
+																	{index + 1}
+																</div>
+															</div>
+														))}
+													</div>
+													<div className="flex items-center justify-between pt-2 border-t border-gray-100">
+														<span className="text-sm text-gray-600">
+															{images.length} image
+															{images.length !== 1 ? "s" : ""} uploaded
+														</span>
+														<button
+															onClick={() => {
+																images.forEach((image, index) => {
+																	setTimeout(
+																		() => window.open(image, "_blank"),
+																		index * 100
+																	);
+																});
+															}}
+															className="inline-flex items-center text-sm text-blue-600 hover:text-blue-800 font-medium"
+														>
+															<FaExternalLinkAlt className="mr-1.5" size={12} />
+															View All Images
+														</button>
+													</div>
+												</div>
+											);
+										} else {
+											return (
+												<div className="flex items-center justify-center h-32 bg-gray-50 border-2 border-dashed border-gray-300 rounded-lg">
+													<div className="text-center">
+														<FaImages className="mx-auto h-8 w-8 text-gray-400 mb-2" />
+														<p className="text-sm text-gray-500">
+															No{" "}
+															{isSellerApplication
+																? "farm photos"
+																: "warehouse images"}{" "}
+															uploaded
+														</p>
+													</div>
+												</div>
+											);
+										}
+									})()}
 								</InfoCard>
 
 								<InfoCard

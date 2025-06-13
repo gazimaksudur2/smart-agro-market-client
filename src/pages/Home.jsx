@@ -59,7 +59,7 @@ export default function Home() {
 					</div>
 					<div className="md:w-1/2 flex justify-center">
 						<img
-							src="https://images.unsplash.com/photo-1555507036-ab1f4038808a?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&h=400&q=80"
+							src="https://res.cloudinary.com/dsawnilz3/image/upload/v1749729345/banner_image_bg37ky.png"
 							alt="Farmers and crops"
 							className="rounded-lg shadow-lg object-cover"
 						/>

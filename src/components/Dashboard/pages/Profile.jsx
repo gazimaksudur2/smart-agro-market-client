@@ -446,7 +446,7 @@ export default function Profile() {
 	const roleConfig = getRoleConfig(currentRole);
 
 	return (
-		<div className="py-6">
+		<div className="">
 			{/* Enhanced Header */}
 			<div className="mb-8">
 				<div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">

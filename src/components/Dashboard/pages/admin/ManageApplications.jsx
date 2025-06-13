@@ -185,6 +185,18 @@ export default function ManageApplications() {
 				const response = await apiCall(
 					`/applications/all-applications?${queryParams}`
 				);
+				// Check if response has success field and return data accordingly
+				if (response?.success) {
+					return {
+						applications: response.applications || [],
+						totalApplications: response.totalApplications || 0,
+						totalPages: response.totalPages || 1,
+						currentPage: response.currentPage || 1,
+						pageSize: response.pageSize || 10,
+						userRole: response.userRole || "admin",
+					};
+				}
+				// Fallback for backward compatibility
 				return response;
 			} catch (error) {
 				console.error("Error fetching applications:", error);
@@ -203,7 +215,13 @@ export default function ManageApplications() {
 		["adminStatistics"],
 		async () => {
 			try {
-				return await apiCall("/applications/statistics");
+				const response = await apiCall("/applications/statistics");
+				// Check if response has success field and return statistics accordingly
+				if (response?.success) {
+					return response.statistics;
+				}
+				// Fallback for backward compatibility
+				return response;
 			} catch (error) {
 				console.error("Error fetching admin statistics:", error);
 				return null;
@@ -224,12 +242,26 @@ export default function ManageApplications() {
 		reason = ""
 	) => {
 		try {
-			await apiCall(`/applications/${applicationId}/${action}`, "PATCH", {
-				reason,
+			const endpoint = `/applications/${applicationId}/${action}`;
+			const body = {
 				reviewedBy: currentUser?.DBUser?._id,
-			});
+			};
 
-			toast.success(`Application ${action}d successfully!`);
+			// Add reason to body - required for reject, optional for approve
+			if (action === "reject" || reason) {
+				body.reason = reason;
+			}
+
+			const response = await apiCall(endpoint, "PATCH", body);
+
+			// Check success field in response
+			if (response?.success) {
+				toast.success(
+					response.message || `Application ${action}d successfully!`
+				);
+			} else {
+				toast.success(`Application ${action}d successfully!`);
+			}
 			refetch();
 		} catch (error) {
 			console.error(`Error ${action}ing application:`, error);
@@ -251,14 +283,25 @@ export default function ManageApplications() {
 	// Execute bulk action
 	const executeBulkAction = async (reason) => {
 		try {
-			await apiCall("/applications/bulk-action", "PATCH", {
+			const response = await apiCall("/applications/bulk-action", "PATCH", {
 				applicationIds: bulkSelected,
 				action: bulkAction,
 				reason,
 				reviewedBy: currentUser?.DBUser?._id,
 			});
 
-			toast.success(`Bulk ${bulkAction} completed successfully!`);
+			// Check success field and show appropriate message
+			if (response?.success) {
+				toast.success(
+					response.message || `Bulk ${bulkAction} completed successfully!`
+				);
+				// Log results if available
+				if (response.results) {
+					console.log("Bulk action results:", response.results);
+				}
+			} else {
+				toast.success(`Bulk ${bulkAction} completed successfully!`);
+			}
 			setBulkSelected([]);
 			refetch();
 		} catch (error) {
@@ -418,7 +461,7 @@ export default function ManageApplications() {
 	}
 
 	return (
-		<div className="py-6">
+		<div className="">
 			<DashboardTitle title="Manage Applications" />
 
 			{/* Statistics Cards */}

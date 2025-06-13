@@ -315,7 +315,7 @@ export default function ManageUsers() {
 	}
 
 	return (
-		<div className="py-6">
+		<div className="">
 			<DashboardTitle title="Manage Users" />
 
 			{/* Statistics Cards */}

@@ -281,7 +281,7 @@ export default function ManageProducts() {
 	// Loading state
 	if (isLoading && !productsData) {
 		return (
-			<div className="py-6">
+			<div className="">
 				<DashboardTitle title="Manage Products" />
 				<div className="mt-6 flex justify-center items-center h-64">
 					<FaSpinner className="animate-spin h-8 w-8 text-primary-600" />
@@ -296,7 +296,7 @@ export default function ManageProducts() {
 	// Error state
 	if (error) {
 		return (
-			<div className="py-6">
+			<div className="">
 				<DashboardTitle title="Manage Products" />
 				<div className="mt-6 bg-red-50 border border-red-200 rounded-lg p-6 text-center">
 					<FaExclamationTriangle className="mx-auto h-12 w-12 text-red-600 mb-4" />
@@ -318,7 +318,7 @@ export default function ManageProducts() {
 	}
 
 	return (
-		<div className="py-6">
+		<div className="">
 			<DashboardTitle title="Manage Products" />
 
 			{/* Statistics Cards */}

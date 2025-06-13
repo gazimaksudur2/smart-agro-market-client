@@ -166,7 +166,7 @@ export default function SystemSettings() {
 
 	if (isLoading) {
 		return (
-			<div className="py-6">
+			<div className="">
 				<DashboardTitle title="Admin Dashboard" />
 				<div className="mt-6 flex justify-center">
 					<div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary-600"></div>
@@ -176,7 +176,7 @@ export default function SystemSettings() {
 	}
 
 	return (
-		<div className="py-6">
+		<div className="">
 			<DashboardTitle title="System Settings" />
 
 			{/* Welcome Message */}

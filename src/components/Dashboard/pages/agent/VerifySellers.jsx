@@ -100,6 +100,17 @@ export default function VerifySellers() {
 				const response = await apiCall(
 					`/applications/agent/applications?${queryParams}`
 				);
+				// Check if response has success field and return data accordingly
+				if (response?.success) {
+					return {
+						applications: response.applications || [],
+						totalApplications: response.totalApplications || 0,
+						totalPages: response.totalPages || 1,
+						currentPage: response.currentPage || 1,
+						pageSize: response.pageSize || 10,
+					};
+				}
+				// Fallback for backward compatibility
 				return response;
 			} catch (error) {
 				console.error("Error fetching agent applications:", error);
@@ -119,7 +130,13 @@ export default function VerifySellers() {
 		["agentStatistics"],
 		async () => {
 			try {
-				return await apiCall("/applications/agent/statistics");
+				const response = await apiCall("/applications/agent/statistics");
+				// Check if response has success field and return statistics accordingly
+				if (response?.success) {
+					return response.statistics;
+				}
+				// Fallback for backward compatibility
+				return response;
 			} catch (error) {
 				console.error("Error fetching agent statistics:", error);
 				return null;
@@ -136,7 +153,13 @@ export default function VerifySellers() {
 		["agentOperationalArea"],
 		async () => {
 			try {
-				return await apiCall("/applications/agent/operational-area");
+				const response = await apiCall("/applications/agent/operational-area");
+				// Check if response has success field and return operational area accordingly
+				if (response?.success) {
+					return response.operationalArea;
+				}
+				// Fallback for backward compatibility
+				return response;
 			} catch (error) {
 				console.error("Error fetching operational area:", error);
 				return null;
@@ -152,12 +175,26 @@ export default function VerifySellers() {
 
 	const handleSellerAction = async (applicationId, action, reason = "") => {
 		try {
-			await apiCall(`/applications/${applicationId}/${action}`, "PATCH", {
-				reason,
+			const endpoint = `/applications/${applicationId}/${action}`;
+			const body = {
 				reviewedBy: currentUser?.DBUser?._id,
-			});
+			};
 
-			toast.success(`Application ${action}d successfully!`);
+			// Add reason to body - required for reject, optional for approve
+			if (action === "reject" || reason) {
+				body.reason = reason;
+			}
+
+			const response = await apiCall(endpoint, "PATCH", body);
+
+			// Check success field in response
+			if (response?.success) {
+				toast.success(
+					response.message || `Application ${action}d successfully!`
+				);
+			} else {
+				toast.success(`Application ${action}d successfully!`);
+			}
 			refetch();
 		} catch (error) {
 			console.error(`Error ${action}ing application:`, error);

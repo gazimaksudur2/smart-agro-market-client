@@ -16,7 +16,7 @@ import { useNavigate } from "react-router-dom";
 import useScrollToTop from "../../hooks/useScrollToTop";
 
 export default function SellerApplication() {
-	useScrollToTop(false); // Use instant scroll for immediate effect
+	useScrollToTop(true, 200); // Add 200ms delay to ensure content is rendered
 	const { currentUser } = useAuth();
 	const { apiCall, loading } = useAPI();
 	const [districts, setDistricts] = useState([]);
@@ -170,11 +170,19 @@ export default function SellerApplication() {
 				status: "pending",
 			};
 
-			await apiCall("/applications", "POST", applicationData);
+			const response = await apiCall("/applications", "POST", applicationData);
 
-			toast.success(
-				"Seller application submitted successfully! We'll review your application and get back to you within 5-7 business days."
-			);
+			// Check success field in response
+			if (response?.success) {
+				toast.success(
+					response.message ||
+						"Seller application submitted successfully! We'll review your application and get back to you within 5-7 business days."
+				);
+			} else {
+				toast.success(
+					"Seller application submitted successfully! We'll review your application and get back to you within 5-7 business days."
+				);
+			}
 			navigate("/");
 
 			// Reset form
@@ -199,10 +207,12 @@ export default function SellerApplication() {
 			});
 		} catch (error) {
 			console.error("Error submitting application:", error);
-			toast.error(
-				error.response.data.message ||
-					"Failed to submit application. Please try again."
-			);
+			// Handle error response with success field
+			const errorMessage =
+				error?.response?.data?.message ||
+				error?.message ||
+				"Failed to submit application. Please try again.";
+			toast.error(errorMessage);
 		}
 	};
 
