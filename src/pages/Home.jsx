@@ -20,7 +20,13 @@ export default function Home() {
 		async () => {
 			try {
 				const { data } = await axios.get(`${apiBaseUrl}/products?limit=4`);
-				return data;
+
+				// Check if response has success field and return products accordingly
+				if (data?.success) {
+					return data.products || [];
+				}
+				// Fallback for backward compatibility
+				return data.products || data || [];
 			} catch (error) {
 				console.error("Error fetching featured products:", error);
 				return [];

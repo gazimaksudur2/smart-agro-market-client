@@ -233,14 +233,32 @@ export default function AddProduct() {
 				status: "pending",
 			};
 
-			await apiCall("/products/add-product", "POST", productData);
-			toast.success(
-				"Product added successfully! It will be reviewed by an agent before going live."
+			const response = await apiCall(
+				"/products/add-product",
+				"POST",
+				productData
 			);
+
+			// Check success field in response
+			if (response?.success) {
+				toast.success(
+					response.message ||
+						"Product added successfully! It will be reviewed by our agents."
+				);
+			} else {
+				toast.success(
+					"Product added successfully! It will be reviewed by our agents."
+				);
+			}
+
+			// Navigate to my products
 			navigate("/dashboard/my-products");
 		} catch (error) {
 			console.error("Error adding product:", error);
-			toast.error("Failed to add product. Please try again.");
+			toast.error(
+				error?.response?.data?.message ||
+					"Failed to add product. Please try again."
+			);
 		} finally {
 			setIsSubmitting(false);
 			setUploadProgress(0);

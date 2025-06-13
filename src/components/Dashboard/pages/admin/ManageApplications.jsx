@@ -559,7 +559,7 @@ export default function ManageApplications() {
 									Sellers
 								</dt>
 								<dd className="text-3xl font-bold text-gray-900">
-									{stats.sellers}
+									{stats?.byType["seller-application"]}
 								</dd>
 							</dl>
 						</div>
@@ -579,7 +579,7 @@ export default function ManageApplications() {
 									Agents
 								</dt>
 								<dd className="text-3xl font-bold text-gray-900">
-									{stats.agents}
+									{stats?.byType["agent-application"]}
 								</dd>
 							</dl>
 						</div>

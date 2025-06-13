@@ -22,6 +22,7 @@ import {
 } from "react-icons/fa";
 import DashboardTitle from "../../DashboardTitle";
 import useAPI from "../../../../hooks/useAPI";
+import { toast } from "react-hot-toast";
 
 const ProductStatusBadge = ({ status }) => {
 	const statusConfig = {
@@ -87,6 +88,7 @@ export default function MyProducts() {
 		data: products,
 		isLoading,
 		error,
+		refetch,
 	} = useQuery(
 		["sellerProducts", currentUser?.FirebaseUser?.uid],
 		async () => {
@@ -96,7 +98,12 @@ export default function MyProducts() {
 				const response = await apiCall(
 					`/products/seller/${currentUser.FirebaseUser.email}`
 				);
-				return response.products || [];
+				// Check if response has success field and return products accordingly
+				if (response?.success) {
+					return response.products || [];
+				}
+				// Fallback for backward compatibility
+				return response.products || response || [];
 			} catch (error) {
 				console.error("Error fetching products:", error);
 				return [];
@@ -118,11 +125,20 @@ export default function MyProducts() {
 	const handleDeleteProduct = async (productId) => {
 		if (window.confirm("Are you sure you want to delete this product?")) {
 			try {
-				await apiCall(`/products/${productId}`, "DELETE");
+				const response = await apiCall(`/products/${productId}`, "DELETE");
+
+				// Check success field in response
+				if (response?.success) {
+					toast.success(response.message || "Product deleted successfully!");
+				} else {
+					toast.success("Product deleted successfully!");
+				}
+
 				// Refresh products list
-				window.location.reload();
+				refetch();
 			} catch (error) {
 				console.error("Error deleting product:", error);
+				toast.error("Failed to delete product. Please try again.");
 			}
 		}
 	};

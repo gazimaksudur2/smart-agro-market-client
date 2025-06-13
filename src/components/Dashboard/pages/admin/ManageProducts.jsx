@@ -100,9 +100,17 @@ export default function ManageProducts() {
 		["adminProducts", queryParams],
 		async () => {
 			try {
-				const response = await apiCall(
-					`/admin/products${queryParams ? `?${queryParams}` : ""}`
-				);
+				const response = await apiCall(`/products/admin/all?${queryParams}`);
+				// Check if response has success field and return data accordingly
+				if (response?.success) {
+					return {
+						products: response.products || [],
+						totalProducts: response.totalProducts || 0,
+						totalPages: response.totalPages || 1,
+						currentPage: response.currentPage || 1,
+					};
+				}
+				// Fallback for backward compatibility
 				return response;
 			} catch (error) {
 				console.error("Error fetching products:", error);
@@ -116,15 +124,50 @@ export default function ManageProducts() {
 		}
 	);
 
+	// Fetch admin product statistics
+	const { data: adminStats } = useQuery(
+		["adminProductStatistics"],
+		async () => {
+			try {
+				const response = await apiCall("/products/admin/statistics");
+				// Check if response has success field and return statistics accordingly
+				if (response?.success) {
+					return response.statistics;
+				}
+				// Fallback for backward compatibility
+				return response;
+			} catch (error) {
+				console.error("Error fetching admin product statistics:", error);
+				return null;
+			}
+		},
+		{
+			enabled: !!currentUser?.DBUser?._id,
+			staleTime: 60000,
+		}
+	);
+
 	// Handle product actions
 	const handleProductAction = async (productId, action, reason = "") => {
 		try {
-			await apiCall(`/admin/products/${productId}/${action}`, "PATCH", {
-				reason,
-				adminId: currentUser?.DBUser?._id,
-			});
+			const endpoint = `/products/admin/${action}/${productId}`;
+			const body = {
+				reviewedBy: currentUser?.DBUser?._id,
+			};
 
-			toast.success(`Product ${action}d successfully!`);
+			// Add reason to body - required for reject, optional for approve
+			if (action === "reject" || reason) {
+				body.reason = reason;
+			}
+
+			const response = await apiCall(endpoint, "PATCH", body);
+
+			// Check success field in response
+			if (response?.success) {
+				toast.success(response.message || `Product ${action}d successfully!`);
+			} else {
+				toast.success(`Product ${action}d successfully!`);
+			}
 			refetch();
 		} catch (error) {
 			console.error(`Error ${action}ing product:`, error);
@@ -146,16 +189,25 @@ export default function ManageProducts() {
 	// Execute bulk action
 	const executeBulkAction = async (reason) => {
 		try {
-			await Promise.all(
-				bulkSelected.map((productId) =>
-					apiCall(`/admin/products/${productId}/${bulkAction}`, "PATCH", {
-						reason,
-						adminId: currentUser?.DBUser?._id,
-					})
-				)
-			);
+			const response = await apiCall("/products/bulk-action", "PATCH", {
+				productIds: bulkSelected,
+				action: bulkAction,
+				reason,
+				reviewedBy: currentUser?.DBUser?._id,
+			});
 
-			toast.success(`Bulk ${bulkAction} completed successfully!`);
+			// Check success field and show appropriate message
+			if (response?.success) {
+				toast.success(
+					response.message || `Bulk ${bulkAction} completed successfully!`
+				);
+				// Log results if available
+				if (response.results) {
+					console.log("Bulk action results:", response.results);
+				}
+			} else {
+				toast.success(`Bulk ${bulkAction} completed successfully!`);
+			}
 			setBulkSelected([]);
 			refetch();
 		} catch (error) {
@@ -185,8 +237,14 @@ export default function ManageProducts() {
 
 	// Get product statistics
 	const getProductStats = () => {
-		if (!productsData?.products)
+		if (adminStats) {
+			return adminStats;
+		}
+
+		// Fallback calculation if backend stats are not available
+		if (!productsData?.products) {
 			return { total: 0, approved: 0, pending: 0, rejected: 0, outOfStock: 0 };
+		}
 
 		const products = productsData.products;
 		return {

@@ -99,12 +99,18 @@ export default function ProductDetails() {
 		axios
 			.get(`${import.meta.env.VITE_SERVER_API_URL}/products/${params.id}`)
 			.then((res) => {
-				setProduct(res.data.product);
+				// Check if response has success field and access product accordingly
+				if (res.data?.success) {
+					setProduct(res.data.product);
+				} else {
+					// Fallback for backward compatibility
+					setProduct(res.data.product || res.data);
+				}
 			})
 			.catch((err) => {
-				toast.error(err.message);
+				toast.error(err.message || "Failed to load product details");
 			});
-	}, []);
+	}, [params.id]);
 
 	return (
 		<div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
