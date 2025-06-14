@@ -4,15 +4,13 @@ import { FiMenu, FiX } from "react-icons/fi";
 import { IoLogOutOutline } from "react-icons/io5";
 import { FaShoppingCart } from "react-icons/fa";
 import { useAuth } from "../../contexts/AuthContext";
-import { useSelector } from "react-redux";
-import { selectCartTotalItems } from "../../redux/slices/cartSlice";
+import useCart from "../../hooks/useCart";
 
 export default function Navbar() {
 	const [isOpen, setIsOpen] = useState(false);
-	const { currentUser, logout } =
-		useAuth();
+	const { currentUser, logout } = useAuth();
 	const navigate = useNavigate();
-	const cartItemCount = useSelector(selectCartTotalItems);
+	const { totalItems } = useCart();
 
 	// Handle user logout
 	const handleLogout = async () => {
@@ -119,9 +117,9 @@ export default function Navbar() {
 							className="relative p-1 text-gray-700 hover:text-primary-600"
 						>
 							<FaShoppingCart className="h-6 w-6" />
-							{cartItemCount > 0 && (
+							{totalItems > 0 && (
 								<span className="absolute -top-1 -right-1 flex items-center justify-center bg-primary-600 text-white rounded-full h-5 w-5 text-xs">
-									{cartItemCount}
+									{totalItems}
 								</span>
 							)}
 						</Link>
@@ -169,9 +167,9 @@ export default function Navbar() {
 							className="relative p-1 mr-2 text-gray-700 hover:text-primary-600"
 						>
 							<FaShoppingCart className="h-6 w-6" />
-							{cartItemCount > 0 && (
+							{totalItems > 0 && (
 								<span className="absolute -top-1 -right-1 flex items-center justify-center bg-primary-600 text-white rounded-full h-5 w-5 text-xs">
-									{cartItemCount}
+									{totalItems}
 								</span>
 							)}
 						</Link>
@@ -198,143 +196,98 @@ export default function Navbar() {
 						<NavLink
 							to="/"
 							className={({ isActive }) =>
-								`block pl-3 pr-4 py-2 border-l-4 text-base font-medium ${
+								`block pl-3 pr-4 py-2 text-base font-medium ${
 									isActive
-										? "bg-primary-50 border-primary-500 text-primary-700"
-										: "border-transparent text-gray-500 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-700"
+										? "text-primary-700 bg-primary-50 border-r-4 border-primary-500"
+										: "text-gray-600 hover:text-gray-800 hover:bg-gray-50"
 								}`
 							}
-							onClick={() => setIsOpen(false)}
 						>
 							Home
 						</NavLink>
 						<NavLink
 							to="/products"
 							className={({ isActive }) =>
-								`block pl-3 pr-4 py-2 border-l-4 text-base font-medium ${
+								`block pl-3 pr-4 py-2 text-base font-medium ${
 									isActive
-										? "bg-primary-50 border-primary-500 text-primary-700"
-										: "border-transparent text-gray-500 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-700"
+										? "text-primary-700 bg-primary-50 border-r-4 border-primary-500"
+										: "text-gray-600 hover:text-gray-800 hover:bg-gray-50"
 								}`
 							}
-							onClick={() => setIsOpen(false)}
 						>
 							Products
 						</NavLink>
 						<NavLink
 							to="/about"
 							className={({ isActive }) =>
-								`block pl-3 pr-4 py-2 border-l-4 text-base font-medium ${
+								`block pl-3 pr-4 py-2 text-base font-medium ${
 									isActive
-										? "bg-primary-50 border-primary-500 text-primary-700"
-										: "border-transparent text-gray-500 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-700"
+										? "text-primary-700 bg-primary-50 border-r-4 border-primary-500"
+										: "text-gray-600 hover:text-gray-800 hover:bg-gray-50"
 								}`
 							}
-							onClick={() => setIsOpen(false)}
 						>
 							About
 						</NavLink>
 						<NavLink
 							to="/help"
 							className={({ isActive }) =>
-								`block pl-3 pr-4 py-2 border-l-4 text-base font-medium ${
+								`block pl-3 pr-4 py-2 text-base font-medium ${
 									isActive
-										? "bg-primary-50 border-primary-500 text-primary-700"
-										: "border-transparent text-gray-500 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-700"
+										? "text-primary-700 bg-primary-50 border-r-4 border-primary-500"
+										: "text-gray-600 hover:text-gray-800 hover:bg-gray-50"
 								}`
 							}
-							onClick={() => setIsOpen(false)}
 						>
 							Help
 						</NavLink>
 						<NavLink
 							to="/contact"
 							className={({ isActive }) =>
-								`block pl-3 pr-4 py-2 border-l-4 text-base font-medium ${
+								`block pl-3 pr-4 py-2 text-base font-medium ${
 									isActive
-										? "bg-primary-50 border-primary-500 text-primary-700"
-										: "border-transparent text-gray-500 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-700"
+										? "text-primary-700 bg-primary-50 border-r-4 border-primary-500"
+										: "text-gray-600 hover:text-gray-800 hover:bg-gray-50"
 								}`
 							}
-							onClick={() => setIsOpen(false)}
 						>
 							Contact
 						</NavLink>
+					</div>
 
-						{/* Conditional nav items for mobile */}
+					{/* Mobile user menu */}
+					<div className="pt-4 pb-3 border-t border-gray-200">
 						{currentUser ? (
-							<>
-								<NavLink
+							<div className="space-y-1">
+								<Link
 									to={getDashboardRoute()}
-									className={({ isActive }) =>
-										`block pl-3 pr-4 py-2 border-l-4 text-base font-medium ${
-											isActive
-												? "bg-primary-50 border-primary-500 text-primary-700"
-												: "border-transparent text-gray-500 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-700"
-										}`
-									}
-									onClick={() => setIsOpen(false)}
+									className="block pl-3 pr-4 py-2 text-base font-medium text-gray-600 hover:text-gray-800 hover:bg-gray-50"
 								>
 									Dashboard
-								</NavLink>
+								</Link>
 								<button
-									onClick={() => {
-										handleLogout();
-										setIsOpen(false);
-									}}
-									className="block w-full text-left pl-3 pr-4 py-2 border-l-4 border-transparent text-base font-medium text-gray-500 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-700"
+									onClick={handleLogout}
+									className="block w-full text-left pl-3 pr-4 py-2 text-base font-medium text-gray-600 hover:text-gray-800 hover:bg-gray-50"
 								>
 									Logout
 								</button>
-							</>
+							</div>
 						) : (
-							<>
-								<NavLink
+							<div className="space-y-1">
+								<Link
 									to="/login"
-									className={({ isActive }) =>
-										`block pl-3 pr-4 py-2 border-l-4 text-base font-medium ${
-											isActive
-												? "bg-primary-50 border-primary-500 text-primary-700"
-												: "border-transparent text-gray-500 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-700"
-										}`
-									}
-									onClick={() => setIsOpen(false)}
+									className="block pl-3 pr-4 py-2 text-base font-medium text-gray-600 hover:text-gray-800 hover:bg-gray-50"
 								>
 									Login
-								</NavLink>
-								<NavLink
+								</Link>
+								<Link
 									to="/register"
-									className={({ isActive }) =>
-										`block pl-3 pr-4 py-2 border-l-4 text-base font-medium ${
-											isActive
-												? "bg-primary-50 border-primary-500 text-primary-700"
-												: "border-transparent text-gray-500 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-700"
-										}`
-									}
-									onClick={() => setIsOpen(false)}
+									className="block pl-3 pr-4 py-2 text-base font-medium text-gray-600 hover:text-gray-800 hover:bg-gray-50"
 								>
 									Register
-								</NavLink>
-							</>
+								</Link>
+							</div>
 						)}
-
-						{/* Footer Links for Mobile */}
-						<div className="border-t border-gray-200 pt-4 mt-4">
-							<NavLink
-								to="/terms"
-								className="block pl-3 pr-4 py-2 text-sm text-gray-500 hover:text-gray-700"
-								onClick={() => setIsOpen(false)}
-							>
-								Terms of Service
-							</NavLink>
-							<NavLink
-								to="/privacy"
-								className="block pl-3 pr-4 py-2 text-sm text-gray-500 hover:text-gray-700"
-								onClick={() => setIsOpen(false)}
-							>
-								Privacy Policy
-							</NavLink>
-						</div>
 					</div>
 				</div>
 			)}

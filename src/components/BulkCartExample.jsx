@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useAuth } from "../contexts/AuthContext";
-import { useCart } from "../hooks/useCart";
+import useCart from "../hooks/useCart";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 
@@ -10,14 +10,8 @@ import toast from "react-hot-toast";
  */
 const BulkCartExample = () => {
 	const { user } = useAuth();
-	const {
-		addMultipleItemsToCart,
-		mergeItemsWithCart,
-		items,
-		totalItems,
-		totalAmount,
-		loading,
-	} = useCart();
+	const { addMultipleItems, items, totalItems, totalAmount, loading } =
+		useCart();
 	const navigate = useNavigate();
 
 	const [selectedItems, setSelectedItems] = useState([]);
@@ -27,51 +21,47 @@ const BulkCartExample = () => {
 	const availableProducts = [
 		{
 			_id: "1",
-			title: "Organic Tomatoes",
+			name: "Organic Tomatoes",
 			price: 50,
-			unit: "kg",
-			minimumOrderQuantity: 2,
-			images: ["tomato.jpg"],
 			category: "Vegetables",
-			subcategory: "Fresh Vegetables",
-			seller: "Farm Fresh Co.",
+			image: "tomato.jpg",
+			sellerId: "seller1",
 		},
 		{
 			_id: "2",
-			title: "Fresh Carrots",
+			name: "Fresh Carrots",
 			price: 40,
-			unit: "kg",
-			minimumOrderQuantity: 1,
-			images: ["carrot.jpg"],
 			category: "Vegetables",
-			subcategory: "Root Vegetables",
-			seller: "Green Valley Farm",
+			image: "carrot.jpg",
+			sellerId: "seller2",
 		},
 		{
 			_id: "3",
-			title: "Organic Spinach",
+			name: "Organic Spinach",
 			price: 30,
-			unit: "bunch",
-			minimumOrderQuantity: 3,
-			images: ["spinach.jpg"],
 			category: "Vegetables",
-			subcategory: "Leafy Greens",
-			seller: "Organic Farms Ltd.",
+			image: "spinach.jpg",
+			sellerId: "seller3",
 		},
 	];
 
 	// Handle item selection
 	const handleItemSelect = (product, quantity) => {
 		const existingIndex = selectedItems.findIndex(
-			(item) => item._id === product._id
+			(item) => item.productId === product._id
 		);
 
 		if (existingIndex >= 0) {
 			// Update existing item
 			const updatedItems = [...selectedItems];
 			updatedItems[existingIndex] = {
-				...product,
-				quantity: Math.max(quantity, product.minimumOrderQuantity || 1),
+				productId: product._id,
+				name: product.name,
+				price: product.price,
+				quantity: Math.max(quantity, 1),
+				image: product.image,
+				category: product.category,
+				sellerId: product.sellerId,
 			};
 			setSelectedItems(updatedItems);
 		} else {
@@ -79,8 +69,13 @@ const BulkCartExample = () => {
 			setSelectedItems((prev) => [
 				...prev,
 				{
-					...product,
-					quantity: Math.max(quantity, product.minimumOrderQuantity || 1),
+					productId: product._id,
+					name: product.name,
+					price: product.price,
+					quantity: Math.max(quantity, 1),
+					image: product.image,
+					category: product.category,
+					sellerId: product.sellerId,
 				},
 			]);
 		}
@@ -88,19 +83,9 @@ const BulkCartExample = () => {
 
 	// Remove item from selection
 	const handleItemRemove = (productId) => {
-		setSelectedItems((prev) => prev.filter((item) => item._id !== productId));
-	};
-
-	// Preview cart merge (client-side calculation)
-	const previewMerge = () => {
-		if (selectedItems.length === 0) return null;
-
-		try {
-			return mergeItemsWithCart(selectedItems);
-		} catch (error) {
-			console.error("Error previewing merge:", error);
-			return null;
-		}
+		setSelectedItems((prev) =>
+			prev.filter((item) => item.productId !== productId)
+		);
 	};
 
 	// Add selected items to cart
@@ -118,7 +103,7 @@ const BulkCartExample = () => {
 
 		try {
 			setIsProcessing(true);
-			await addMultipleItemsToCart(selectedItems);
+			await addMultipleItems(selectedItems);
 			setSelectedItems([]); // Clear selection after successful add
 		} catch (error) {
 			console.error("Error adding items to cart:", error);
@@ -132,8 +117,6 @@ const BulkCartExample = () => {
 		(total, item) => total + item.price * item.quantity,
 		0
 	);
-
-	const previewData = previewMerge();
 
 	return (
 		<div className="max-w-4xl mx-auto p-6">
@@ -168,24 +151,22 @@ const BulkCartExample = () => {
 				<div className="grid grid-cols-1 md:grid-cols-3 gap-4">
 					{availableProducts.map((product) => {
 						const selectedItem = selectedItems.find(
-							(item) => item._id === product._id
+							(item) => item.productId === product._id
 						);
 						const currentQuantity = selectedItem?.quantity || 0;
 
 						return (
 							<div key={product._id} className="border rounded-lg p-4">
-								<h3 className="font-semibold">{product.title}</h3>
-								<p className="text-gray-600">
-									₹{product.price}/{product.unit}
-								</p>
+								<h3 className="font-semibold">{product.name}</h3>
+								<p className="text-gray-600">₹{product.price}</p>
 								<p className="text-sm text-gray-500">
-									Min Order: {product.minimumOrderQuantity || 1} {product.unit}
+									Category: {product.category}
 								</p>
 
 								<div className="mt-3 flex items-center gap-2">
 									<input
 										type="number"
-										min={product.minimumOrderQuantity || 1}
+										min={1}
 										value={currentQuantity}
 										onChange={(e) => {
 											const quantity = parseInt(e.target.value) || 0;
@@ -198,13 +179,13 @@ const BulkCartExample = () => {
 										className="w-20 px-2 py-1 border rounded"
 										placeholder="0"
 									/>
-									<span className="text-sm">{product.unit}</span>
+									<span className="text-sm text-gray-500">qty</span>
 								</div>
 
 								{selectedItem && (
-									<p className="text-green-600 text-sm mt-1">
-										Selected: {selectedItem.quantity} {product.unit}
-										(₹{selectedItem.price * selectedItem.quantity})
+									<p className="text-sm text-green-600 mt-1">
+										Selected: {selectedItem.quantity} × ₹{product.price} = ₹
+										{selectedItem.quantity * product.price}
 									</p>
 								)}
 							</div>
@@ -216,53 +197,24 @@ const BulkCartExample = () => {
 			{/* Selected Items Summary */}
 			{selectedItems.length > 0 && (
 				<div className="bg-green-50 p-4 rounded-lg mb-6">
-					<h2 className="text-xl font-semibold mb-3">Selected Items</h2>
+					<h2 className="text-xl font-semibold mb-2">Selected Items</h2>
 					<div className="space-y-2">
 						{selectedItems.map((item) => (
-							<div key={item._id} className="flex justify-between items-center">
+							<div
+								key={item.productId}
+								className="flex justify-between items-center"
+							>
 								<span>
-									{item.title} x {item.quantity} {item.unit}
+									{item.name} × {item.quantity}
 								</span>
-								<span className="font-semibold">
-									₹{item.price * item.quantity}
-								</span>
+								<span>₹{item.price * item.quantity}</span>
 							</div>
 						))}
 					</div>
 					<div className="border-t pt-2 mt-2">
-						<div className="flex justify-between items-center font-bold">
-							<span>Selected Total:</span>
+						<div className="flex justify-between items-center font-semibold">
+							<span>Total Selected:</span>
 							<span>₹{selectedTotal}</span>
-						</div>
-					</div>
-				</div>
-			)}
-
-			{/* Preview Merged Cart */}
-			{previewData && (
-				<div className="bg-yellow-50 p-4 rounded-lg mb-6">
-					<h2 className="text-xl font-semibold mb-3">
-						Cart Preview (After Adding)
-					</h2>
-					<div className="grid grid-cols-2 gap-4">
-						<div>
-							<p>
-								<strong>Total Items:</strong> {previewData.totalItems}
-							</p>
-							<p>
-								<strong>Unique Products:</strong> {previewData.items.length}
-							</p>
-						</div>
-						<div>
-							<p>
-								<strong>Subtotal:</strong> ₹{previewData.subtotal}
-							</p>
-							<p>
-								<strong>Delivery:</strong> ₹{previewData.deliveryCharge}
-							</p>
-							<p>
-								<strong>Total:</strong> ₹{previewData.totalAmount}
-							</p>
 						</div>
 					</div>
 				</div>
@@ -273,11 +225,7 @@ const BulkCartExample = () => {
 				<button
 					onClick={handleAddToCart}
 					disabled={selectedItems.length === 0 || isProcessing || loading}
-					className={`px-6 py-3 rounded-lg font-semibold ${
-						selectedItems.length === 0 || isProcessing || loading
-							? "bg-gray-300 text-gray-500 cursor-not-allowed"
-							: "bg-blue-600 text-white hover:bg-blue-700"
-					}`}
+					className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
 				>
 					{isProcessing
 						? "Adding..."
@@ -287,26 +235,32 @@ const BulkCartExample = () => {
 				<button
 					onClick={() => setSelectedItems([])}
 					disabled={selectedItems.length === 0}
-					className="px-6 py-3 rounded-lg font-semibold bg-gray-200 text-gray-700 hover:bg-gray-300 disabled:opacity-50"
+					className="bg-gray-600 text-white px-6 py-2 rounded-lg hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
 				>
 					Clear Selection
 				</button>
 			</div>
 
-			{/* Usage Instructions */}
-			<div className="mt-8 p-4 bg-gray-50 rounded-lg">
-				<h3 className="font-semibold mb-2">How it works:</h3>
-				<ul className="list-disc list-inside space-y-1 text-sm text-gray-700">
-					<li>Select quantities for products you want to add</li>
-					<li>The system will merge with your existing cart items</li>
-					<li>
-						If an item already exists in cart, quantities will be added together
-					</li>
-					<li>Minimum order quantities are automatically enforced</li>
-					<li>Cart totals are recalculated automatically</li>
-					<li>All operations require user authentication</li>
-				</ul>
-			</div>
+			{/* Cart Items Display */}
+			{items.length > 0 && (
+				<div className="mt-8">
+					<h2 className="text-xl font-semibold mb-4">Current Cart Items</h2>
+					<div className="space-y-2">
+						{items.map((item) => (
+							<div
+								key={item.productId}
+								className="flex justify-between items-center p-3 bg-gray-50 rounded"
+							>
+								<div>
+									<span className="font-medium">{item.name}</span>
+									<span className="text-gray-600 ml-2">× {item.quantity}</span>
+								</div>
+								<span>₹{item.price * item.quantity}</span>
+							</div>
+						))}
+					</div>
+				</div>
+			)}
 		</div>
 	);
 };

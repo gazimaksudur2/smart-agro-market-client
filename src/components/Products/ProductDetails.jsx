@@ -20,7 +20,7 @@ import {
 } from "react-icons/fa";
 import { format } from "date-fns";
 import { useAuth } from "../../contexts/AuthContext";
-import { useCart } from "../../hooks/useCart";
+import useCart from "../../hooks/useCart";
 import axios from "axios";
 import toast from "react-hot-toast";
 import useScrollToTop from "../../hooks/useScrollToTop";
@@ -33,7 +33,7 @@ export default function ProductDetails() {
 	const [isAddingToCart, setIsAddingToCart] = useState(false);
 	const [isBuyingNow, setIsBuyingNow] = useState(false);
 	const { user, currentUser } = useAuth();
-	const { addToCart, addMultipleItemsToCart } = useCart();
+	const { addItem, addMultipleItems } = useCart();
 	const navigate = useNavigate();
 	const location = useLocation();
 	const params = useParams();
@@ -62,24 +62,17 @@ export default function ProductDetails() {
 
 			const productToAdd = {
 				_id: product?.id || product?._id,
-				title: product?.title,
+				name: product?.title,
 				price: product?.price || product?.pricePerUnit,
-				unit: product?.unit,
-				quantity: Math.max(quantity, product?.minimumOrderQuantity || 1),
-				minimumOrderQuantity: product?.minimumOrderQuantity || 1,
 				image: product?.images?.[0] || fallbackImage,
 				category: product?.category,
-				subcategory: product?.subcategory,
-				seller: product?.seller || product?.sellerInfo,
-				region:
-					product?.location?.region ||
-					product?.sellerInfo?.operationalArea?.region,
-				district:
-					product?.location?.district ||
-					product?.sellerInfo?.operationalArea?.district,
+				sellerId: product?.seller?.id || product?.sellerInfo?.id,
 			};
 
-			await addToCart(productToAdd);
+			await addItem(
+				productToAdd,
+				Math.max(quantity, product?.minimumOrderQuantity || 1)
+			);
 		} catch (error) {
 			console.error("Error adding to cart:", error);
 		} finally {
@@ -107,25 +100,18 @@ export default function ProductDetails() {
 
 			const productToAdd = {
 				_id: product?.id || product?._id,
-				title: product?.title,
+				name: product?.title,
 				price: product?.price || product?.pricePerUnit,
-				unit: product?.unit,
-				quantity: Math.max(quantity, product?.minimumOrderQuantity || 1),
-				minimumOrderQuantity: product?.minimumOrderQuantity || 1,
 				image: product?.images?.[0] || fallbackImage,
 				category: product?.category,
-				subcategory: product?.subcategory,
-				seller: product?.seller || product?.sellerInfo,
-				region:
-					product?.location?.region ||
-					product?.sellerInfo?.operationalArea?.region,
-				district:
-					product?.location?.district ||
-					product?.sellerInfo?.operationalArea?.district,
+				sellerId: product?.seller?.id || product?.sellerInfo?.id,
 			};
 
 			// Add to cart first
-			await addToCart(productToAdd);
+			await addItem(
+				productToAdd,
+				Math.max(quantity, product?.minimumOrderQuantity || 1)
+			);
 
 			// Then navigate to checkout
 			navigate("/checkout", {
@@ -159,19 +145,16 @@ export default function ProductDetails() {
 
 			// Validate and format items
 			const cartItems = items.map((item) => ({
-				_id: item._id || item.id,
-				title: item.title,
+				productId: item._id || item.id,
+				name: item.title,
 				price: item.price || item.pricePerUnit,
-				unit: item.unit,
 				quantity: item.quantity || item.minimumOrderQuantity || 1,
-				minimumOrderQuantity: item.minimumOrderQuantity || 1,
 				image: item.images?.[0] || fallbackImage,
 				category: item.category,
-				subcategory: item.subcategory,
-				seller: item.seller || item.sellerInfo,
+				sellerId: item.seller?.id || item.sellerInfo?.id,
 			}));
 
-			await addMultipleItemsToCart(cartItems);
+			await addMultipleItems(cartItems);
 		} catch (error) {
 			console.error("Error adding multiple items to cart:", error);
 		} finally {
@@ -199,7 +182,8 @@ export default function ProductDetails() {
 				}
 			})
 			.catch((err) => {
-				toast.error(err.message || "Failed to load product details");
+				console.error("Error fetching product:", err);
+				toast.error("Failed to load product details");
 			});
 	}, [params.id]);
 

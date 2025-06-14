@@ -1,303 +1,256 @@
-import { useNavigate } from "react-router-dom";
-import { useCart } from "../../hooks/useCart";
-import {
-	FaTrash,
-	FaMinus,
-	FaPlus,
-	FaShoppingCart,
-	FaArrowRight,
-} from "react-icons/fa";
-import useScrollToTop from "../../hooks/useScrollToTop";
-import React from "react";
+import React, { useEffect } from "react";
+import { Link } from "react-router-dom";
+import { FiShoppingCart, FiTrash2, FiPlus, FiMinus } from "react-icons/fi";
+import useCart from "../../hooks/useCart";
 
-export default function CartPage() {
-	useScrollToTop();
-	const navigate = useNavigate();
+const CartPage = () => {
 	const {
-		items: cartItems,
-		totalItems,
-		subtotal,
-		deliveryCharge,
-		totalAmount: total,
-		updateItem: updateItemQuantity,
-		removeItem: removeItemFromCart,
-		clearCartItems,
-		isAuthenticated,
+		items,
 		loading,
+		error,
+		totalAmount,
+		totalItems,
+		updateItem,
+		removeItem,
+		clearCart,
 		loadCart,
 	} = useCart();
 
-	// Load cart on component mount
-	React.useEffect(() => {
+	useEffect(() => {
 		loadCart();
-	}, []);
+	}, [loadCart]);
 
-	const handleQuantityChange = async (itemId, newQuantity, minQuantity) => {
-		if (newQuantity < minQuantity) {
-			return;
-		}
-		try {
-			await updateItemQuantity(itemId, newQuantity);
-		} catch (error) {
-			console.error("Error updating quantity:", error);
-		}
+	const handleQuantityChange = async (productId, newQuantity) => {
+		if (newQuantity < 1) return;
+		await updateItem(productId, newQuantity);
 	};
 
-	const handleCheckout = () => {
-		if (!isAuthenticated) {
-			navigate("/login", { state: { from: "/checkout" } });
-			return;
-		}
-		navigate("/checkout");
-	};
-
-	const handleRemoveItem = async (itemId) => {
-		try {
-			await removeItemFromCart(itemId);
-		} catch (error) {
-			console.error("Error removing item:", error);
-		}
+	const handleRemoveItem = async (productId) => {
+		await removeItem(productId);
 	};
 
 	const handleClearCart = async () => {
 		if (window.confirm("Are you sure you want to clear your cart?")) {
-			try {
-				await clearCartItems();
-			} catch (error) {
-				console.error("Error clearing cart:", error);
-			}
+			await clearCart();
 		}
 	};
 
-	if (loading && (!cartItems || cartItems.length === 0)) {
+	if (loading) {
 		return (
-			<div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-				<div className="text-center py-12">
-					<div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto"></div>
-					<h2 className="mt-4 text-lg font-medium text-gray-900">
-						Loading your cart...
-					</h2>
+			<div className="min-h-screen bg-gray-50 py-12">
+				<div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+					<div className="flex justify-center items-center h-64">
+						<div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
+					</div>
 				</div>
 			</div>
 		);
 	}
 
-	if (!cartItems || cartItems.length === 0) {
+	if (error) {
 		return (
-			<div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-				<div className="text-center py-12">
-					<FaShoppingCart className="mx-auto h-12 w-12 text-gray-400" />
-					<h2 className="mt-4 text-lg font-medium text-gray-900">
-						Your cart is empty
-					</h2>
-					<p className="mt-2 text-sm text-gray-500">
-						Start shopping to add items to your cart.
-					</p>
-					<button
-						onClick={() => navigate("/products")}
-						className="mt-6 btn btn-primary"
-					>
-						Continue Shopping
-					</button>
+			<div className="min-h-screen bg-gray-50 py-12">
+				<div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+					<div className="bg-red-50 border border-red-200 rounded-lg p-4">
+						<p className="text-red-600">Error loading cart: {error}</p>
+						<button
+							onClick={loadCart}
+							className="mt-2 text-red-600 hover:text-red-800 underline"
+						>
+							Try again
+						</button>
+					</div>
+				</div>
+			</div>
+		);
+	}
+
+	if (!items || items.length === 0) {
+		return (
+			<div className="min-h-screen bg-gray-50 py-12">
+				<div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+					<div className="text-center py-12">
+						<FiShoppingCart className="mx-auto h-16 w-16 text-gray-400" />
+						<h1 className="mt-4 text-3xl font-bold text-gray-900">
+							Your cart is empty
+						</h1>
+						<p className="mt-2 text-lg text-gray-500">
+							Start shopping to add items to your cart.
+						</p>
+						<div className="mt-8">
+							<Link
+								to="/products"
+								className="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
+							>
+								<FiShoppingCart className="-ml-1 mr-2 h-5 w-5" />
+								Start Shopping
+							</Link>
+						</div>
+					</div>
 				</div>
 			</div>
 		);
 	}
 
 	return (
-		<div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-			<div className="flex items-center justify-between mb-8">
-				<h1 className="text-2xl md:text-3xl font-bold text-gray-900">
-					Shopping Cart ({totalItems} items)
-				</h1>
-				<button
-					onClick={handleClearCart}
-					disabled={loading}
-					className="text-red-600 hover:text-red-700 text-sm font-medium disabled:opacity-50"
-				>
-					Clear Cart
-				</button>
-			</div>
+		<div className="min-h-screen bg-gray-50 py-12">
+			<div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+				{/* Header */}
+				<div className="flex justify-between items-center mb-8">
+					<h1 className="text-3xl font-bold text-gray-900">Shopping Cart</h1>
+					<button
+						onClick={handleClearCart}
+						className="text-red-600 hover:text-red-800 text-sm font-medium"
+					>
+						Clear Cart
+					</button>
+				</div>
 
-			<div className="lg:grid lg:grid-cols-12 lg:gap-8">
-				{/* Cart Items */}
-				<div className="lg:col-span-8">
-					<div className="bg-white shadow-sm rounded-lg overflow-hidden">
-						<ul className="divide-y divide-gray-200">
-							{cartItems.map((item) => (
-								<li key={item._id} className="p-4 sm:p-6">
-									<div className="flex items-start space-x-4">
-										{/* Product Image */}
-										<div className="flex-shrink-0">
-											<img
-												src={item.image}
-												alt={item.title}
-												className="w-16 h-16 sm:w-20 sm:h-20 object-cover rounded-md"
-												onError={(e) => {
-													e.target.src = "/placeholder-image.jpg";
-												}}
-											/>
-										</div>
+				<div className="lg:grid lg:grid-cols-12 lg:gap-8">
+					{/* Cart Items */}
+					<div className="lg:col-span-8">
+						<div className="bg-white shadow rounded-lg">
+							<div className="px-4 py-5 sm:p-6">
+								<div className="space-y-6">
+									{items.map((item) => (
+										<div
+											key={item.productId || item._id}
+											className="flex items-center space-x-4 py-4 border-b border-gray-200 last:border-b-0"
+										>
+											{/* Product Image */}
+											<div className="flex-shrink-0">
+												<img
+													className="h-20 w-20 rounded-lg object-cover"
+													src={item.image || "/placeholder-image.jpg"}
+													alt={item.name}
+													onError={(e) => {
+														e.target.src = "/placeholder-image.jpg";
+													}}
+												/>
+											</div>
 
-										{/* Product Details */}
-										<div className="flex-1 min-w-0">
-											<div className="flex items-start justify-between">
-												<div className="flex-1">
-													<h3 className="text-base font-medium text-gray-900 truncate">
-														{item.title}
-													</h3>
-													<p className="text-sm text-gray-500">
-														৳{item.price?.toLocaleString() || 0} per {item.unit}
+											{/* Product Details */}
+											<div className="flex-1 min-w-0">
+												<h3 className="text-lg font-medium text-gray-900 truncate">
+													{item.name}
+												</h3>
+												<p className="text-sm text-gray-500">
+													₹{item.price} per unit
+												</p>
+												{item.category && (
+													<p className="text-sm text-gray-400">
+														{item.category}
 													</p>
-													<p className="text-xs text-gray-400">
-														Min. order: {item.minimumOrderQuantity || 1}{" "}
-														{item.unit}
-													</p>
-													{item.seller && (
-														<p className="text-xs text-gray-400 mt-1">
-															Seller: {item.seller.name || item.seller}
-														</p>
-													)}
-												</div>
-
-												{/* Remove Button */}
-												<button
-													onClick={() => handleRemoveItem(item._id)}
-													disabled={loading}
-													className="ml-4 text-red-600 hover:text-red-700 p-1 disabled:opacity-50"
-													aria-label="Remove item"
-												>
-													<FaTrash className="h-4 w-4" />
-												</button>
+												)}
 											</div>
 
 											{/* Quantity Controls */}
-											<div className="mt-4 flex items-center justify-between">
-												<div className="flex items-center space-x-2">
-													<button
-														onClick={() =>
-															handleQuantityChange(
-																item._id,
-																item.quantity - 1,
-																item.minimumOrderQuantity || 1
-															)
-														}
-														disabled={
-															item.quantity <=
-																(item.minimumOrderQuantity || 1) || loading
-														}
-														className="p-1 border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-													>
-														<FaMinus className="h-3 w-3" />
-													</button>
-													<span className="text-sm font-medium min-w-[3rem] text-center">
-														{item.quantity} {item.unit}
-													</span>
-													<button
-														onClick={() =>
-															handleQuantityChange(
-																item._id,
-																item.quantity + 1,
-																item.minimumOrderQuantity || 1
-															)
-														}
-														disabled={loading}
-														className="p-1 border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50"
-													>
-														<FaPlus className="h-3 w-3" />
-													</button>
-												</div>
-
-												{/* Item Total */}
-												<div className="text-right">
-													<p className="text-sm font-medium text-gray-900">
-														৳
-														{(
-															(item.price || 0) * item.quantity
-														).toLocaleString()}
-													</p>
-												</div>
+											<div className="flex items-center space-x-3">
+												<button
+													onClick={() =>
+														handleQuantityChange(
+															item.productId || item._id,
+															item.quantity - 1
+														)
+													}
+													disabled={item.quantity <= 1}
+													className="p-2 rounded-full hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
+												>
+													<FiMinus className="h-4 w-4" />
+												</button>
+												<span className="px-4 py-2 text-sm font-medium bg-gray-100 rounded-lg min-w-[3rem] text-center">
+													{item.quantity}
+												</span>
+												<button
+													onClick={() =>
+														handleQuantityChange(
+															item.productId || item._id,
+															item.quantity + 1
+														)
+													}
+													className="p-2 rounded-full hover:bg-gray-100"
+												>
+													<FiPlus className="h-4 w-4" />
+												</button>
 											</div>
+
+											{/* Item Total */}
+											<div className="text-right">
+												<p className="text-lg font-medium text-gray-900">
+													₹{(item.price * item.quantity).toFixed(2)}
+												</p>
+											</div>
+
+											{/* Remove Button */}
+											<button
+												onClick={() =>
+													handleRemoveItem(item.productId || item._id)
+												}
+												className="p-2 text-red-600 hover:text-red-800 hover:bg-red-50 rounded-full"
+											>
+												<FiTrash2 className="h-5 w-5" />
+											</button>
 										</div>
-									</div>
-								</li>
-							))}
-						</ul>
-					</div>
-				</div>
-
-				{/* Order Summary */}
-				<div className="mt-8 lg:mt-0 lg:col-span-4">
-					<div className="bg-white shadow-sm rounded-lg p-6 lg:sticky lg:top-8">
-						<h2 className="text-lg font-medium text-gray-900 mb-4">
-							Order Summary
-						</h2>
-
-						<div className="space-y-3">
-							<div className="flex justify-between text-sm">
-								<span className="text-gray-600">
-									Subtotal ({totalItems} items)
-								</span>
-								<span className="font-medium">
-									৳{subtotal?.toLocaleString() || 0}
-								</span>
-							</div>
-							<div className="flex justify-between text-sm">
-								<span className="text-gray-600">Delivery Charge</span>
-								<span className="font-medium">
-									৳{deliveryCharge?.toLocaleString() || 0}
-								</span>
-							</div>
-							<div className="border-t border-gray-200 pt-3">
-								<div className="flex justify-between text-base font-medium">
-									<span>Total</span>
-									<span>৳{total?.toLocaleString() || 0}</span>
+									))}
 								</div>
 							</div>
 						</div>
+					</div>
 
-						{/* Authentication Notice */}
-						{!isAuthenticated && (
-							<div className="mt-6 bg-yellow-50 border border-yellow-200 rounded-lg p-3">
-								<p className="text-sm text-yellow-800">
-									<strong>Note:</strong> You'll need to login to proceed with
-									checkout.
-								</p>
+					{/* Order Summary */}
+					<div className="lg:col-span-4 mt-8 lg:mt-0">
+						<div className="bg-white shadow rounded-lg sticky top-8">
+							<div className="px-4 py-5 sm:p-6">
+								<h3 className="text-lg font-medium text-gray-900 mb-4">
+									Order Summary
+								</h3>
+								<div className="space-y-3">
+									<div className="flex justify-between text-sm">
+										<span>Items ({totalItems})</span>
+										<span>₹{totalAmount.toFixed(2)}</span>
+									</div>
+									<div className="flex justify-between text-sm">
+										<span>Shipping</span>
+										<span>₹0.00</span>
+									</div>
+									<div className="flex justify-between text-sm">
+										<span>Tax</span>
+										<span>₹0.00</span>
+									</div>
+									<div className="border-t border-gray-200 pt-3">
+										<div className="flex justify-between text-base font-medium">
+											<span>Total</span>
+											<span>₹{totalAmount.toFixed(2)}</span>
+										</div>
+									</div>
+								</div>
+								<div className="mt-6">
+									<Link
+										to="/checkout"
+										className="w-full bg-primary-600 border border-transparent rounded-md shadow-sm py-3 px-4 text-base font-medium text-white hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 flex items-center justify-center"
+									>
+										Proceed to Checkout
+									</Link>
+								</div>
+								<div className="mt-6 flex justify-center text-sm text-center text-gray-500">
+									<p>
+										or{" "}
+										<Link
+											to="/products"
+											className="text-primary-600 font-medium hover:text-primary-500"
+										>
+											Continue Shopping
+											<span aria-hidden="true"> &rarr;</span>
+										</Link>
+									</p>
+								</div>
 							</div>
-						)}
-
-						{/* Checkout Button */}
-						<button
-							onClick={handleCheckout}
-							disabled={loading || totalItems === 0}
-							className="w-full mt-6 btn btn-primary flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
-						>
-							{isAuthenticated ? "Proceed to Checkout" : "Login & Checkout"}
-							<FaArrowRight className="ml-2 h-4 w-4" />
-						</button>
-
-						{/* Continue Shopping */}
-						<button
-							onClick={() => navigate("/products")}
-							className="w-full mt-3 btn btn-outline-primary"
-						>
-							Continue Shopping
-						</button>
-
-						{/* Delivery Info */}
-						<div className="mt-6 text-xs text-gray-500">
-							<p className="mb-2">
-								<strong>Delivery Information:</strong>
-							</p>
-							<ul className="space-y-1">
-								<li>• Advance payment required (2x delivery charge)</li>
-								<li>• Delivery handled by regional agents</li>
-								<li>• Balance payment on delivery</li>
-							</ul>
 						</div>
 					</div>
 				</div>
 			</div>
 		</div>
 	);
-}
+};
+
+export default CartPage;

@@ -7,8 +7,11 @@ axios.defaults.withCredentials = true;
 axios.defaults.headers.common["Accept"] = "application/json";
 axios.defaults.headers.common["Content-Type"] = "application/json";
 
+// Use consistent token key
+const JWT_TOKEN_KEY = "JWT_TOKEN_KEY";
+
 // Initialize auth token from localStorage if available
-const token = localStorage.getItem("jwt_token");
+const token = localStorage.getItem(JWT_TOKEN_KEY);
 if (token) {
 	axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
 }
