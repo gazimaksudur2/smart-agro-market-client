@@ -56,11 +56,9 @@ const useCart = () => {
 
 		try {
 			const response = await getCartFromDB(user.email);
-			console.log("Cart API Response:", response);
 
 			// Handle backend response format: { success: true, cart: { items: [...] } }
 			const backendItems = response.cart?.items || response.data?.items || [];
-			console.log("Backend Items:", backendItems);
 
 			// Map backend format to frontend format
 			const items = backendItems.map((item) => ({
@@ -75,7 +73,6 @@ const useCart = () => {
 				sellerName: item.seller?.name || item.sellerName,
 				category: item.category,
 			}));
-			console.log("Mapped Items:", items);
 
 			setCartItems(items);
 
@@ -83,16 +80,10 @@ const useCart = () => {
 			if (response.cart?.totalItems && response.cart?.totalAmount) {
 				setTotalItems(response.cart.totalItems);
 				setTotalAmount(response.cart.totalAmount);
-				console.log("Using backend totals:", {
-					totalItems: response.cart.totalItems,
-					totalAmount: response.cart.totalAmount,
-				});
 			} else {
 				calculateTotals(items);
-				console.log("Calculated totals from items");
 			}
 		} catch (err) {
-			console.error("Cart loading error:", err);
 			setError(err.message || "Failed to load cart");
 			setCartItems([]);
 			setTotalItems(0);
@@ -324,35 +315,27 @@ const useCart = () => {
 		}
 	}, [user?.email]);
 
-	// Batch update cart
+	// Batch update operations
 	const batchUpdate = useCallback(
-		async (updates) => {
+		async (operations) => {
 			if (!user?.email) {
-				toast.error("Please login to update cart");
-				return false;
-			}
-
-			if (!Array.isArray(updates) || updates.length === 0) {
-				toast.error("No updates provided");
-				return false;
+				throw new Error("User not authenticated");
 			}
 
 			setLoading(true);
 			setError(null);
 
 			try {
-				await batchUpdateCart(user.email, updates);
+				// Use the batch update service function
+				await batchUpdateCart(user.email, operations);
 
-				// Reload cart from backend to ensure consistency
+				// Reload cart after all operations
 				await loadCart();
-
-				toast.success("Cart updated successfully");
 				return true;
-			} catch (err) {
-				const errorMessage = err.message || "Failed to update cart";
-				setError(errorMessage);
-				toast.error(errorMessage);
-				return false;
+			} catch (error) {
+				console.error("Batch update error:", error);
+				setError(error.message || "Failed to update cart");
+				throw error;
 			} finally {
 				setLoading(false);
 			}

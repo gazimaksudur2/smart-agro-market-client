@@ -135,7 +135,7 @@ const CartPage = () => {
 													{item.name}
 												</h3>
 												<p className="text-sm text-gray-500">
-													₹{item.price} per unit
+													৳{item.price} per unit
 												</p>
 												{item.category && (
 													<p className="text-sm text-gray-400">
@@ -177,7 +177,7 @@ const CartPage = () => {
 											{/* Item Total */}
 											<div className="text-right">
 												<p className="text-lg font-medium text-gray-900">
-													₹{(item.price * item.quantity).toFixed(2)}
+													৳{(item.price * item.quantity).toFixed(2)}
 												</p>
 											</div>
 
@@ -206,21 +206,25 @@ const CartPage = () => {
 								</h3>
 								<div className="space-y-3">
 									<div className="flex justify-between text-sm">
-										<span>Items ({totalItems})</span>
-										<span>₹{totalAmount.toFixed(2)}</span>
+										<span className="text-gray-600">
+											Subtotal ({totalItems} items)
+										</span>
+										<span>৳{totalAmount.toFixed(2)}</span>
 									</div>
 									<div className="flex justify-between text-sm">
-										<span>Shipping</span>
-										<span>₹0.00</span>
+										<span className="text-gray-600">Shipping</span>
+										<span>৳0.00</span>
 									</div>
 									<div className="flex justify-between text-sm">
-										<span>Tax</span>
-										<span>₹0.00</span>
+										<span className="text-gray-600">Tax</span>
+										<span>৳0.00</span>
 									</div>
 									<div className="border-t border-gray-200 pt-3">
-										<div className="flex justify-between text-base font-medium">
-											<span>Total</span>
-											<span>₹{totalAmount.toFixed(2)}</span>
+										<div className="flex justify-between">
+											<span className="text-base font-medium text-gray-900">
+												Total
+											</span>
+											<span>৳{totalAmount.toFixed(2)}</span>
 										</div>
 									</div>
 								</div>

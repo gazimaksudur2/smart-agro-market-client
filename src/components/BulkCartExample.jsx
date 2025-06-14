@@ -131,7 +131,7 @@ const BulkCartExample = () => {
 							<strong>Items:</strong> {totalItems}
 						</p>
 						<p>
-							<strong>Total:</strong> ₹{totalAmount}
+							<strong>Total:</strong> ৳{totalAmount}
 						</p>
 					</div>
 					<div>
@@ -158,7 +158,7 @@ const BulkCartExample = () => {
 						return (
 							<div key={product._id} className="border rounded-lg p-4">
 								<h3 className="font-semibold">{product.name}</h3>
-								<p className="text-gray-600">₹{product.price}</p>
+								<p className="text-gray-600">৳{product.price}</p>
 								<p className="text-sm text-gray-500">
 									Category: {product.category}
 								</p>
@@ -184,7 +184,7 @@ const BulkCartExample = () => {
 
 								{selectedItem && (
 									<p className="text-sm text-green-600 mt-1">
-										Selected: {selectedItem.quantity} × ₹{product.price} = ₹
+										Selected: {selectedItem.quantity} × ৳{product.price} = ৳
 										{selectedItem.quantity * product.price}
 									</p>
 								)}
@@ -207,14 +207,14 @@ const BulkCartExample = () => {
 								<span>
 									{item.name} × {item.quantity}
 								</span>
-								<span>₹{item.price * item.quantity}</span>
+								<span>৳{item.price * item.quantity}</span>
 							</div>
 						))}
 					</div>
 					<div className="border-t pt-2 mt-2">
 						<div className="flex justify-between items-center font-semibold">
 							<span>Total Selected:</span>
-							<span>₹{selectedTotal}</span>
+							<span>৳{selectedTotal}</span>
 						</div>
 					</div>
 				</div>
@@ -255,7 +255,7 @@ const BulkCartExample = () => {
 									<span className="font-medium">{item.name}</span>
 									<span className="text-gray-600 ml-2">× {item.quantity}</span>
 								</div>
-								<span>₹{item.price * item.quantity}</span>
+								<span>৳{item.price * item.quantity}</span>
 							</div>
 						))}
 					</div>
