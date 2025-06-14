@@ -2,10 +2,9 @@ import axios from "axios";
 
 const API_BASE_URL =
 	import.meta.env.VITE_SERVER_API_URL || "http://localhost:5000";
-const CART_STORAGE_KEY = "smart_agro_cart";
 
 /**
- * Cart service to handle database synchronization and localStorage
+ * Cart service to handle database operations only
  */
 const cartService = {
 	/**
@@ -17,12 +16,22 @@ const cartService = {
 		}
 
 		try {
-			const response = await axios.get(`${API_BASE_URL}/carts/${email}`, {
+			const response = await axios.get(`${API_BASE_URL}/api/cart/${email}`, {
 				withCredentials: true,
 			});
 			return response.data.cart || { items: [] };
 		} catch (error) {
 			console.error("Error getting cart from database:", error);
+			// Return empty cart if not found (404) instead of throwing error
+			if (error.response?.status === 404) {
+				return {
+					items: [],
+					totalItems: 0,
+					subtotal: 0,
+					deliveryCharge: 0,
+					totalAmount: 0,
+				};
+			}
 			throw new Error(
 				error.response?.data?.message || "Failed to fetch cart from database"
 			);
@@ -46,14 +55,10 @@ const cartService = {
 
 		try {
 			const response = await axios.post(
-				`${API_BASE_URL}/carts`,
+				`${API_BASE_URL}/api/cart/add-multiple`,
 				{
 					email,
 					items: cartData.items,
-					totalItems: cartData.totalItems,
-					subtotal: cartData.subtotal,
-					deliveryCharge: cartData.deliveryCharge,
-					totalAmount: cartData.totalAmount,
 				},
 				{ withCredentials: true }
 			);
@@ -67,232 +72,332 @@ const cartService = {
 	},
 
 	/**
+	 * Add multiple items to cart (merges with existing items)
+	 */
+	addMultipleItemsToCart: async (email, items) => {
+		if (!email) {
+			throw new Error("Email is required to add items to cart");
+		}
+
+		if (!Array.isArray(items) || items.length === 0) {
+			throw new Error("Items array is required and cannot be empty");
+		}
+
+		// Validate all items before adding
+		items.forEach((item, index) => {
+			try {
+				cartService.validateCartItem(item);
+			} catch (error) {
+				throw new Error(`Invalid item at index ${index}: ${error.message}`);
+			}
+		});
+
+		try {
+			const response = await axios.post(
+				`${API_BASE_URL}/api/cart/add-multiple`,
+				{ email, items },
+				{ withCredentials: true }
+			);
+			return response.data;
+		} catch (error) {
+			console.error("Error adding multiple items to cart:", error);
+			throw new Error(
+				error.response?.data?.message || "Failed to add items to cart"
+			);
+		}
+	},
+
+	/**
+	 * Batch update cart items (multiple operations in one request)
+	 */
+	batchUpdateCart: async (email, operations) => {
+		if (!email) {
+			throw new Error("Email is required for batch cart update");
+		}
+
+		if (!Array.isArray(operations) || operations.length === 0) {
+			throw new Error("Operations array is required for batch update");
+		}
+
+		// Validate operations
+		operations.forEach((op, index) => {
+			if (!op.type || !op.itemId) {
+				throw new Error(
+					`Invalid operation at index ${index}: type and itemId are required`
+				);
+			}
+			if (
+				op.type === "update" &&
+				(typeof op.quantity !== "number" || op.quantity < 0)
+			) {
+				throw new Error(
+					`Invalid operation at index ${index}: quantity must be a non-negative number`
+				);
+			}
+		});
+
+		try {
+			const response = await axios.post(
+				`${API_BASE_URL}/api/cart/batch-update`,
+				{ email, operations },
+				{ withCredentials: true }
+			);
+			return response.data;
+		} catch (error) {
+			console.error("Error batch updating cart:", error);
+			throw new Error(
+				error.response?.data?.message || "Failed to batch update cart"
+			);
+		}
+	},
+
+	/**
+	 * Add single item to cart in database (merges with existing)
+	 */
+	addItemToDB: async (email, item) => {
+		if (!email) {
+			throw new Error("Email is required to add item to cart");
+		}
+
+		cartService.validateCartItem(item);
+
+		try {
+			const response = await axios.post(
+				`${API_BASE_URL}/api/cart/add`,
+				{
+					email,
+					productId: item._id || item.productId,
+					quantity: item.quantity,
+				},
+				{ withCredentials: true }
+			);
+			return response.data;
+		} catch (error) {
+			console.error("Error adding item to cart:", error);
+			throw new Error(
+				error.response?.data?.message || "Failed to add item to cart"
+			);
+		}
+	},
+
+	/**
 	 * Update cart item in database
 	 */
 	updateCartItemInDB: async (email, itemId, quantity) => {
+		if (!email || !itemId) {
+			throw new Error("Email and item ID are required");
+		}
+
+		if (typeof quantity !== "number" || quantity < 0) {
+			throw new Error("Quantity must be a non-negative number");
+		}
+
 		try {
 			const response = await axios.put(
-				`${API_BASE_URL}/carts/${email}/items/${itemId}`,
-				{ quantity },
+				`${API_BASE_URL}/api/cart/update`,
+				{ email, productId: itemId, quantity },
 				{ withCredentials: true }
 			);
 			return response.data;
 		} catch (error) {
-			console.error("Error updating cart item in database:", error);
-			throw error;
+			console.error("Error updating cart item:", error);
+			throw new Error(
+				error.response?.data?.message || "Failed to update cart item"
+			);
 		}
 	},
 
 	/**
-	 * Remove cart item from database
+	 * Remove item from cart in database
 	 */
 	removeCartItemFromDB: async (email, itemId) => {
-		try {
-			const response = await axios.delete(
-				`${API_BASE_URL}/carts/${email}/items/${itemId}`,
-				{ withCredentials: true }
-			);
-			return response.data;
-		} catch (error) {
-			console.error("Error removing cart item from database:", error);
-			throw new Error(
-				error.response?.data?.message || "Failed to remove item from cart"
-			);
+		if (!email || !itemId) {
+			throw new Error("Email and item ID are required");
 		}
-	},
 
-	/**
-	 * Clear cart in database
-	 */
-	clearCartInDB: async (email) => {
 		try {
-			const response = await axios.delete(`${API_BASE_URL}/carts/${email}`, {
+			const response = await axios.delete(`${API_BASE_URL}/api/cart/remove`, {
+				data: { email, productId: itemId },
 				withCredentials: true,
 			});
 			return response.data;
 		} catch (error) {
-			console.error("Error clearing cart in database:", error);
-			throw error;
+			console.error("Error removing cart item:", error);
+			throw new Error(
+				error.response?.data?.message || "Failed to remove cart item"
+			);
 		}
 	},
 
 	/**
-	 * Get cart from localStorage
+	 * Clear entire cart in database
 	 */
-	getCartFromLocalStorage: () => {
-		try {
-			const cart = localStorage.getItem(CART_STORAGE_KEY);
-			return cart ? JSON.parse(cart) : { items: [] };
-		} catch (error) {
-			console.error("Error getting cart from localStorage:", error);
-			return { items: [] };
-		}
-	},
-
-	/**
-	 * Save cart to localStorage
-	 */
-	saveCartToLocalStorage: (cartData) => {
-		try {
-			localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(cartData));
-		} catch (error) {
-			console.error("Error saving cart to localStorage:", error);
-		}
-	},
-
-	/**
-	 * Clear cart from localStorage
-	 */
-	clearCartFromLocalStorage: () => {
-		try {
-			localStorage.removeItem(CART_STORAGE_KEY);
-		} catch (error) {
-			console.error("Error clearing cart from localStorage:", error);
-		}
-	},
-
-	/**
-	 * Transfer cart from localStorage to database when user logs in
-	 */
-	transferCartToDatabase: async (email) => {
-		try {
-			const localCart = cartService.getCartFromLocalStorage();
-
-			if (localCart.items && localCart.items.length > 0) {
-				// Save local cart to database
-				await cartService.saveCartToDB(email, localCart);
-
-				// Clear localStorage after successful transfer
-				cartService.clearCartFromLocalStorage();
-
-				return localCart;
-			}
-
-			return null;
-		} catch (error) {
-			console.error("Error transferring cart to database:", error);
-			throw error;
-		}
-	},
-
-	/**
-	 * Merge carts when transferring from localStorage to database
-	 */
-	mergeAndTransferCart: async (email) => {
+	clearCartInDB: async (email) => {
 		if (!email) {
-			throw new Error("Email is required to merge carts");
+			throw new Error("Email is required to clear cart");
 		}
 
 		try {
-			const [localCart, dbCart] = await Promise.all([
-				cartService.getCartFromLocalStorage(),
-				cartService.getCartFromDB(email),
-			]);
+			const response = await axios.delete(
+				`${API_BASE_URL}/api/cart/clear/${email}`,
+				{ withCredentials: true }
+			);
+			return response.data;
+		} catch (error) {
+			console.error("Error clearing cart:", error);
+			throw new Error(error.response?.data?.message || "Failed to clear cart");
+		}
+	},
 
-			// Validate both carts
-			if (localCart.items && !Array.isArray(localCart.items)) {
-				throw new Error("Invalid local cart items");
-			}
-			if (dbCart.items && !Array.isArray(dbCart.items)) {
-				throw new Error("Invalid database cart items");
-			}
+	/**
+	 * Preview cart merge (optional endpoint)
+	 */
+	previewCartMerge: async (email, newItems) => {
+		if (!email) {
+			throw new Error("Email is required for cart merge preview");
+		}
 
-			// If no local cart items, just return database cart
-			if (!localCart.items || localCart.items.length === 0) {
-				return dbCart;
-			}
+		if (!Array.isArray(newItems) || newItems.length === 0) {
+			throw new Error("Items array is required for merge preview");
+		}
 
-			// If no database cart items, transfer local cart
-			if (!dbCart.items || dbCart.items.length === 0) {
-				await cartService.saveCartToDB(email, localCart);
-				cartService.clearCartFromLocalStorage();
-				return localCart;
-			}
+		try {
+			const response = await axios.post(
+				`${API_BASE_URL}/api/cart/preview-merge`,
+				{ email, newItems },
+				{ withCredentials: true }
+			);
+			return response.data;
+		} catch (error) {
+			console.error("Error previewing cart merge:", error);
+			throw new Error(
+				error.response?.data?.message || "Failed to preview cart merge"
+			);
+		}
+	},
 
-			// Validate all items before merging
-			[...localCart.items, ...dbCart.items].forEach((item) =>
-				cartService.validateCartItem(item)
+	/**
+	 * Get cart summary (items count, total amount) for authenticated user
+	 */
+	getCartSummary: async (email) => {
+		if (!email) {
+			throw new Error("Email is required to get cart summary");
+		}
+
+		try {
+			// Use the main cart endpoint and extract summary data
+			const response = await axios.get(`${API_BASE_URL}/api/cart/${email}`, {
+				withCredentials: true,
+			});
+			const cart = response.data.cart || { totalItems: 0, totalAmount: 0 };
+			return {
+				totalItems: cart.totalItems || 0,
+				totalAmount: cart.totalAmount || 0,
+			};
+		} catch (error) {
+			console.error("Error getting cart summary:", error);
+			// Return empty summary if not found
+			if (error.response?.status === 404) {
+				return { totalItems: 0, totalAmount: 0 };
+			}
+			throw new Error(
+				error.response?.data?.message || "Failed to get cart summary"
+			);
+		}
+	},
+
+	/**
+	 * Merge items with existing cart (client-side helper)
+	 */
+	mergeCartItems: (existingItems, newItems) => {
+		const mergedItems = [...existingItems];
+
+		newItems.forEach((newItem) => {
+			const existingItemIndex = mergedItems.findIndex(
+				(item) => item._id === newItem._id
 			);
 
-			// Merge carts - combine items, avoiding duplicates
-			const mergedItems = [...dbCart.items];
+			if (existingItemIndex >= 0) {
+				// Item exists, update quantity
+				const existingItem = mergedItems[existingItemIndex];
+				const newQuantity = existingItem.quantity + newItem.quantity;
 
-			localCart.items.forEach((localItem) => {
-				const existingItemIndex = mergedItems.findIndex(
-					(item) => item._id === localItem._id
+				// Ensure quantity meets minimum order requirement
+				const minQuantity = Math.max(
+					newItem.minimumOrderQuantity || 1,
+					existingItem.minimumOrderQuantity || 1
 				);
 
-				if (existingItemIndex !== -1) {
-					// Update quantity if item exists
-					mergedItems[existingItemIndex].quantity += localItem.quantity;
-				} else {
-					// Add new item
-					mergedItems.push(localItem);
-				}
-			});
+				mergedItems[existingItemIndex] = {
+					...existingItem,
+					...newItem, // Use new item data (in case of updates)
+					quantity: Math.max(newQuantity, minQuantity),
+				};
+			} else {
+				// New item, add to cart
+				const minQuantity = newItem.minimumOrderQuantity || 1;
+				mergedItems.push({
+					...newItem,
+					quantity: Math.max(newItem.quantity, minQuantity),
+				});
+			}
+		});
 
-			// Calculate merged cart totals
-			const mergedCart = {
-				items: mergedItems,
-				totalItems: mergedItems.reduce(
-					(total, item) => total + item.quantity,
-					0
-				),
-				subtotal: mergedItems.reduce(
-					(total, item) => total + item.price * item.quantity,
-					0
-				),
-				deliveryCharge: mergedItems.length * 100, // Base delivery charge
-				totalAmount: 0,
-			};
-			mergedCart.totalAmount = mergedCart.subtotal + mergedCart.deliveryCharge;
-
-			// Save merged cart to database
-			await cartService.saveCartToDB(email, mergedCart);
-
-			// Clear localStorage
-			cartService.clearCartFromLocalStorage();
-
-			return mergedCart;
-		} catch (error) {
-			console.error("Error merging and transferring cart:", error);
-			throw error;
-		}
+		return mergedItems;
 	},
 
 	/**
-	 * Validate cart item before adding/updating
+	 * Calculate cart totals
+	 */
+	calculateCartTotals: (items) => {
+		const totalItems = items.reduce((total, item) => total + item.quantity, 0);
+		const subtotal = items.reduce(
+			(total, item) => total + item.price * item.quantity,
+			0
+		);
+		const deliveryCharge = items.length * 100; // Base delivery charge per unique item
+		const totalAmount = subtotal + deliveryCharge;
+
+		return {
+			totalItems,
+			subtotal,
+			deliveryCharge,
+			totalAmount,
+		};
+	},
+
+	/**
+	 * Validate cart item structure
 	 */
 	validateCartItem: (item) => {
-		if (!item) {
+		if (!item || typeof item !== "object") {
 			throw new Error("Invalid cart item");
 		}
 
-		const requiredFields = [
-			"_id",
-			"title",
-			"price",
-			"quantity",
-			"unit",
-			"minimumOrderQuantity",
-		];
-		const missingFields = requiredFields.filter((field) => !item[field]);
-
-		if (missingFields.length > 0) {
-			throw new Error(`Missing required fields: ${missingFields.join(", ")}`);
+		const requiredFields = ["_id", "title", "price", "unit"];
+		for (const field of requiredFields) {
+			if (!item[field]) {
+				throw new Error(`Cart item missing required field: ${field}`);
+			}
 		}
 
-		if (item.quantity < item.minimumOrderQuantity) {
+		if (typeof item.price !== "number" || item.price <= 0) {
+			throw new Error("Cart item price must be a positive number");
+		}
+
+		if (typeof item.quantity !== "number" || item.quantity <= 0) {
+			throw new Error("Cart item quantity must be a positive number");
+		}
+
+		if (
+			item.minimumOrderQuantity &&
+			typeof item.minimumOrderQuantity === "number" &&
+			item.quantity < item.minimumOrderQuantity
+		) {
 			throw new Error(
-				`Quantity must be at least ${item.minimumOrderQuantity} ${item.unit}`
+				`Cart item quantity must be at least ${item.minimumOrderQuantity}`
 			);
 		}
-
-		if (item.price <= 0) {
-			throw new Error("Invalid price");
-		}
-
-		return true;
 	},
 };
 

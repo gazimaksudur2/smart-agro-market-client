@@ -166,7 +166,7 @@ export default function MyPurchases() {
 		// Date filter
 		if (dateFilter !== "all") {
 			const now = new Date();
-			const filterDate = new Date();
+			let filterDate = new Date();
 
 			switch (dateFilter) {
 				case "week":

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link, useNavigate, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams, useLocation } from "react-router-dom";
 import {
 	FaMapMarkerAlt,
 	FaCalendarAlt,
@@ -29,85 +29,162 @@ export default function ProductDetails() {
 	useScrollToTop();
 	const [selectedImage, setSelectedImage] = useState(0);
 	const [product, setProduct] = useState({});
-	const { currentUser } = useAuth();
-	const { addItemToCart } = useCart();
+	const [quantity, setQuantity] = useState(1);
+	const [isAddingToCart, setIsAddingToCart] = useState(false);
+	const [isBuyingNow, setIsBuyingNow] = useState(false);
+	const { user, currentUser } = useAuth();
+	const { addToCart, addMultipleItemsToCart } = useCart();
 	const navigate = useNavigate();
+	const location = useLocation();
 	const params = useParams();
 
 	// Fallback image in case product image is not available
 	const fallbackImage =
 		"https://images.unsplash.com/photo-1471193945509-9ad0617afabf?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&h=300&q=80";
 
-	const handleAddToCart = () => {
-		const productToAdd = {
-			_id: product?.id || product?._id,
-			title: product?.title,
-			price: product?.price || product?.pricePerUnit,
-			unit: product?.unit,
-			minimumOrderQuantity: product?.minimumOrderQuantity,
-			image: product?.images?.[0] || fallbackImage,
-			quantity: product?.minimumOrderQuantity,
-			seller: product?.seller || product?.sellerInfo,
-			region:
-				product?.location?.region ||
-				product?.sellerInfo?.operationalArea?.region,
-			district:
-				product?.location?.district ||
-				product?.sellerInfo?.operationalArea?.district,
-		};
-
-		// Add to cart regardless of authentication status
-		// The useCart hook will handle localStorage for unauthenticated users
-		// and database sync for authenticated users
-		addItemToCart(productToAdd, product?.minimumOrderQuantity);
-	};
-
-	const handleBuyNow = () => {
-		const productToAdd = {
-			_id: product?.id || product?._id,
-			title: product?.title,
-			price: product?.price || product?.pricePerUnit,
-			unit: product?.unit,
-			minimumOrderQuantity: product?.minimumOrderQuantity,
-			image: product?.images?.[0] || fallbackImage,
-			quantity: product?.minimumOrderQuantity,
-			seller: product?.seller || product?.sellerInfo,
-			region:
-				product?.location?.region ||
-				product?.sellerInfo?.operationalArea?.region,
-			district:
-				product?.location?.district ||
-				product?.sellerInfo?.operationalArea?.district,
-		};
-
-		// Add to cart first (works for both authenticated and unauthenticated users)
-		addItemToCart(productToAdd, product?.minimumOrderQuantity);
-
-		// Check authentication only when proceeding to checkout
-		if (!currentUser) {
-			// Store checkout intent and redirect to login
-			localStorage.setItem(
-				"checkoutIntent",
-				JSON.stringify({
-					buyNow: true,
-					productId: product?.id || product?._id,
-					timestamp: new Date().toISOString(),
-				})
-			);
+	const handleAddToCart = async () => {
+		// Check if user is authenticated
+		if (!user && !currentUser?.FirebaseUser) {
+			toast.error("Please login to add items to cart");
 			navigate("/login", {
-				state: { from: `/product/${product?.id || product?._id}` },
+				state: {
+					from: location.pathname,
+					action: "addToCart",
+					productId: params.id,
+					quantity: quantity,
+				},
 			});
 			return;
 		}
 
-		// Navigate to checkout page for authenticated users
-		navigate("/checkout", {
-			state: {
-				buyNow: true,
-				productId: product?.id || product?._id,
-			},
-		});
+		try {
+			setIsAddingToCart(true);
+
+			const productToAdd = {
+				_id: product?.id || product?._id,
+				title: product?.title,
+				price: product?.price || product?.pricePerUnit,
+				unit: product?.unit,
+				quantity: Math.max(quantity, product?.minimumOrderQuantity || 1),
+				minimumOrderQuantity: product?.minimumOrderQuantity || 1,
+				image: product?.images?.[0] || fallbackImage,
+				category: product?.category,
+				subcategory: product?.subcategory,
+				seller: product?.seller || product?.sellerInfo,
+				region:
+					product?.location?.region ||
+					product?.sellerInfo?.operationalArea?.region,
+				district:
+					product?.location?.district ||
+					product?.sellerInfo?.operationalArea?.district,
+			};
+
+			await addToCart(productToAdd);
+		} catch (error) {
+			console.error("Error adding to cart:", error);
+		} finally {
+			setIsAddingToCart(false);
+		}
 	};
+
+	const handleBuyNow = async () => {
+		// Check if user is authenticated
+		if (!user && !currentUser?.FirebaseUser) {
+			toast.error("Please login to proceed with purchase");
+			navigate("/login", {
+				state: {
+					from: location.pathname,
+					action: "buyNow",
+					productId: params.id,
+					quantity: quantity,
+				},
+			});
+			return;
+		}
+
+		try {
+			setIsBuyingNow(true);
+
+			const productToAdd = {
+				_id: product?.id || product?._id,
+				title: product?.title,
+				price: product?.price || product?.pricePerUnit,
+				unit: product?.unit,
+				quantity: Math.max(quantity, product?.minimumOrderQuantity || 1),
+				minimumOrderQuantity: product?.minimumOrderQuantity || 1,
+				image: product?.images?.[0] || fallbackImage,
+				category: product?.category,
+				subcategory: product?.subcategory,
+				seller: product?.seller || product?.sellerInfo,
+				region:
+					product?.location?.region ||
+					product?.sellerInfo?.operationalArea?.region,
+				district:
+					product?.location?.district ||
+					product?.sellerInfo?.operationalArea?.district,
+			};
+
+			// Add to cart first
+			await addToCart(productToAdd);
+
+			// Then navigate to checkout
+			navigate("/checkout", {
+				state: {
+					buyNow: true,
+					productId: product?.id || product?._id,
+				},
+			});
+		} catch (error) {
+			console.error("Error in buy now:", error);
+		} finally {
+			setIsBuyingNow(false);
+		}
+	};
+
+	// Handle bulk add to cart (example for multiple items)
+	const handleBulkAddToCart = async (items) => {
+		if (!user && !currentUser?.FirebaseUser) {
+			navigate("/login", {
+				state: {
+					from: location.pathname,
+					action: "bulkAddToCart",
+					items: items,
+				},
+			});
+			return;
+		}
+
+		try {
+			setIsAddingToCart(true);
+
+			// Validate and format items
+			const cartItems = items.map((item) => ({
+				_id: item._id || item.id,
+				title: item.title,
+				price: item.price || item.pricePerUnit,
+				unit: item.unit,
+				quantity: item.quantity || item.minimumOrderQuantity || 1,
+				minimumOrderQuantity: item.minimumOrderQuantity || 1,
+				image: item.images?.[0] || fallbackImage,
+				category: item.category,
+				subcategory: item.subcategory,
+				seller: item.seller || item.sellerInfo,
+			}));
+
+			await addMultipleItemsToCart(cartItems);
+		} catch (error) {
+			console.error("Error adding multiple items to cart:", error);
+		} finally {
+			setIsAddingToCart(false);
+		}
+	};
+
+	// Set initial quantity based on minimum order quantity
+	useEffect(() => {
+		if (product?.minimumOrderQuantity) {
+			setQuantity(product.minimumOrderQuantity);
+		}
+	}, [product?.minimumOrderQuantity]);
 
 	useEffect(() => {
 		axios
@@ -134,6 +211,7 @@ export default function ProductDetails() {
 		product?.location || getSeller()?.operationalArea || {};
 	const getHarvestDate = () =>
 		product?.specifications?.harvestDate || product?.harvestedOn;
+	const getProductId = () => product?.id || product?._id;
 
 	return (
 		<div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">

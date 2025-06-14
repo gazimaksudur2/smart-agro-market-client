@@ -17,7 +17,6 @@ import axios from "axios";
 import toast from "react-hot-toast";
 import { areCookiesEnabled } from "../utils/cookieUtils";
 import authService from "../services/authService";
-import cartService from "../services/cartService";
 
 export const AuthContext = createContext();
 
@@ -341,7 +340,9 @@ export default function AuthProvider({ children }) {
 			console.error("Error changing password:", error);
 
 			toast.error(
-				(error?.code) ? `${error.code}: ${error.message}` : "Failed to update password"
+				error?.code
+					? `${error.code}: ${error.message}`
+					: "Failed to update password"
 			);
 			throw error;
 		}
@@ -454,13 +455,6 @@ export default function AuthProvider({ children }) {
 					// Get DB user info and wait for it
 					const role = await getDBUser(user.email);
 					if (role) setCurrentRole(role);
-
-					// Merge cart from localStorage to database when user logs in
-					try {
-						await cartService.mergeAndTransferCart(user.email);
-					} catch (error) {
-						console.error("Error merging cart on login:", error);
-					}
 				} catch (error) {
 					console.error("Error during auth state change:", error);
 				}

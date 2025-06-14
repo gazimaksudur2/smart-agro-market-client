@@ -1,15 +1,6 @@
 import { useState, useEffect } from "react";
-import { useSelector, useDispatch } from "react-redux";
 import { useLocation, useNavigate } from "react-router-dom";
-import {
-	selectCartItems,
-	selectCartSubtotal,
-	selectCartDeliveryCharge,
-	selectCartTotal,
-	updateDeliveryCharge,
-	updateCartItemQuantity,
-	clearCart,
-} from "../../redux/slices/cartSlice";
+import { useCart } from "../../hooks/useCart";
 import { useAuth } from "../../contexts/AuthContext";
 import { FaArrowLeft, FaLock } from "react-icons/fa";
 import toast from "react-hot-toast";
@@ -46,7 +37,7 @@ function CheckoutForm({
 	const elements = useElements();
 	const [error, setError] = useState(null);
 	const [processing, setProcessing] = useState(false);
-	const { currentUser } = useAuth();
+	const { user, currentUser } = useAuth();
 
 	const handleSubmit = async (event) => {
 		event.preventDefault();
@@ -63,7 +54,7 @@ function CheckoutForm({
 				`${import.meta.env.VITE_SERVER_API_URL}/create-payment-intent`,
 				{
 					amount: advancePaymentAmount, // amount in smallest currency unit (cents/paisa)
-					userId: currentUser.FirebaseUser.uid,
+					userId: user?.uid || currentUser?.FirebaseUser?.uid,
 					items: items.map((item) => ({
 						id: item._id,
 						title: item.title,
@@ -79,8 +70,11 @@ function CheckoutForm({
 				payment_method: {
 					card: elements.getElement(CardElement),
 					billing_details: {
-						name: currentUser.FirebaseUser.displayName || "Customer",
-						email: currentUser.FirebaseUser.email,
+						name:
+							user?.displayName ||
+							currentUser?.FirebaseUser?.displayName ||
+							"Customer",
+						email: user?.email || currentUser?.FirebaseUser?.email,
 					},
 				},
 			});
@@ -92,7 +86,7 @@ function CheckoutForm({
 				if (result.paymentIntent.status === "succeeded") {
 					// Create the order in database
 					await axios.post(`${import.meta.env.VITE_SERVER_API_URL}/orders`, {
-						userId: currentUser.FirebaseUser.uid,
+						userId: user?.uid || currentUser?.FirebaseUser?.uid,
 						items: items.map((item) => ({
 							productId: item._id,
 							title: item.title,
@@ -179,14 +173,19 @@ function CheckoutForm({
 
 export default function CheckoutPage() {
 	useScrollToTop();
-	const cartItems = useSelector(selectCartItems);
-	const subtotal = useSelector(selectCartSubtotal);
-	const initialDeliveryCharge = useSelector(selectCartDeliveryCharge);
-	const total = useSelector(selectCartTotal);
-	const dispatch = useDispatch();
+	const {
+		items: cartItems,
+		subtotal: initialSubtotal,
+		deliveryCharge: initialDeliveryCharge,
+		totalAmount: initialTotal,
+		updateItem,
+		clearCartItems,
+		loadCart,
+		loading,
+	} = useCart();
 	const navigate = useNavigate();
 	const location = useLocation();
-	const { currentUser } = useAuth();
+	const { user, currentUser } = useAuth();
 
 	const [selectedRegion, setSelectedRegion] = useState("");
 	const [selectedDistrict, setSelectedDistrict] = useState("");
@@ -195,68 +194,59 @@ export default function CheckoutPage() {
 	const [deliveryAddress, setDeliveryAddress] = useState("");
 	const [phoneNumber, setPhoneNumber] = useState("");
 	const [orderNote, setOrderNote] = useState("");
-	const [deliveryCharge, setDeliveryCharge] = useState(initialDeliveryCharge);
-	const [advancePaymentAmount, setAdvancePaymentAmount] = useState(
-		initialDeliveryCharge * 2
+	const [deliveryCharge, setDeliveryCharge] = useState(
+		initialDeliveryCharge || 0
 	);
-	const [showPayment, setShowPayment] = useState(false);
+	const [advancePaymentAmount, setAdvancePaymentAmount] = useState(0);
 	const [items, setItems] = useState([]);
 
-	// For "Buy Now" flow
-	const buyNow = location.state?.buyNow || false;
-	const productId = location.state?.productId || null;
-
+	// Load cart on component mount
 	useEffect(() => {
-		if (cartItems.length === 0 && !buyNow) {
-			toast.error("Your cart is empty");
-			navigate("/cart");
-			return;
+		loadCart();
+	}, []);
+
+	// Handle buy now scenario
+	useEffect(() => {
+		const buyNow = location.state?.buyNow;
+		const productId = location.state?.productId;
+
+		if (!cartItems || cartItems.length === 0) {
+			if (!buyNow) {
+				navigate("/cart");
+				return;
+			}
 		}
 
-		// If in "Buy Now" mode, filter to just the selected product
-		if (buyNow && productId) {
+		if (buyNow && productId && cartItems) {
 			const buyNowItems = cartItems.filter((item) => item._id === productId);
 			setItems(buyNowItems);
-		} else {
+		} else if (cartItems) {
 			setItems(cartItems);
 		}
 
 		// Initialize selected quantities
-		const initialQuantities = {};
-		cartItems.forEach((item) => {
-			initialQuantities[item._id] = item.quantity;
-		});
-		setSelectedQuantities(initialQuantities);
-	}, [cartItems, buyNow, productId]);
-
-	// Update delivery charge when region/district changes
-	useEffect(() => {
-		if (selectedRegion && selectedDistrict) {
-			// Recalculate delivery charge based on location
-			let baseCharge = items.length * 100; // Base price
-
-			if (selectedRegion === "Chittagong") {
-				baseCharge += 200;
-			} else if (selectedRegion === "Rajshahi") {
-				baseCharge += 100;
-			} else if (selectedRegion === "Dhaka") {
-				baseCharge += 150;
-			} else {
-				baseCharge += 300; // Other regions
-			}
-
-			setDeliveryCharge(baseCharge);
-			setAdvancePaymentAmount(baseCharge * 2); // 2x delivery charge as advance
-
-			// Update in Redux
-			dispatch(
-				updateDeliveryCharge({
-					region: selectedRegion,
-					district: selectedDistrict,
-				})
-			);
+		if (cartItems) {
+			const quantities = {};
+			cartItems.forEach((item) => {
+				quantities[item._id] = item.quantity;
+			});
+			setSelectedQuantities(quantities);
 		}
-	}, [selectedRegion, selectedDistrict, items]);
+	}, [cartItems, location.state, navigate]);
+
+	// Update delivery charge and advance payment when items or region changes
+	useEffect(() => {
+		if (items.length > 0) {
+			const baseDeliveryCharge = items.length * 100;
+			const regionMultiplier = selectedRegion === "Dhaka" ? 1 : 1.5;
+			const finalDeliveryCharge = Math.round(
+				baseDeliveryCharge * regionMultiplier
+			);
+
+			setDeliveryCharge(finalDeliveryCharge);
+			setAdvancePaymentAmount(finalDeliveryCharge * 2);
+		}
+	}, [items, selectedRegion]);
 
 	const handleRegionChange = (e) => {
 		const region = e.target.value;
@@ -269,27 +259,26 @@ export default function CheckoutPage() {
 		setSelectedDistrict(e.target.value);
 	};
 
-	const handleQuantityChange = (itemId, quantity) => {
-		const item = items.find((item) => item._id === itemId);
-		if (item && quantity >= item.minimumOrderQuantity) {
-			setSelectedQuantities({ ...selectedQuantities, [itemId]: quantity });
-			dispatch(updateCartItemQuantity({ _id: itemId, quantity }));
-		} else {
-			toast.error(
-				`Minimum order quantity is ${item.minimumOrderQuantity} ${item.unit}`
-			);
+	const handleQuantityChange = async (itemId, quantity) => {
+		if (quantity < 1) return;
+
+		setSelectedQuantities((prev) => ({
+			...prev,
+			[itemId]: quantity,
+		}));
+
+		// Update in cart
+		try {
+			await updateItem(itemId, quantity);
+		} catch (error) {
+			console.error("Error updating quantity:", error);
 		}
 	};
 
 	const handleContinueToPayment = () => {
-		// Validate all fields
-		if (!selectedRegion) {
-			toast.error("Please select a region");
-			return;
-		}
-
-		if (!selectedDistrict) {
-			toast.error("Please select a district");
+		// Validation
+		if (!selectedRegion || !selectedDistrict) {
+			toast.error("Please select your region and district");
 			return;
 		}
 
@@ -303,353 +292,354 @@ export default function CheckoutPage() {
 			return;
 		}
 
-		setShowPayment(true);
+		// Phone number validation (basic)
+		const phoneRegex = /^(\+88)?01[3-9]\d{8}$/;
+		if (!phoneRegex.test(phoneNumber.replace(/\s/g, ""))) {
+			toast.error("Please enter a valid Bangladeshi phone number");
+			return;
+		}
+
+		// Scroll to payment section
+		document.getElementById("payment-section")?.scrollIntoView({
+			behavior: "smooth",
+		});
 	};
 
 	const handlePaymentSuccess = () => {
-		// Clear cart (or just the bought item if "Buy Now")
-		if (buyNow) {
-			// Just remove the specific product
-			dispatch(updateCartItemQuantity({ _id: productId, quantity: 0 }));
-		} else {
-			dispatch(clearCart());
-		}
+		// Clear cart after successful payment
+		clearCartItems();
 
-		// Navigate to order success page
-		navigate("/order-success");
+		// Navigate to success page or orders
+		navigate("/dashboard/my-purchases", {
+			state: { orderSuccess: true },
+		});
 	};
 
-	// Calculate the final total based on updated quantities and delivery charge
 	const calculateFinalTotal = () => {
-		const itemsTotal = items.reduce(
+		const itemsSubtotal = items.reduce(
 			(total, item) =>
 				total + item.price * (selectedQuantities[item._id] || item.quantity),
 			0
 		);
-		return itemsTotal + deliveryCharge;
+		return itemsSubtotal + deliveryCharge;
 	};
 
-	const finalTotal = calculateFinalTotal();
+	// Show loading state
+	if (loading && (!cartItems || cartItems.length === 0)) {
+		return (
+			<div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+				<div className="text-center py-12">
+					<div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto"></div>
+					<h2 className="mt-4 text-lg font-medium text-gray-900">
+						Loading checkout...
+					</h2>
+				</div>
+			</div>
+		);
+	}
+
+	// Redirect if no items
+	if (!items || items.length === 0) {
+		return (
+			<div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+				<div className="text-center py-12">
+					<h2 className="text-lg font-medium text-gray-900">
+						No items to checkout
+					</h2>
+					<p className="mt-2 text-sm text-gray-500">
+						Add items to your cart before proceeding to checkout.
+					</p>
+					<button
+						onClick={() => navigate("/products")}
+						className="mt-6 btn btn-primary"
+					>
+						Browse Products
+					</button>
+				</div>
+			</div>
+		);
+	}
+
+	const deliveryDetails = {
+		region: selectedRegion,
+		district: selectedDistrict,
+		address: deliveryAddress,
+		phoneNumber,
+		orderNote,
+		deliveryCharge,
+		totalAmount: calculateFinalTotal(),
+	};
 
 	return (
-		<div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-			<h1 className="text-2xl md:text-3xl font-bold text-gray-900 mb-6 md:mb-8">
-				Checkout
-			</h1>
+		<div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+			<div className="mb-8">
+				<h1 className="text-2xl md:text-3xl font-bold text-gray-900">
+					Checkout
+				</h1>
+				<p className="mt-2 text-sm text-gray-600">
+					Review your order and complete your purchase
+				</p>
+			</div>
 
-			<div className="lg:grid lg:grid-cols-12 lg:gap-8">
-				{/* Left Column - Customer Information */}
-				<div className="lg:col-span-8">
-					{!showPayment ? (
-						<div className="space-y-6 md:space-y-8">
-							{/* Delivery Location */}
-							<div className="bg-white p-4 md:p-6 rounded-lg shadow-sm border border-gray-200">
-								<h2 className="text-lg md:text-xl font-semibold text-gray-900 mb-4">
-									Delivery Location
-								</h2>
-								<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-									<div>
-										<label
-											htmlFor="region"
-											className="block text-sm font-medium text-gray-700 mb-1"
-										>
-											Region
-										</label>
-										<select
-											id="region"
-											value={selectedRegion}
-											onChange={handleRegionChange}
-											className="w-full border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:ring-primary-500 focus:border-primary-500"
-										>
-											<option value="">Select a Region</option>
-											{Object.keys(regionsData).map((region) => (
-												<option key={region} value={region}>
-													{region}
-												</option>
-											))}
-										</select>
-									</div>
-									<div>
-										<label
-											htmlFor="district"
-											className="block text-sm font-medium text-gray-700 mb-1"
-										>
-											District
-										</label>
-										<select
-											id="district"
-											value={selectedDistrict}
-											onChange={handleDistrictChange}
-											className="w-full border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:ring-primary-500 focus:border-primary-500"
-											disabled={!selectedRegion}
-										>
-											<option value="">Select a District</option>
-											{availableDistricts.map((district) => (
-												<option key={district} value={district}>
-													{district}
-												</option>
-											))}
-										</select>
-									</div>
-								</div>
-								<div className="mt-4">
-									<label
-										htmlFor="address"
-										className="block text-sm font-medium text-gray-700 mb-1"
-									>
-										Detailed Address
-									</label>
-									<textarea
-										id="address"
-										value={deliveryAddress}
-										onChange={(e) => setDeliveryAddress(e.target.value)}
-										className="w-full border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:ring-primary-500 focus:border-primary-500"
-										rows="3"
-										placeholder="Enter your full address including postal code"
-									></textarea>
-								</div>
-								<div className="mt-4">
-									<label
-										htmlFor="phone"
-										className="block text-sm font-medium text-gray-700 mb-1"
-									>
-										Phone Number
-									</label>
-									<input
-										id="phone"
-										type="tel"
-										value={phoneNumber}
-										onChange={(e) => setPhoneNumber(e.target.value)}
-										className="w-full border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:ring-primary-500 focus:border-primary-500"
-										placeholder="Enter your phone number"
+			<div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+				{/* Left Column - Order Details & Delivery Info */}
+				<div className="space-y-6">
+					{/* Order Summary */}
+					<div className="bg-white shadow-sm rounded-lg p-6">
+						<h2 className="text-lg font-medium text-gray-900 mb-4">
+							Order Summary ({items.length} items)
+						</h2>
+						<div className="space-y-4">
+							{items.map((item) => (
+								<div key={item._id} className="flex items-center space-x-4">
+									<img
+										src={item.image}
+										alt={item.title}
+										className="w-16 h-16 object-cover rounded-md"
+										onError={(e) => {
+											e.target.src = "/placeholder-image.jpg";
+										}}
 									/>
-								</div>
-							</div>
-
-							{/* Order Items */}
-							<div className="bg-white p-4 md:p-6 rounded-lg shadow-sm border border-gray-200">
-								<h2 className="text-lg md:text-xl font-semibold text-gray-900 mb-4">
-									Order Items
-								</h2>
-								<div className="space-y-4">
-									{items.map((item) => (
-										<div
-											key={item._id}
-											className="flex flex-col sm:flex-row items-start sm:items-center justify-between py-4 border-b border-gray-200 last:border-b-0"
+									<div className="flex-1">
+										<h3 className="text-sm font-medium text-gray-900">
+											{item.title}
+										</h3>
+										<p className="text-sm text-gray-500">
+											৳{item.price?.toLocaleString() || 0} per {item.unit}
+										</p>
+									</div>
+									<div className="flex items-center space-x-2">
+										<button
+											onClick={() =>
+												handleQuantityChange(
+													item._id,
+													(selectedQuantities[item._id] || item.quantity) - 1
+												)
+											}
+											disabled={
+												(selectedQuantities[item._id] || item.quantity) <= 1
+											}
+											className="p-1 border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50"
 										>
-											<div className="flex items-center mb-4 sm:mb-0 w-full sm:w-auto">
-												<img
-													src={item.image}
-													alt={item.title}
-													className="w-16 h-16 object-cover rounded-md"
-												/>
-												<div className="ml-4">
-													<h3 className="text-base font-medium text-gray-900">
-														{item.title}
-													</h3>
-													<p className="text-sm text-gray-500">
-														৳{item.price.toLocaleString()} per {item.unit}
-													</p>
-													<p className="text-xs text-gray-500">
-														Min. Order: {item.minimumOrderQuantity} {item.unit}
-													</p>
-												</div>
-											</div>
-											<div className="flex items-center justify-between w-full sm:w-auto">
-												<label
-													htmlFor={`quantity-${item._id}`}
-													className="sm:sr-only text-sm mr-2 sm:mr-0"
-												>
-													Quantity:
-												</label>
-												<div className="flex items-center border border-gray-300 rounded-md">
-													<button
-														type="button"
-														onClick={() =>
-															handleQuantityChange(
-																item._id,
-																Math.max(
-																	(selectedQuantities[item._id] ||
-																		item.quantity) - 1,
-																	item.minimumOrderQuantity
-																)
-															)
-														}
-														className="px-3 py-1 text-gray-600 hover:text-gray-700"
-														aria-label="Decrease quantity"
-													>
-														-
-													</button>
-													<input
-														id={`quantity-${item._id}`}
-														type="number"
-														min={item.minimumOrderQuantity}
-														value={
-															selectedQuantities[item._id] || item.quantity
-														}
-														onChange={(e) =>
-															handleQuantityChange(
-																item._id,
-																parseInt(e.target.value)
-															)
-														}
-														className="w-12 text-center focus:outline-none"
-													/>
-													<button
-														type="button"
-														onClick={() =>
-															handleQuantityChange(
-																item._id,
-																(selectedQuantities[item._id] ||
-																	item.quantity) + 1
-															)
-														}
-														className="px-3 py-1 text-gray-600 hover:text-gray-700"
-														aria-label="Increase quantity"
-													>
-														+
-													</button>
-												</div>
-												<div className="ml-4 text-right">
-													<span className="block font-medium">
-														৳
-														{(
-															(selectedQuantities[item._id] || item.quantity) *
-															item.price
-														).toLocaleString()}
-													</span>
-												</div>
-											</div>
-										</div>
-									))}
+											-
+										</button>
+										<span className="text-sm font-medium min-w-[2rem] text-center">
+											{selectedQuantities[item._id] || item.quantity}
+										</span>
+										<button
+											onClick={() =>
+												handleQuantityChange(
+													item._id,
+													(selectedQuantities[item._id] || item.quantity) + 1
+												)
+											}
+											className="p-1 border border-gray-300 rounded-md hover:bg-gray-50"
+										>
+											+
+										</button>
+									</div>
+									<div className="text-right">
+										<p className="text-sm font-medium text-gray-900">
+											৳
+											{(
+												(item.price || 0) *
+												(selectedQuantities[item._id] || item.quantity)
+											).toLocaleString()}
+										</p>
+									</div>
 								</div>
+							))}
+						</div>
+					</div>
+
+					{/* Delivery Information */}
+					<div className="bg-white shadow-sm rounded-lg p-6">
+						<h2 className="text-lg font-medium text-gray-900 mb-4">
+							Delivery Information
+						</h2>
+						<div className="space-y-4">
+							{/* Region Selection */}
+							<div>
+								<label className="block text-sm font-medium text-gray-700 mb-1">
+									Region *
+								</label>
+								<select
+									value={selectedRegion}
+									onChange={handleRegionChange}
+									className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+									required
+								>
+									<option value="">Select Region</option>
+									{Object.keys(regionsData).map((region) => (
+										<option key={region} value={region}>
+											{region}
+										</option>
+									))}
+								</select>
 							</div>
 
-							{/* Order Notes */}
-							<div className="bg-white p-4 md:p-6 rounded-lg shadow-sm border border-gray-200">
-								<h2 className="text-lg md:text-xl font-semibold text-gray-900 mb-4">
-									Additional Notes
-								</h2>
+							{/* District Selection */}
+							<div>
+								<label className="block text-sm font-medium text-gray-700 mb-1">
+									District *
+								</label>
+								<select
+									value={selectedDistrict}
+									onChange={handleDistrictChange}
+									disabled={!selectedRegion}
+									className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 disabled:bg-gray-100"
+									required
+								>
+									<option value="">Select District</option>
+									{availableDistricts.map((district) => (
+										<option key={district} value={district}>
+											{district}
+										</option>
+									))}
+								</select>
+							</div>
+
+							{/* Delivery Address */}
+							<div>
+								<label className="block text-sm font-medium text-gray-700 mb-1">
+									Delivery Address *
+								</label>
+								<textarea
+									value={deliveryAddress}
+									onChange={(e) => setDeliveryAddress(e.target.value)}
+									placeholder="Enter your complete delivery address"
+									className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+									rows={3}
+									required
+								/>
+							</div>
+
+							{/* Phone Number */}
+							<div>
+								<label className="block text-sm font-medium text-gray-700 mb-1">
+									Phone Number *
+								</label>
+								<input
+									type="tel"
+									value={phoneNumber}
+									onChange={(e) => setPhoneNumber(e.target.value)}
+									placeholder="01XXXXXXXXX"
+									className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+									required
+								/>
+							</div>
+
+							{/* Order Note */}
+							<div>
+								<label className="block text-sm font-medium text-gray-700 mb-1">
+									Order Note (Optional)
+								</label>
 								<textarea
 									value={orderNote}
 									onChange={(e) => setOrderNote(e.target.value)}
-									className="w-full border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:ring-primary-500 focus:border-primary-500"
-									rows="3"
-									placeholder="Any special instructions for your order or delivery (optional)"
-								></textarea>
-							</div>
-
-							<div className="flex flex-col sm:flex-row justify-between gap-3 sm:gap-0">
-								<button
-									type="button"
-									onClick={() => navigate("/cart")}
-									className="btn btn-outline-primary px-6 py-2 order-2 sm:order-1"
-								>
-									<FaArrowLeft className="mr-2" /> Back to Cart
-								</button>
-								<button
-									type="button"
-									onClick={handleContinueToPayment}
-									className="btn btn-primary px-6 py-2 order-1 sm:order-2"
-								>
-									Continue to Payment
-								</button>
-							</div>
-						</div>
-					) : (
-						<Elements stripe={stripePromise}>
-							<CheckoutForm
-								advancePaymentAmount={advancePaymentAmount}
-								deliveryDetails={{
-									region: selectedRegion,
-									district: selectedDistrict,
-									address: deliveryAddress,
-									phone: phoneNumber,
-									orderNote,
-									totalAmount: finalTotal,
-								}}
-								items={items}
-								onSuccess={handlePaymentSuccess}
-							/>
-						</Elements>
-					)}
-				</div>
-
-				{/* Order Summary */}
-				<div className="mt-8 lg:mt-0 lg:col-span-4">
-					<div className="bg-white p-4 md:p-6 rounded-lg shadow-sm border border-gray-200 lg:sticky lg:top-8">
-						<h2 className="text-lg md:text-xl font-semibold text-gray-900 mb-4">
-							Order Summary
-						</h2>
-
-						<div className="flow-root">
-							<div className="divide-y divide-gray-200">
-								<div className="py-3 flex justify-between">
-									<dt className="text-sm text-gray-600">Subtotal</dt>
-									<dd className="text-sm font-medium text-gray-900">
-										৳
-										{items
-											.reduce(
-												(total, item) =>
-													total +
-													item.price *
-														(selectedQuantities[item._id] || item.quantity),
-												0
-											)
-											.toLocaleString()}
-									</dd>
-								</div>
-								<div className="py-3 flex justify-between">
-									<dt className="text-sm text-gray-600">Delivery Charge</dt>
-									<dd className="text-sm font-medium text-gray-900">
-										৳{deliveryCharge.toLocaleString()}
-									</dd>
-								</div>
-								<div className="py-3 flex justify-between font-medium">
-									<dt className="text-base text-gray-900">Total</dt>
-									<dd className="text-base text-gray-900">
-										৳{finalTotal.toLocaleString()}
-									</dd>
-								</div>
-								<div className="py-3 flex justify-between text-primary-700 font-medium">
-									<dt className="text-sm">Advance Payment (2x Delivery)</dt>
-									<dd className="text-sm">
-										৳{advancePaymentAmount.toLocaleString()}
-									</dd>
-								</div>
-								<div className="py-3 flex justify-between text-gray-500">
-									<dt className="text-sm">Balance on Delivery</dt>
-									<dd className="text-sm">
-										৳{(finalTotal - advancePaymentAmount).toLocaleString()}
-									</dd>
-								</div>
-							</div>
-						</div>
-
-						<div className="mt-6 space-y-4">
-							<div className="bg-primary-50 p-4 rounded-md text-sm text-gray-700">
-								<p className="mb-2">
-									<strong>Important:</strong> You are required to pay{" "}
-									{advancePaymentAmount.toLocaleString()} taka (2x delivery
-									charge) as advance to place this order.
-								</p>
-								<p>
-									The remaining amount will be collected upon delivery. Delivery
-									is handled through our verified agents in your region.
-								</p>
-							</div>
-
-							<div className="bg-gray-50 p-4 rounded-md">
-								<h3 className="text-sm font-medium text-gray-900 mb-2">
-									Cancellation Policy:
-								</h3>
-								<p className="text-xs text-gray-600">
-									Orders can be cancelled within 12 hours of placement. Advance
-									payments will be refunded according to our refund policy.
-								</p>
+									placeholder="Any special instructions for delivery"
+									className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+									rows={2}
+								/>
 							</div>
 						</div>
 					</div>
+				</div>
+
+				{/* Right Column - Payment Summary & Payment Form */}
+				<div className="space-y-6">
+					{/* Payment Summary */}
+					<div className="bg-white shadow-sm rounded-lg p-6 sticky top-4">
+						<h2 className="text-lg font-medium text-gray-900 mb-4">
+							Payment Summary
+						</h2>
+						<div className="space-y-3">
+							<div className="flex justify-between text-sm">
+								<span className="text-gray-600">Subtotal</span>
+								<span className="font-medium">
+									৳
+									{items
+										.reduce(
+											(total, item) =>
+												total +
+												item.price *
+													(selectedQuantities[item._id] || item.quantity),
+											0
+										)
+										.toLocaleString()}
+								</span>
+							</div>
+							<div className="flex justify-between text-sm">
+								<span className="text-gray-600">
+									Delivery Charge ({selectedRegion || "Select region"})
+								</span>
+								<span className="font-medium">
+									৳{deliveryCharge.toLocaleString()}
+								</span>
+							</div>
+							<div className="border-t pt-3">
+								<div className="flex justify-between text-base font-medium">
+									<span>Total</span>
+									<span>৳{calculateFinalTotal().toLocaleString()}</span>
+								</div>
+							</div>
+							<div className="border-t pt-3">
+								<div className="flex justify-between text-sm">
+									<span className="text-gray-600">
+										Advance Payment (2x delivery)
+									</span>
+									<span className="font-medium text-primary-600">
+										৳{advancePaymentAmount.toLocaleString()}
+									</span>
+								</div>
+								<div className="flex justify-between text-sm mt-1">
+									<span className="text-gray-600">Balance on Delivery</span>
+									<span className="font-medium">
+										৳
+										{(
+											calculateFinalTotal() - advancePaymentAmount
+										).toLocaleString()}
+									</span>
+								</div>
+							</div>
+						</div>
+
+						{/* Continue to Payment Button */}
+						{(!selectedRegion ||
+							!selectedDistrict ||
+							!deliveryAddress ||
+							!phoneNumber) && (
+							<button
+								onClick={handleContinueToPayment}
+								className="w-full mt-6 btn btn-primary"
+							>
+								Continue to Payment
+							</button>
+						)}
+					</div>
+
+					{/* Payment Form */}
+					{selectedRegion &&
+						selectedDistrict &&
+						deliveryAddress &&
+						phoneNumber && (
+							<div
+								id="payment-section"
+								className="bg-white shadow-sm rounded-lg p-6"
+							>
+								<h2 className="text-lg font-medium text-gray-900 mb-4">
+									Payment
+								</h2>
+								<Elements stripe={stripePromise}>
+									<CheckoutForm
+										advancePaymentAmount={advancePaymentAmount}
+										deliveryDetails={deliveryDetails}
+										items={items}
+										onSuccess={handlePaymentSuccess}
+									/>
+								</Elements>
+							</div>
+						)}
 				</div>
 			</div>
 		</div>

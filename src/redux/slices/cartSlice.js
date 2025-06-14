@@ -13,36 +13,12 @@ const initialState = {
 	syncStatus: "idle", // 'idle', 'syncing', 'synced', 'error'
 };
 
-// Async thunks for database operations
+// Async thunks for database operations only
 export const loadCartFromDB = createAsyncThunk(
 	"cart/loadFromDB",
 	async (email) => {
 		const cart = await cartService.getCartFromDB(email);
 		return cart;
-	}
-);
-
-export const loadCartFromLocalStorage = createAsyncThunk(
-	"cart/loadFromLocalStorage",
-	async () => {
-		const cart = cartService.getCartFromLocalStorage();
-		return cart;
-	}
-);
-
-export const syncCartToDB = createAsyncThunk(
-	"cart/syncToDB",
-	async ({ email, cartData }) => {
-		await cartService.saveCartToDB(email, cartData);
-		return cartData;
-	}
-);
-
-export const mergeCartOnLogin = createAsyncThunk(
-	"cart/mergeOnLogin",
-	async (email) => {
-		const mergedCart = await cartService.mergeAndTransferCart(email);
-		return mergedCart;
 	}
 );
 
@@ -60,13 +36,7 @@ export const addToCartAsync = createAsyncThunk(
 					operation: "add",
 				});
 			} else {
-				// Update localStorage
-				const currentCart = cartService.getCartFromLocalStorage();
-				const updatedCart = {
-					...currentCart,
-					items: [...(currentCart.items || []), product],
-				};
-				cartService.saveCartToLocalStorage(updatedCart);
+				throw new Error("Authentication required for cart operations");
 			}
 			return { product, isAuthenticated };
 		} catch (error) {
@@ -81,6 +51,8 @@ export const updateCartItemQuantityAsync = createAsyncThunk(
 		try {
 			if (isAuthenticated && email) {
 				await cartService.updateCartItemInDB(email, itemId, quantity);
+			} else {
+				throw new Error("Authentication required for cart operations");
 			}
 			return { itemId, quantity };
 		} catch (error) {
@@ -95,6 +67,8 @@ export const removeFromCartAsync = createAsyncThunk(
 		try {
 			if (isAuthenticated && email) {
 				await cartService.removeCartItemFromDB(email, itemId);
+			} else {
+				throw new Error("Authentication required for cart operations");
 			}
 			return { itemId };
 		} catch (error) {
@@ -110,7 +84,7 @@ export const clearCartAsync = createAsyncThunk(
 			if (isAuthenticated && email) {
 				await cartService.clearCartInDB(email);
 			} else {
-				cartService.clearCartFromLocalStorage();
+				throw new Error("Authentication required for cart operations");
 			}
 			return true;
 		} catch (error) {
@@ -214,52 +188,18 @@ export const cartSlice = createSlice({
 		},
 
 		updateDeliveryCharge: (state, action) => {
-			const { region, district } = action.payload;
-			// Calculate delivery charge based on region and district
-			// This is a placeholder - actual logic would depend on your delivery charge calculation
-			let baseCharge = state.items.length * 100; // Base charge
-
-			// Apply regional pricing adjustments (example)
-			if (region === "Chittagong") {
-				baseCharge += 200;
-			} else if (region === "Rajshahi") {
-				baseCharge += 100;
-			}
-
-			state.deliveryCharge = baseCharge;
+			state.deliveryCharge = action.payload;
 			state.totalAmount = state.subtotal + state.deliveryCharge;
 		},
 
-		// Sync cart to localStorage for non-authenticated users
-		syncToLocalStorage: (state) => {
-			cartService.saveCartToLocalStorage({
-				items: state.items,
-				totalItems: state.totalItems,
-				subtotal: state.subtotal,
-				deliveryCharge: state.deliveryCharge,
-				totalAmount: state.totalAmount,
-			});
-		},
-
-		// Set cart from external source (DB or localStorage)
-		setCart: (state, action) => {
-			const {
-				items = [],
-				totalItems = 0,
-				subtotal = 0,
-				deliveryCharge = 0,
-				totalAmount = 0,
-			} = action.payload;
-			state.items = items;
-			state.totalItems = totalItems;
-			state.subtotal = subtotal;
-			state.deliveryCharge = deliveryCharge;
-			state.totalAmount = totalAmount;
+		resetCartError: (state) => {
+			state.error = null;
+			state.syncError = null;
 		},
 	},
 	extraReducers: (builder) => {
 		builder
-			// Load cart from database
+			// Load cart from DB
 			.addCase(loadCartFromDB.pending, (state) => {
 				state.loading = true;
 				state.syncStatus = "syncing";
@@ -267,59 +207,23 @@ export const cartSlice = createSlice({
 			.addCase(loadCartFromDB.fulfilled, (state, action) => {
 				state.loading = false;
 				state.syncStatus = "synced";
+				state.lastSync = new Date().toISOString();
+
 				const cart = action.payload;
-				state.items = cart.items || [];
-				state.totalItems = cart.totalItems || 0;
-				state.subtotal = cart.subtotal || 0;
-				state.deliveryCharge = cart.deliveryCharge || 0;
-				state.totalAmount = cart.totalAmount || 0;
+				if (cart && cart.items) {
+					state.items = cart.items;
+					state.totalItems = cart.totalItems || 0;
+					state.subtotal = cart.subtotal || 0;
+					state.deliveryCharge = cart.deliveryCharge || 0;
+					state.totalAmount = cart.totalAmount || 0;
+				}
 			})
 			.addCase(loadCartFromDB.rejected, (state, action) => {
 				state.loading = false;
 				state.syncStatus = "error";
-				state.error = action.error.message;
+				state.syncError = action.error.message;
 			})
-			// Load cart from localStorage
-			.addCase(loadCartFromLocalStorage.fulfilled, (state, action) => {
-				const cart = action.payload;
-				state.items = cart.items || [];
-				state.totalItems = cart.totalItems || 0;
-				state.subtotal = cart.subtotal || 0;
-				state.deliveryCharge = cart.deliveryCharge || 0;
-				state.totalAmount = cart.totalAmount || 0;
-			})
-			// Sync cart to database
-			.addCase(syncCartToDB.pending, (state) => {
-				state.syncStatus = "syncing";
-			})
-			.addCase(syncCartToDB.fulfilled, (state) => {
-				state.syncStatus = "synced";
-			})
-			.addCase(syncCartToDB.rejected, (state, action) => {
-				state.syncStatus = "error";
-				state.error = action.error.message;
-			})
-			// Merge cart on login
-			.addCase(mergeCartOnLogin.pending, (state) => {
-				state.loading = true;
-				state.syncStatus = "syncing";
-			})
-			.addCase(mergeCartOnLogin.fulfilled, (state, action) => {
-				state.loading = false;
-				state.syncStatus = "synced";
-				const cart = action.payload;
-				state.items = cart.items || [];
-				state.totalItems = cart.totalItems || 0;
-				state.subtotal = cart.subtotal || 0;
-				state.deliveryCharge = cart.deliveryCharge || 0;
-				state.totalAmount = cart.totalAmount || 0;
-			})
-			.addCase(mergeCartOnLogin.rejected, (state, action) => {
-				state.loading = false;
-				state.syncStatus = "error";
-				state.syncError = action.payload;
-				toast.error(action.payload || "Failed to merge cart on login");
-			})
+
 			// Add to cart async
 			.addCase(addToCartAsync.pending, (state) => {
 				state.loading = true;
@@ -329,69 +233,65 @@ export const cartSlice = createSlice({
 				state.loading = false;
 				state.syncStatus = "synced";
 				state.lastSync = new Date().toISOString();
-				state.syncError = null;
+				// Add item to local state
+				cartSlice.caseReducers.addToCart(state, action);
 			})
 			.addCase(addToCartAsync.rejected, (state, action) => {
 				state.loading = false;
 				state.syncStatus = "error";
 				state.syncError = action.payload;
-				toast.error(action.payload || "Failed to add item to cart");
 			})
-			// Update quantity async
+
+			// Update cart item quantity async
 			.addCase(updateCartItemQuantityAsync.pending, (state) => {
-				state.loading = true;
 				state.syncStatus = "syncing";
 			})
 			.addCase(updateCartItemQuantityAsync.fulfilled, (state, action) => {
-				state.loading = false;
 				state.syncStatus = "synced";
 				state.lastSync = new Date().toISOString();
-				state.syncError = null;
+				// Update item in local state
+				cartSlice.caseReducers.updateCartItemQuantity(state, {
+					payload: {
+						_id: action.payload.itemId,
+						quantity: action.payload.quantity,
+					},
+				});
 			})
 			.addCase(updateCartItemQuantityAsync.rejected, (state, action) => {
-				state.loading = false;
 				state.syncStatus = "error";
 				state.syncError = action.payload;
-				toast.error(action.payload || "Failed to update item quantity");
 			})
+
 			// Remove from cart async
 			.addCase(removeFromCartAsync.pending, (state) => {
-				state.loading = true;
 				state.syncStatus = "syncing";
 			})
 			.addCase(removeFromCartAsync.fulfilled, (state, action) => {
-				state.loading = false;
 				state.syncStatus = "synced";
 				state.lastSync = new Date().toISOString();
-				state.syncError = null;
+				// Remove item from local state
+				cartSlice.caseReducers.removeFromCart(state, {
+					payload: { _id: action.payload.itemId },
+				});
 			})
 			.addCase(removeFromCartAsync.rejected, (state, action) => {
-				state.loading = false;
 				state.syncStatus = "error";
 				state.syncError = action.payload;
-				toast.error(action.payload || "Failed to remove item from cart");
 			})
+
 			// Clear cart async
 			.addCase(clearCartAsync.pending, (state) => {
-				state.loading = true;
 				state.syncStatus = "syncing";
 			})
 			.addCase(clearCartAsync.fulfilled, (state) => {
-				state.loading = false;
 				state.syncStatus = "synced";
 				state.lastSync = new Date().toISOString();
-				state.syncError = null;
-				state.items = [];
-				state.totalItems = 0;
-				state.subtotal = 0;
-				state.deliveryCharge = 0;
-				state.totalAmount = 0;
+				// Clear local state
+				cartSlice.caseReducers.clearCart(state);
 			})
 			.addCase(clearCartAsync.rejected, (state, action) => {
-				state.loading = false;
 				state.syncStatus = "error";
 				state.syncError = action.payload;
-				toast.error(action.payload || "Failed to clear cart");
 			});
 	},
 });
@@ -402,10 +302,10 @@ export const {
 	removeFromCart,
 	clearCart,
 	updateDeliveryCharge,
-	syncToLocalStorage,
-	setCart,
+	resetCartError,
 } = cartSlice.actions;
 
+// Selectors
 export const selectCart = (state) => state.cart;
 export const selectCartItems = (state) => state.cart.items;
 export const selectCartTotalItems = (state) => state.cart.totalItems;

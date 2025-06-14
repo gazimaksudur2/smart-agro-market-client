@@ -8,35 +8,81 @@ import {
 	FaArrowRight,
 } from "react-icons/fa";
 import useScrollToTop from "../../hooks/useScrollToTop";
+import React from "react";
 
 export default function CartPage() {
 	useScrollToTop();
 	const navigate = useNavigate();
 	const {
-		cartItems,
+		items: cartItems,
 		totalItems,
 		subtotal,
 		deliveryCharge,
-		total,
-		updateItemQuantity,
-		removeItemFromCart,
+		totalAmount: total,
+		updateItem: updateItemQuantity,
+		removeItem: removeItemFromCart,
 		clearCartItems,
-		proceedToCheckout,
 		isAuthenticated,
+		loading,
+		loadCart,
 	} = useCart();
 
-	const handleQuantityChange = (itemId, newQuantity, minQuantity) => {
+	// Load cart on component mount
+	React.useEffect(() => {
+		loadCart();
+	}, []);
+
+	const handleQuantityChange = async (itemId, newQuantity, minQuantity) => {
 		if (newQuantity < minQuantity) {
 			return;
 		}
-		updateItemQuantity(itemId, newQuantity);
+		try {
+			await updateItemQuantity(itemId, newQuantity);
+		} catch (error) {
+			console.error("Error updating quantity:", error);
+		}
 	};
 
 	const handleCheckout = () => {
-		proceedToCheckout(navigate);
+		if (!isAuthenticated) {
+			navigate("/login", { state: { from: "/checkout" } });
+			return;
+		}
+		navigate("/checkout");
 	};
 
-	if (cartItems.length === 0) {
+	const handleRemoveItem = async (itemId) => {
+		try {
+			await removeItemFromCart(itemId);
+		} catch (error) {
+			console.error("Error removing item:", error);
+		}
+	};
+
+	const handleClearCart = async () => {
+		if (window.confirm("Are you sure you want to clear your cart?")) {
+			try {
+				await clearCartItems();
+			} catch (error) {
+				console.error("Error clearing cart:", error);
+			}
+		}
+	};
+
+	if (loading && (!cartItems || cartItems.length === 0)) {
+		return (
+			<div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+				<div className="text-center py-12">
+					<div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto"></div>
+					<h2 className="mt-4 text-lg font-medium text-gray-900">
+						Loading your cart...
+					</h2>
+				</div>
+			</div>
+		);
+	}
+
+	if (!cartItems || cartItems.length === 0) {
 		return (
 			<div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
 				<div className="text-center py-12">
@@ -65,8 +111,9 @@ export default function CartPage() {
 					Shopping Cart ({totalItems} items)
 				</h1>
 				<button
-					onClick={clearCartItems}
-					className="text-red-600 hover:text-red-700 text-sm font-medium"
+					onClick={handleClearCart}
+					disabled={loading}
+					className="text-red-600 hover:text-red-700 text-sm font-medium disabled:opacity-50"
 				>
 					Clear Cart
 				</button>
@@ -86,6 +133,9 @@ export default function CartPage() {
 												src={item.image}
 												alt={item.title}
 												className="w-16 h-16 sm:w-20 sm:h-20 object-cover rounded-md"
+												onError={(e) => {
+													e.target.src = "/placeholder-image.jpg";
+												}}
 											/>
 										</div>
 
@@ -97,22 +147,24 @@ export default function CartPage() {
 														{item.title}
 													</h3>
 													<p className="text-sm text-gray-500">
-														৳{item.price.toLocaleString()} per {item.unit}
+														৳{item.price?.toLocaleString() || 0} per {item.unit}
 													</p>
 													<p className="text-xs text-gray-400">
-														Min. order: {item.minimumOrderQuantity} {item.unit}
+														Min. order: {item.minimumOrderQuantity || 1}{" "}
+														{item.unit}
 													</p>
 													{item.seller && (
 														<p className="text-xs text-gray-400 mt-1">
-															Seller: {item.seller.name}
+															Seller: {item.seller.name || item.seller}
 														</p>
 													)}
 												</div>
 
 												{/* Remove Button */}
 												<button
-													onClick={() => removeItemFromCart(item._id)}
-													className="ml-4 text-red-600 hover:text-red-700 p-1"
+													onClick={() => handleRemoveItem(item._id)}
+													disabled={loading}
+													className="ml-4 text-red-600 hover:text-red-700 p-1 disabled:opacity-50"
 													aria-label="Remove item"
 												>
 													<FaTrash className="h-4 w-4" />
@@ -127,11 +179,12 @@ export default function CartPage() {
 															handleQuantityChange(
 																item._id,
 																item.quantity - 1,
-																item.minimumOrderQuantity
+																item.minimumOrderQuantity || 1
 															)
 														}
 														disabled={
-															item.quantity <= item.minimumOrderQuantity
+															item.quantity <=
+																(item.minimumOrderQuantity || 1) || loading
 														}
 														className="p-1 border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
 													>
@@ -145,10 +198,11 @@ export default function CartPage() {
 															handleQuantityChange(
 																item._id,
 																item.quantity + 1,
-																item.minimumOrderQuantity
+																item.minimumOrderQuantity || 1
 															)
 														}
-														className="p-1 border border-gray-300 rounded-md hover:bg-gray-50"
+														disabled={loading}
+														className="p-1 border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50"
 													>
 														<FaPlus className="h-3 w-3" />
 													</button>
@@ -157,7 +211,10 @@ export default function CartPage() {
 												{/* Item Total */}
 												<div className="text-right">
 													<p className="text-sm font-medium text-gray-900">
-														৳{(item.price * item.quantity).toLocaleString()}
+														৳
+														{(
+															(item.price || 0) * item.quantity
+														).toLocaleString()}
 													</p>
 												</div>
 											</div>
@@ -178,21 +235,23 @@ export default function CartPage() {
 
 						<div className="space-y-3">
 							<div className="flex justify-between text-sm">
-								<span className="text-gray-600">Subtotal</span>
+								<span className="text-gray-600">
+									Subtotal ({totalItems} items)
+								</span>
 								<span className="font-medium">
-									৳{subtotal.toLocaleString()}
+									৳{subtotal?.toLocaleString() || 0}
 								</span>
 							</div>
 							<div className="flex justify-between text-sm">
 								<span className="text-gray-600">Delivery Charge</span>
 								<span className="font-medium">
-									৳{deliveryCharge.toLocaleString()}
+									৳{deliveryCharge?.toLocaleString() || 0}
 								</span>
 							</div>
 							<div className="border-t border-gray-200 pt-3">
 								<div className="flex justify-between text-base font-medium">
 									<span>Total</span>
-									<span>৳{total.toLocaleString()}</span>
+									<span>৳{total?.toLocaleString() || 0}</span>
 								</div>
 							</div>
 						</div>
@@ -210,7 +269,8 @@ export default function CartPage() {
 						{/* Checkout Button */}
 						<button
 							onClick={handleCheckout}
-							className="w-full mt-6 btn btn-primary flex items-center justify-center"
+							disabled={loading || totalItems === 0}
+							className="w-full mt-6 btn btn-primary flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
 						>
 							{isAuthenticated ? "Proceed to Checkout" : "Login & Checkout"}
 							<FaArrowRight className="ml-2 h-4 w-4" />
