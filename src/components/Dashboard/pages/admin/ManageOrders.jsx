@@ -213,7 +213,7 @@ export default function ManageOrders() {
 		},
 	];
 
-	const displayOrders = orders || mockOrders;
+	const displayOrders = mockOrders;
 
 	// Filter orders
 	useEffect(() => {
@@ -256,11 +256,11 @@ export default function ManageOrders() {
 	const getOrderStats = () => {
 		const stats = {
 			total: displayOrders.length,
-			pending: displayOrders.filter((o) => o.status === "pending").length,
-			confirmed: displayOrders.filter((o) => o.status === "confirmed").length,
-			processing: displayOrders.filter((o) => o.status === "processing").length,
-			shipped: displayOrders.filter((o) => o.status === "shipped").length,
-			delivered: displayOrders.filter((o) => o.status === "delivered").length,
+			pending: displayOrders?.filter((o) => o.status === "pending").length,
+			confirmed: displayOrders?.filter((o) => o.status === "confirmed").length,
+			processing: displayOrders?.filter((o) => o.status === "processing").length,
+			shipped: displayOrders?.filter((o) => o.status === "shipped").length,
+			delivered: displayOrders?.filter((o) => o.status === "delivered").length,
 			totalRevenue: displayOrders.reduce(
 				(sum, order) => sum + order.grandTotal,
 				0
