@@ -66,7 +66,10 @@ export default function ProductDetails() {
 				price: product?.price || product?.pricePerUnit,
 				image: product?.images?.[0] || fallbackImage,
 				category: product?.category,
-				sellerId: product?.seller?.id || product?.sellerInfo?.id,
+				sellerId: product?.seller?._id || product?.sellerInfo?._id,
+				sellerName: product?.seller?.name || product?.sellerInfo?.name,
+				unit: product?.unit,
+				minimumOrderQuantity: product?.minimumOrderQuantity || 1,
 			};
 
 			await addItem(
@@ -104,7 +107,10 @@ export default function ProductDetails() {
 				price: product?.price || product?.pricePerUnit,
 				image: product?.images?.[0] || fallbackImage,
 				category: product?.category,
-				sellerId: product?.seller?.id || product?.sellerInfo?.id,
+				sellerId: product?.seller?._id || product?.sellerInfo?._id,
+				sellerName: product?.seller?.name || product?.sellerInfo?.name,
+				unit: product?.unit,
+				minimumOrderQuantity: product?.minimumOrderQuantity || 1,
 			};
 
 			// Add to cart first
@@ -151,7 +157,10 @@ export default function ProductDetails() {
 				quantity: item.quantity || item.minimumOrderQuantity || 1,
 				image: item.images?.[0] || fallbackImage,
 				category: item.category,
-				sellerId: item.seller?.id || item.sellerInfo?.id,
+				sellerId: item.seller?._id || item.sellerInfo?._id,
+				sellerName: item.seller?.name || item.sellerInfo?.name,
+				unit: item.unit,
+				minimumOrderQuantity: item.minimumOrderQuantity || 1,
 			}));
 
 			await addMultipleItems(cartItems);
