@@ -66,8 +66,8 @@ export default function ProductDetails() {
 				price: product?.price || product?.pricePerUnit,
 				image: product?.images?.[0] || fallbackImage,
 				category: product?.category,
-				sellerId: product?.seller?._id || product?.sellerInfo?._id,
-				sellerName: product?.seller?.name || product?.sellerInfo?.name,
+				sellerId: product?.seller?.id,
+				sellerName: product?.seller?.name,
 				unit: product?.unit,
 				minimumOrderQuantity: product?.minimumOrderQuantity || 1,
 			};
@@ -107,8 +107,8 @@ export default function ProductDetails() {
 				price: product?.price || product?.pricePerUnit,
 				image: product?.images?.[0] || fallbackImage,
 				category: product?.category,
-				sellerId: product?.seller?._id || product?.sellerInfo?._id,
-				sellerName: product?.seller?.name || product?.sellerInfo?.name,
+				sellerId: product?.seller?.id,
+				sellerName: product?.seller?.name,
 				unit: product?.unit,
 				minimumOrderQuantity: product?.minimumOrderQuantity || 1,
 			};
@@ -157,8 +157,8 @@ export default function ProductDetails() {
 				quantity: item.quantity || item.minimumOrderQuantity || 1,
 				image: item.images?.[0] || fallbackImage,
 				category: item.category,
-				sellerId: item.seller?._id || item.sellerInfo?._id,
-				sellerName: item.seller?.name || item.sellerInfo?.name,
+				sellerId: item.seller?.id,
+				sellerName: item.seller?.name,
 				unit: item.unit,
 				minimumOrderQuantity: item.minimumOrderQuantity || 1,
 			}));

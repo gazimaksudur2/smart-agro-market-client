@@ -69,8 +69,8 @@ const useCart = () => {
 				image: item.image,
 				unit: item.unit,
 				minimumOrderQuantity: item.minimumOrderQuantity,
-				sellerId: item.seller?.sellerId || item.sellerId,
-				sellerName: item.seller?.name || item.sellerName,
+				sellerId: item?.seller?.id || "unknown_seller",
+				sellerName: item?.seller?.name || "Unknown Seller",
 				category: item.category,
 			}));
 
@@ -81,7 +81,8 @@ const useCart = () => {
 				setTotalItems(response.cart.totalItems);
 				setTotalAmount(response.cart.totalAmount);
 			} else {
-				calculateTotals(items);
+				const calculated = calculateTotals(items);
+				// console.log("useCart: Calculated totals", calculated);
 			}
 		} catch (err) {
 			setError(err.message || "Failed to load cart");
@@ -126,8 +127,8 @@ const useCart = () => {
 					minimumOrderQuantity: product.minimumOrderQuantity || 1,
 					category: product.category,
 					seller: {
-						sellerId: product.sellerId,
-						name: product.sellerName,
+						id: product?.seller?.id || "unknown_seller",
+						name: product?.seller?.name || "Unknown Seller",
 					},
 				};
 
@@ -187,8 +188,8 @@ const useCart = () => {
 					minimumOrderQuantity: item.minimumOrderQuantity || 1,
 					category: item.category,
 					seller: {
-						sellerId: item.sellerId,
-						name: item.sellerName,
+						id: item?.seller?.id || "unknown_seller",
+						name: item?.seller?.name || "Unknown Seller",
 					},
 				});
 			}

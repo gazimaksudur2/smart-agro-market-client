@@ -113,7 +113,7 @@ export default function Navbar() {
 					<div className="hidden md:flex md:items-center md:space-x-4">
 						{/* Shopping Cart */}
 						<Link
-							to="/cart"
+							to={currentUser ? "/dashboard/my-cart" : "/cart"}
 							className="relative p-1 text-gray-700 hover:text-primary-600"
 						>
 							<FaShoppingCart className="h-6 w-6" />
@@ -163,7 +163,7 @@ export default function Navbar() {
 					<div className="flex items-center md:hidden">
 						{/* Mobile Shopping Cart */}
 						<Link
-							to="/cart"
+							to={currentUser ? "/dashboard/my-cart" : "/cart"}
 							className="relative p-1 mr-2 text-gray-700 hover:text-primary-600"
 						>
 							<FaShoppingCart className="h-6 w-6" />

@@ -1,9 +1,18 @@
 import React, { useEffect } from "react";
-import { Link } from "react-router-dom";
-import { FiShoppingCart, FiTrash2, FiPlus, FiMinus } from "react-icons/fi";
+import { Link, useNavigate } from "react-router-dom";
+import {
+	FiShoppingCart,
+	FiTrash2,
+	FiPlus,
+	FiMinus,
+	FiUser,
+} from "react-icons/fi";
 import useCart from "../../hooks/useCart";
+import { useAuth } from "../../contexts/AuthContext";
 
 const CartPage = () => {
+	const navigate = useNavigate();
+	const { currentUser } = useAuth();
 	const {
 		items,
 		loading,
@@ -19,6 +28,13 @@ const CartPage = () => {
 	useEffect(() => {
 		loadCart();
 	}, [loadCart]);
+
+	// Redirect logged-in users to dashboard cart
+	useEffect(() => {
+		if (currentUser) {
+			navigate("/dashboard/my-cart", { replace: true });
+		}
+	}, [currentUser, navigate]);
 
 	const handleQuantityChange = async (productId, newQuantity) => {
 		if (newQuantity < 1) return;
@@ -77,6 +93,31 @@ const CartPage = () => {
 						<p className="mt-2 text-lg text-gray-500">
 							Start shopping to add items to your cart.
 						</p>
+
+						{/* Login Encouragement */}
+						{!currentUser && (
+							<div className="mt-6 max-w-md mx-auto">
+								<div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+									<div className="flex items-center justify-center mb-2">
+										<FiUser className="h-5 w-5 text-blue-600 mr-2" />
+										<h3 className="text-sm font-medium text-blue-900">
+											Better Cart Experience
+										</h3>
+									</div>
+									<p className="text-sm text-blue-800 mb-3">
+										Log in to save items, track orders, and get personalized
+										recommendations!
+									</p>
+									<Link
+										to="/login"
+										className="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700"
+									>
+										Sign In
+									</Link>
+								</div>
+							</div>
+						)}
+
 						<div className="mt-8">
 							<Link
 								to="/products"
@@ -228,25 +269,49 @@ const CartPage = () => {
 										</div>
 									</div>
 								</div>
-								<div className="mt-6">
-									<Link
-										to="/checkout"
-										className="w-full bg-primary-600 border border-transparent rounded-md shadow-sm py-3 px-4 text-base font-medium text-white hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 flex items-center justify-center"
-									>
-										Proceed to Checkout
-									</Link>
-								</div>
-								<div className="mt-6 flex justify-center text-sm text-center text-gray-500">
-									<p>
-										or{" "}
+								{/* Action Buttons */}
+								<div className="space-y-4">
+									{!currentUser && (
+										<div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+											<div className="flex items-center mb-2">
+												<FiUser className="h-4 w-4 text-blue-600 mr-2" />
+												<h3 className="text-sm font-medium text-blue-900">
+													Enhanced Cart Features
+												</h3>
+											</div>
+											<p className="text-xs text-blue-800 mb-3">
+												Log in to save cart changes, track orders, and access
+												advanced cart management!
+											</p>
+											<Link
+												to="/login"
+												className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded text-white bg-blue-600 hover:bg-blue-700"
+											>
+												Sign In for Better Experience
+											</Link>
+										</div>
+									)}
+
+									<div className="mt-6">
 										<Link
-											to="/products"
-											className="text-primary-600 font-medium hover:text-primary-500"
+											to="/checkout"
+											className="w-full bg-primary-600 border border-transparent rounded-md shadow-sm py-3 px-4 text-base font-medium text-white hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 flex items-center justify-center"
 										>
-											Continue Shopping
-											<span aria-hidden="true"> &rarr;</span>
+											Proceed to Checkout
 										</Link>
-									</p>
+									</div>
+									<div className="mt-6 flex justify-center text-sm text-center text-gray-500">
+										<p>
+											or{" "}
+											<Link
+												to="/products"
+												className="text-primary-600 font-medium hover:text-primary-500"
+											>
+												Continue Shopping
+												<span aria-hidden="true"> &rarr;</span>
+											</Link>
+										</p>
+									</div>
 								</div>
 							</div>
 						</div>
