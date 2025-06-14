@@ -275,10 +275,10 @@ export default function MyProducts() {
 									<FaCalendarAlt className="h-3 w-3 mr-1" />
 									Listed: {formatDate(product.createdAt)}
 								</div>
-								{product.harvestDate && (
+								{product.harvestedOn && (
 									<div className="flex items-center">
 										<FaLeaf className="h-3 w-3 mr-1" />
-										Harvested: {formatDate(product.harvestDate)}
+										Harvested: {formatDate(product.harvestedOn)}
 									</div>
 								)}
 							</div>
@@ -344,6 +344,56 @@ export default function MyProducts() {
 										<p className="text-gray-600">
 											Agent ID: {product.approvedBy.agentId}
 										</p>
+										{product.approvalReason && (
+											<p className="text-gray-600">
+												Reason: {product.approvalReason}
+											</p>
+										)}
+									</div>
+								)}
+
+								{/* Specifications */}
+								{product.specifications && (
+									<div className="mt-3 text-sm">
+										<p className="font-medium text-gray-900 mb-2">
+											Specifications
+										</p>
+										<div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+											{product.specifications.variety && (
+												<p className="text-gray-600">
+													<strong>Variety:</strong>{" "}
+													{product.specifications.variety}
+												</p>
+											)}
+											{product.specifications.grade && (
+												<p className="text-gray-600">
+													<strong>Grade:</strong> {product.specifications.grade}
+												</p>
+											)}
+											{product.specifications.processingMethod && (
+												<p className="text-gray-600">
+													<strong>Processing:</strong>{" "}
+													{product.specifications.processingMethod}
+												</p>
+											)}
+										</div>
+									</div>
+								)}
+
+								{/* Timeline */}
+								{product.timeline && (
+									<div className="mt-3 text-sm">
+										<p className="font-medium text-gray-900 mb-2">Timeline</p>
+										<div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+											<p className="text-gray-600">
+												<strong>Submitted:</strong>{" "}
+												{formatDate(product.timeline.submittedAt)}
+											</p>
+											<p className="text-gray-600">
+												<strong>Last Updated:</strong>{" "}
+												{formatDate(product.timeline.lastUpdated)}
+											</p>
+										</div>
 									</div>
 								)}
 

@@ -69,6 +69,8 @@ export default function AgentApplication() {
 			const newFormData = { ...prev, [name]: value };
 			if (name === "region") {
 				newFormData.district = "";
+			} else if (name === "warehouseImages") {
+				newFormData.warehouseImages = value.split(",").map((img) => img.trim());
 			}
 			return newFormData;
 		});

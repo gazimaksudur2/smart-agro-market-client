@@ -210,13 +210,12 @@ export default function AddProduct() {
 					return;
 				}
 			}
+			if(formData.cropType === "Others"){
+				formData.cropType = customCropType.trim().toLowerCase();
+			}
 
 			const productData = {
 				...formData,
-				cropType:
-					formData.cropType === "Others"
-						? customCropType.trim().toLowerCase()
-						: formData.cropType.toLowerCase(),
 				images: uploadedImageUrls,
 				pricePerUnit: parseFloat(formData.pricePerUnit),
 				minimumOrderQuantity: parseInt(formData.minimumOrderQuantity),

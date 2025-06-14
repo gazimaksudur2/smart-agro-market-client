@@ -337,6 +337,10 @@ export default function ManageApplications() {
 				rejected: 0,
 				sellers: 0,
 				agents: 0,
+				byType: {
+					"seller-application": 0,
+					"agent-application": 0,
+				},
 			};
 		}
 
@@ -559,7 +563,7 @@ export default function ManageApplications() {
 									Sellers
 								</dt>
 								<dd className="text-3xl font-bold text-gray-900">
-									{stats?.byType["seller-application"]}
+									{stats?.byType?.["seller-application"]}
 								</dd>
 							</dl>
 						</div>
@@ -579,7 +583,7 @@ export default function ManageApplications() {
 									Agents
 								</dt>
 								<dd className="text-3xl font-bold text-gray-900">
-									{stats?.byType["agent-application"]}
+									{stats?.byType?.["agent-application"]}
 								</dd>
 							</dl>
 						</div>

@@ -99,9 +99,10 @@ export default function VerifyProducts() {
 	// Get agent's operational area
 	const agentOperationalArea = currentUser?.DBUser?.operationalArea;
 
-	// Check if agent has operational area assigned
-	const hasOperationalArea =
-		agentOperationalArea?.region && agentOperationalArea?.district;
+	// Check if agent has operational area assigned - ensure it's a proper boolean
+	const hasOperationalArea = Boolean(
+		agentOperationalArea?.region && agentOperationalArea?.district
+	);
 
 	// Build query parameters with regional filtering
 	const queryParams = new URLSearchParams({
@@ -167,7 +168,7 @@ export default function VerifyProducts() {
 			}
 		},
 		{
-			enabled: !!currentUser?.DBUser?._id && hasOperationalArea,
+			enabled: Boolean(currentUser?.DBUser?._id && hasOperationalArea),
 			keepPreviousData: true,
 			staleTime: 30000,
 			refetchOnWindowFocus: false,
@@ -198,7 +199,7 @@ export default function VerifyProducts() {
 			}
 		},
 		{
-			enabled: !!currentUser?.DBUser?._id && hasOperationalArea,
+			enabled: Boolean(currentUser?.DBUser?._id && hasOperationalArea),
 			staleTime: 60000,
 		}
 	);
@@ -223,7 +224,7 @@ export default function VerifyProducts() {
 			}
 		},
 		{
-			enabled: !!currentUser?.DBUser?._id && hasOperationalArea,
+			enabled: Boolean(currentUser?.DBUser?._id && hasOperationalArea),
 			staleTime: 300000, // 5 minutes - rarely changes
 		}
 	);

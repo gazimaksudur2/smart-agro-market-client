@@ -103,6 +103,7 @@ export default function Register() {
 				zip: data.zip,
 				country: data.country || "Bangladesh",
 			};
+			const fullAddress = `${data.street}, ${data.city}, ${data.state}, ${data.zip}, ${data.country}`
 
 			await registerWithEmail(
 				data.email,
@@ -112,7 +113,8 @@ export default function Register() {
 					last_name: data.last_name,
 				},
 				profileImageUrl,
-				address
+				address,
+				fullAddress
 			);
 			toast.success("Registration successful! Please complete your profile.");
 			navigate("/dashboard/profile", {

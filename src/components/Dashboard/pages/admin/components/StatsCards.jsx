@@ -44,7 +44,7 @@ const StatsCard = ({
 						</dt>
 						<dd className="flex items-center">
 							<span className="text-3xl font-bold text-gray-900">
-								{value.toLocaleString()}
+								{(value ?? 0).toLocaleString()}
 							</span>
 							{trend && (
 								<span
@@ -68,80 +68,80 @@ const StatsCard = ({
 	);
 };
 
-export const ProductStatsCards = ({ stats }) => {
+export const ProductStatsCards = ({ stats = {} }) => {
 	return (
 		<div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-5">
 			<StatsCard
 				icon={FaCubes}
 				title="Total Products"
-				value={stats.total}
+				value={stats.total ?? 0}
 				color="primary"
 			/>
 			<StatsCard
 				icon={FaCheck}
 				title="Approved"
-				value={stats.approved}
+				value={stats.approved ?? 0}
 				color="green"
 			/>
 			<StatsCard
 				icon={FaExclamationTriangle}
 				title="Pending"
-				value={stats.pending}
+				value={stats.pending ?? 0}
 				color="yellow"
 			/>
 			<StatsCard
 				icon={FaTimes}
 				title="Rejected"
-				value={stats.rejected}
+				value={stats.rejected ?? 0}
 				color="red"
 			/>
 			<StatsCard
 				icon={FaWarehouse}
 				title="Out of Stock"
-				value={stats.outOfStock}
+				value={stats.outOfStock ?? 0}
 				color="gray"
 			/>
 		</div>
 	);
 };
 
-export const UserStatsCards = ({ stats }) => {
+export const UserStatsCards = ({ stats = {} }) => {
 	return (
 		<div className="grid grid-cols-1 gap-5 sm:grid-cols-3 lg:grid-cols-6">
 			<StatsCard
 				icon={FaUsers}
 				title="Total Users"
-				value={stats.total}
+				value={stats.total ?? 0}
 				color="primary"
 			/>
 			<StatsCard
 				icon={FaUserCheck}
 				title="Active"
-				value={stats.active}
+				value={stats.active ?? 0}
 				color="green"
 			/>
 			<StatsCard
 				icon={FaUserTimes}
 				title="Inactive"
-				value={stats.inactive}
+				value={stats.inactive ?? 0}
 				color="red"
 			/>
 			<StatsCard
 				icon={FaUserCheck}
 				title="Agents"
-				value={stats.agents}
+				value={stats.agents ?? 0}
 				color="blue"
 			/>
 			<StatsCard
 				icon={FaUsers}
 				title="Sellers"
-				value={stats.sellers}
+				value={stats.sellers ?? 0}
 				color="green"
 			/>
 			<StatsCard
 				icon={FaUsers}
 				title="Consumers"
-				value={stats.consumers}
+				value={stats.consumers ?? 0}
 				color="gray"
 			/>
 		</div>

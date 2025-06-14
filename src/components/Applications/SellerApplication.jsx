@@ -78,7 +78,7 @@ export default function SellerApplication() {
 			if (name === "region") {
 				newFormData.district = "";
 			} else if (name === "farmPhotos") {
-				newFormData.farmPhotos = value.split(",").map((url) => url.trim());
+				newFormData.farmPhotos = value.split(",").map((img) => img.trim());
 			}
 			return newFormData;
 		});

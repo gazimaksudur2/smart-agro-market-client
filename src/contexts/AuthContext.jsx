@@ -96,7 +96,8 @@ export default function AuthProvider({ children }) {
 		password,
 		name,
 		profileImage,
-		address
+		address,
+		fullAddress
 	) => {
 		try {
 			const userCredential = await createUserWithEmailAndPassword(
@@ -121,7 +122,8 @@ export default function AuthProvider({ children }) {
 				password,
 				"email-pass",
 				"consumer",
-				address
+				address,
+				fullAddress
 			);
 
 			// Return user info
@@ -258,7 +260,8 @@ export default function AuthProvider({ children }) {
 		password,
 		provider,
 		role = "consumer",
-		address = null
+		address = null,
+		fullAddress = null
 	) => {
 		try {
 			const { data } = await axios.post(
@@ -271,6 +274,7 @@ export default function AuthProvider({ children }) {
 					role,
 					phoneNumber: "",
 					address: address,
+					fullAddress: fullAddress,
 					firebaseUID: user.uid,
 					profilePicture:
 						user.photoURL || "https://i.ibb.co/MBtjqXQ/no-avatar.gif",
