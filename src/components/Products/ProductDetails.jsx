@@ -244,7 +244,7 @@ export default function ProductDetails() {
 					{/* Main Image */}
 					<div className="relative rounded-lg overflow-hidden bg-gray-100">
 						<img
-							src={product?.images?.[selectedImage] || fallbackImage}
+							src={product?.images?.[selectedImage]}
 							alt={product?.title}
 							className="w-full h-[400px] object-cover"
 						/>
@@ -270,7 +270,7 @@ export default function ProductDetails() {
 								}`}
 							>
 								<img
-									src={image || fallbackImage}
+									src={image}
 									alt={`${product?.title} - ${index + 1}`}
 									className="w-full h-full object-cover"
 								/>
