@@ -6,7 +6,7 @@ const apiBaseUrl =
 
 const useRegions = () => {
 	const { data: regions } = useQuery("regions", async () => {
-		const { data } = await axios.get(`${apiBaseUrl}/regions`);
+		const { data } = await axios.get(`${apiBaseUrl}/api/regions`);
 		return data.regions;
 	});
 	return regions || [];

@@ -77,7 +77,7 @@ export default function ManageOrders() {
 		refetch,
 	} = useQuery(["allOrders"], async () => {
 		try {
-			return await apiCall("/admin/orders");
+			return await apiCall("/api/admin/api/orders");
 		} catch (error) {
 			console.error("Error fetching orders:", error);
 			return [];
@@ -245,7 +245,7 @@ export default function ManageOrders() {
 
 	const handleOrderAction = async (orderId, action) => {
 		try {
-			await apiCall(`/admin/orders/${orderId}/${action}`, "PATCH");
+			await apiCall(`/api/admin/api/orders/${orderId}/${action}`, "PATCH");
 			toast.success(`Order ${action}d successfully`);
 			refetch();
 		} catch (error) {
@@ -258,7 +258,8 @@ export default function ManageOrders() {
 			total: displayOrders.length,
 			pending: displayOrders?.filter((o) => o.status === "pending").length,
 			confirmed: displayOrders?.filter((o) => o.status === "confirmed").length,
-			processing: displayOrders?.filter((o) => o.status === "processing").length,
+			processing: displayOrders?.filter((o) => o.status === "processing")
+				.length,
 			shipped: displayOrders?.filter((o) => o.status === "shipped").length,
 			delivered: displayOrders?.filter((o) => o.status === "delivered").length,
 			totalRevenue: displayOrders.reduce(

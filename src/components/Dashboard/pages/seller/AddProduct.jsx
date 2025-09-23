@@ -210,7 +210,7 @@ export default function AddProduct() {
 					return;
 				}
 			}
-			if(formData.cropType === "Others"){
+			if (formData.cropType === "Others") {
 				formData.cropType = customCropType.trim().toLowerCase();
 			}
 
@@ -233,7 +233,7 @@ export default function AddProduct() {
 			};
 
 			const response = await apiCall(
-				"/products/add-product",
+				"/api/products/add-product",
 				"POST",
 				productData
 			);

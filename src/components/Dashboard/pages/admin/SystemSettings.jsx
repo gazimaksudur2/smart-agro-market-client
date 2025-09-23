@@ -55,7 +55,7 @@ export default function SystemSettings() {
 		["adminDashboardStats"],
 		async () => {
 			try {
-				return await apiCall("/admin/dashboard-stats");
+				return await apiCall("/api/admin/dashboard-stats");
 			} catch (error) {
 				console.error("Error fetching admin stats:", error);
 				return null;

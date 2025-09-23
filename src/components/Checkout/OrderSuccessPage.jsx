@@ -26,7 +26,7 @@ export default function OrderSuccessPage() {
 
 	// If no order details, redirect to products
 	if (!orderDetails) {
-		navigate("/products");
+		navigate("/api/products");
 		return null;
 	}
 
@@ -285,7 +285,7 @@ export default function OrderSuccessPage() {
 								<span>View My Orders</span>
 							</Link>
 							<Link
-								to="/products"
+								to="/api/products"
 								className="flex items-center justify-center px-6 py-3 border border-green-300 text-green-700 bg-green-50 rounded-lg hover:bg-green-100 transition-colors"
 							>
 								<FaBox className="mr-2" />

@@ -4,7 +4,7 @@ import { useQuery } from "react-query";
 const useCropTypes = () => {
 	const fetchCropTypes = async () => {
 		const { data } = await axios.get(
-			`${import.meta.env.VITE_SERVER_API_URL}/products/crop-types`
+			`${import.meta.env.VITE_SERVER_API_URL}/api/products/crop-types`
 		);
 
 		// Check if response has success field and return data accordingly

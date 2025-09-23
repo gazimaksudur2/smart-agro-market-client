@@ -92,7 +92,7 @@ const authService = {
 
 			console.log("Fetching new token from server");
 			const response = await axios.post(
-				`${API_BASE_URL}/users/login`,
+				`${API_BASE_URL}/api/users/login`,
 				{
 					uid: user.uid,
 					email: user.email,
@@ -143,7 +143,7 @@ const authService = {
 		try {
 			// Clear from server
 			await axios.post(
-				`${API_BASE_URL}/users/logout`,
+				`${API_BASE_URL}/api/users/logout`,
 				{},
 				{ withCredentials: true }
 			);

@@ -57,32 +57,37 @@ const useCart = () => {
 		try {
 			const response = await getCartFromDB(user.email);
 
-			// Handle backend response format: { success: true, cart: { items: [...] } }
-			const backendItems = response.cart?.items || response.data?.items || [];
+			// Handle backend response format per API spec: { success: true, cart: { items: [...] } }
+			const backendItems = response.cart?.items || [];
 
 			// Map backend format to frontend format
+			// Backend stores ONLY: productId, price, quantity, addedAt, totalPrice (derived)
+			// Per API spec, NO other fields are returned from backend
 			const items = backendItems.map((item) => ({
-				productId: item._id,
-				name: item.title,
+				productId: item.productId,
+				productTitle: item.product.title,
+				productImage: item.product.images[0],
 				price: item.price,
 				quantity: item.quantity,
-				image: item.image,
-				unit: item.unit,
-				minimumOrderQuantity: item.minimumOrderQuantity,
-				sellerId: item?.seller?.id || "unknown_seller",
-				sellerName: item?.seller?.name || "Unknown Seller",
-				category: item.category,
+				totalPrice: item.totalPrice,
+				minimumOrderQuantity: item.product.minimumOrderQuantity,
+				availableStock: item.product.availableStock,
+				unit: item.product.unit,
+				addedAt: item.addedAt,
 			}));
 
 			setCartItems(items);
 
-			// Use backend totals if available, otherwise calculate
-			if (response.cart?.totalItems && response.cart?.totalAmount) {
+			// Use backend totals from API response (as per API spec)
+			if (
+				response.cart?.totalItems !== undefined &&
+				response.cart?.totalAmount !== undefined
+			) {
 				setTotalItems(response.cart.totalItems);
 				setTotalAmount(response.cart.totalAmount);
 			} else {
+				// Fallback calculation if backend doesn't provide totals
 				const calculated = calculateTotals(items);
-				// console.log("useCart: Calculated totals", calculated);
 			}
 		} catch (err) {
 			setError(err.message || "Failed to load cart");
@@ -102,7 +107,8 @@ const useCart = () => {
 				return false;
 			}
 
-			if (!product || !product._id) {
+			if (!product || !product.productId) {
+				console.log("product", product);
 				toast.error("Invalid product data");
 				return false;
 			}
@@ -116,20 +122,11 @@ const useCart = () => {
 			setError(null);
 
 			try {
-				// Send data in backend expected format
+				// Send data in backend expected format (API spec: productId, price, quantity)
 				const cartItem = {
-					_id: product._id,
-					title: product.name || product.title,
+					productId: product.productId,
 					price: product.price,
 					quantity: quantity,
-					image: product.image,
-					unit: product.unit,
-					minimumOrderQuantity: product.minimumOrderQuantity || 1,
-					category: product.category,
-					seller: {
-						id: product?.seller?.id || "unknown_seller",
-						name: product?.seller?.name || "Unknown Seller",
-					},
 				};
 
 				await addItemToDB(user.email, cartItem);
@@ -137,7 +134,7 @@ const useCart = () => {
 				// Reload cart from backend to ensure consistency
 				await loadCart();
 
-				toast.success(`${product.name || product.title} added to cart`);
+				toast.success(`Product added to cart`);
 				return true;
 			} catch (err) {
 				const errorMessage = err.message || "Failed to add item to cart";
@@ -164,33 +161,17 @@ const useCart = () => {
 				return false;
 			}
 
-			// Validate and transform items to backend format
+			// Validate and transform items to backend format (API spec: productId, price, quantity)
 			const backendItems = [];
 			for (const item of items) {
-				if (
-					!item.productId ||
-					!item.name ||
-					!item.price ||
-					item.quantity <= 0
-				) {
+				if (!item.productId || !item.price || item.quantity <= 0) {
 					toast.error("Invalid item data provided");
 					return false;
 				}
 
 				// Transform to backend format
 				backendItems.push({
-					_id: item.productId,
-					title: item.name,
-					price: item.price,
-					quantity: item.quantity,
-					image: item.image,
-					unit: item.unit,
-					minimumOrderQuantity: item.minimumOrderQuantity || 1,
-					category: item.category,
-					seller: {
-						id: item?.seller?.id || "unknown_seller",
-						name: item?.seller?.name || "Unknown Seller",
-					},
+					...item,
 				});
 			}
 
@@ -203,7 +184,7 @@ const useCart = () => {
 				// Reload cart from backend to ensure consistency
 				await loadCart();
 
-				toast.success(`${items.length} items added to cart`);
+				toast.success(`Products added to cart`);
 				return true;
 			} catch (err) {
 				const errorMessage = err.message || "Failed to add items to cart";
@@ -234,7 +215,7 @@ const useCart = () => {
 			setError(null);
 
 			try {
-				// Backend expects _id field for product identification
+				// API spec: email, productId, quantity
 				await updateCartItemInDB(user.email, productId, quantity);
 
 				// Reload cart from backend to ensure consistency
@@ -266,7 +247,7 @@ const useCart = () => {
 			setError(null);
 
 			try {
-				// Backend expects _id field for product identification
+				// API spec: email, productId
 				await removeCartItemFromDB(user.email, productId);
 
 				// Reload cart from backend to ensure consistency

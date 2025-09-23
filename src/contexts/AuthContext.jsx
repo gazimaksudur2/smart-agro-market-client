@@ -62,7 +62,7 @@ export default function AuthProvider({ children }) {
 	// Get user role from API
 	const getDBUser = async (email) => {
 		try {
-			const { data } = await axios.get(`${apiBaseUrl}/users/${email}`, {
+			const { data } = await axios.get(`${apiBaseUrl}/api/users/${email}`, {
 				withCredentials: true,
 			});
 
@@ -178,7 +178,7 @@ export default function AuthProvider({ children }) {
 
 			// Check if user exists in database
 			const { data: userInDatabase } = await axios.get(
-				`${apiBaseUrl}/users/verifyUser?email=${user?.email}`
+				`${apiBaseUrl}/api/users/verifyUser?email=${user?.email}`
 			);
 
 			// If user doesn't exist in the database, create a new user
@@ -213,7 +213,7 @@ export default function AuthProvider({ children }) {
 
 			// Check if user exists in database
 			const { data: userInDatabase } = await axios.get(
-				`${apiBaseUrl}/users/verifyUser?email=${user?.email}`
+				`${apiBaseUrl}/api/users/verifyUser?email=${user?.email}`
 			);
 
 			// If user doesn't exist in the database, create a new user
@@ -264,7 +264,7 @@ export default function AuthProvider({ children }) {
 	) => {
 		try {
 			const { data } = await axios.post(
-				`${apiBaseUrl}/users/register`,
+				`${apiBaseUrl}/api/users/register`,
 				{
 					name: user.displayName,
 					email: user.email,
@@ -329,7 +329,7 @@ export default function AuthProvider({ children }) {
 
 			// Update password in database
 			await axios.patch(
-				`${apiBaseUrl}/users/updatePassword/${user.email}`,
+				`${apiBaseUrl}/api/users/updatePassword/${user.email}`,
 				{ currentPassword, newPassword },
 				{ withCredentials: true }
 			);

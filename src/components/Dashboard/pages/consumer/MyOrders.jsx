@@ -66,13 +66,13 @@ export default function MyOrders() {
 		isLoading,
 		error,
 	} = useQuery(
-		["userOrders", currentUser?.FirebaseUser?.uid],
+		["userOrders", currentUser?.DBUser._id],
 		async () => {
-			if (!currentUser?.FirebaseUser?.uid) return [];
+			if (!currentUser?.DBUser._id) return [];
 
 			try {
 				const response = await apiCall(
-					`/orders/user/${currentUser.FirebaseUser.uid}`
+					`/api/orders/user/${currentUser?.DBUser._id}`
 				);
 				return response.orders || [];
 			} catch (error) {
@@ -81,9 +81,10 @@ export default function MyOrders() {
 			}
 		},
 		{
-			enabled: !!currentUser?.FirebaseUser?.uid,
+			enabled: !!currentUser?.DBUser._id,
 		}
 	);
+	// console.log(currentUser);
 
 	// Mock orders for demo
 	const mockOrders = [

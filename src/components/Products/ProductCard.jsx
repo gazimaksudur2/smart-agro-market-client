@@ -13,9 +13,9 @@ export default function ProductCard({ product }) {
 		"https://images.unsplash.com/photo-1471193945509-9ad0617afabf?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&h=300&q=80";
 
 	// Helper functions to get the correct field values with fallbacks
-	const getPrice = () => product?.price || product?.pricePerUnit || 0;
-	const getStock = () => product?.stock || product?.availableStock || 0;
-	const getSeller = () => product?.seller || product?.sellerInfo || {};
+	const getPrice = () => product?.pricePerUnit || 0;
+	const getStock = () => product?.availableStock || 0;
+	const getSeller = () => product?.sellerInfo || {};
 	const getLocation = () =>
 		product?.location || getSeller()?.operationalArea || {};
 	const getHarvestDate = () =>

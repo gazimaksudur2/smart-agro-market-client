@@ -15,6 +15,8 @@ import useCart from "../../hooks/useCart";
 import useOrders from "../../hooks/useOrders";
 import { useAuth } from "../../contexts/AuthContext";
 import StripePaymentForm from "./StripePaymentForm";
+import { updateDefaultShippingAddress } from "../../services/userService";
+import toast from "react-hot-toast";
 
 const CheckoutPage = () => {
 	const navigate = useNavigate();
@@ -31,19 +33,56 @@ const CheckoutPage = () => {
 	} = useCart();
 	const { placeOrder, loading: orderLoading } = useOrders();
 
-	const [orderData, setOrderData] = useState({
-		shippingAddress: {
-			fullName: "",
-			email: "",
-			address: "",
-			city: "",
-			state: "",
-			zipCode: "",
-			phone: "",
-		},
-		paymentMethod: "cod",
-		notes: "",
-	});
+	// Helper function to parse address
+	const parseAddress = (address) => {
+		if (!address) return { address: "", city: "", state: "", zipCode: "" };
+
+		if (typeof address === "string") {
+			// Simple parsing - you may want to enhance this based on your address format
+			const parts = address.split(", ");
+			return {
+				address: parts[0] || "",
+				city: parts[1] || "",
+				state: parts[2] || "",
+				zipCode: parts[3] || "",
+			};
+		}
+
+		if (typeof address === "object") {
+			return {
+				address: address.street || address.address || "",
+				city: address.city || "",
+				state: address.state || "",
+				zipCode: address.zip || address.zipCode || "",
+			};
+		}
+
+		return { address: "", city: "", state: "", zipCode: "" };
+	};
+
+	// Initialize order data with user defaults
+	const initializeOrderData = () => {
+		const dbUser = currentUser?.DBUser;
+		const firebaseUser = currentUser?.FirebaseUser;
+		const addressData = parseAddress(dbUser?.fullAddress || dbUser?.address);
+
+		return {
+			shippingAddress: {
+				fullName: dbUser?.name || firebaseUser?.displayName || "",
+				email: dbUser?.email || firebaseUser?.email || "",
+				address: addressData.address,
+				city: addressData.city,
+				state: addressData.state,
+				zipCode: addressData.zipCode,
+				phone: dbUser?.phoneNumber || "",
+			},
+			paymentMethod: "cod",
+			notes: "",
+		};
+	};
+
+	const [orderData, setOrderData] = useState(initializeOrderData());
+	const [saveAsDefaultAddress, setSaveAsDefaultAddress] = useState(false);
 
 	const [isSubmitting, setIsSubmitting] = useState(false);
 	const [cartChecked, setCartChecked] = useState(false);
@@ -52,6 +91,13 @@ const CheckoutPage = () => {
 	useEffect(() => {
 		loadCart();
 	}, [loadCart]);
+
+	// Re-initialize order data when user data becomes available
+	useEffect(() => {
+		if (currentUser?.DBUser || currentUser?.FirebaseUser) {
+			setOrderData(initializeOrderData());
+		}
+	}, [currentUser?.DBUser, currentUser?.FirebaseUser]);
 
 	useEffect(() => {
 		if (!loading && cartChecked) {
@@ -83,6 +129,22 @@ const CheckoutPage = () => {
 		}));
 	};
 
+	// Save default shipping address if checkbox is checked
+	const saveDefaultAddressIfRequested = async () => {
+		if (saveAsDefaultAddress && currentUser?.DBUser?.email) {
+			try {
+				await updateDefaultShippingAddress(
+					currentUser.DBUser.email,
+					orderData.shippingAddress
+				);
+				toast.success("Default shipping address updated!");
+			} catch (error) {
+				console.error("Failed to update default shipping address:", error);
+				toast.error("Order placed but failed to save default address");
+			}
+		}
+	};
+
 	const handleSubmit = async (e) => {
 		e.preventDefault();
 		setIsSubmitting(true);
@@ -106,21 +168,15 @@ const CheckoutPage = () => {
 		try {
 			setIsSubmitting(true);
 
-			// Validate items before processing
+			// Validate items before processing (API spec: only productId and quantity needed)
 			const validatedItems = items.map((item, index) => {
-				if (!item.productId || !item.name || !item.price || !item.quantity) {
+				if (!item.productId || !item.quantity) {
 					throw new Error(`Invalid item data: ${item.name || "Unknown item"}`);
 				}
 
 				return {
 					productId: item.productId,
-					name: item.name,
-					price: item.price,
 					quantity: item.quantity,
-					unit: item.unit || "piece",
-					image: item.image || "",
-					sellerId: item.sellerId || "unknown_seller",
-					sellerName: item.sellerName || "Unknown Seller",
 				};
 			});
 
@@ -134,6 +190,9 @@ const CheckoutPage = () => {
 			});
 
 			if (orderResult.success) {
+				// Save default address if requested
+				await saveDefaultAddressIfRequested();
+
 				// Clear cart after successful order
 				await clearCart();
 
@@ -152,21 +211,15 @@ const CheckoutPage = () => {
 
 	const handleCODOrder = async () => {
 		try {
-			// Validate items before processing
+			// Validate items before processing (API spec: only productId and quantity needed)
 			const validatedItems = items.map((item, index) => {
-				if (!item.productId || !item.name || !item.price || !item.quantity) {
+				if (!item.productId || !item.quantity) {
 					throw new Error(`Invalid item data: ${item.name || "Unknown item"}`);
 				}
 
 				return {
 					productId: item.productId,
-					name: item.name,
-					price: item.price,
 					quantity: item.quantity,
-					unit: item.unit || "piece",
-					image: item.image || "",
-					sellerId: item.sellerId || "unknown_seller",
-					sellerName: item.sellerName || "Unknown Seller",
 				};
 			});
 
@@ -179,6 +232,9 @@ const CheckoutPage = () => {
 			});
 
 			if (orderResult.success) {
+				// Save default address if requested
+				await saveDefaultAddressIfRequested();
+
 				// Clear cart after successful order
 				await clearCart();
 
@@ -345,7 +401,7 @@ const CheckoutPage = () => {
 												</div>
 											</div>
 										</div>
-										<div className="px-6 py-6">
+										<div className="px-6 py-6 space-y-4">
 											<div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
 												<div className="sm:col-span-2">
 													<label className="block text-sm font-semibold text-gray-700 mb-2">
@@ -483,6 +539,33 @@ const CheckoutPage = () => {
 														className="w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all duration-200"
 														placeholder="Enter your phone number"
 													/>
+												</div>
+											</div>
+
+											{/* Save as Default Address Checkbox */}
+											<div className="pt-4 border-t border-gray-200">
+												<div className="flex items-center">
+													<input
+														id="save-default-address"
+														type="checkbox"
+														checked={saveAsDefaultAddress}
+														onChange={(e) =>
+															setSaveAsDefaultAddress(e.target.checked)
+														}
+														className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
+													/>
+													<label
+														htmlFor="save-default-address"
+														className="ml-3 text-sm text-gray-700 cursor-pointer"
+													>
+														<span className="font-medium">
+															Save this address as my default shipping address
+														</span>
+														<p className="text-xs text-gray-500 mt-1">
+															This will update your profile with this shipping
+															information for future orders
+														</p>
+													</label>
 												</div>
 											</div>
 										</div>
@@ -670,22 +753,23 @@ const CheckoutPage = () => {
 										<div className="space-y-4 mb-6 max-h-80 overflow-y-auto">
 											{items.map((item) => (
 												<div
-													key={item.productId || item._id}
+													key={item.productId}
 													className="flex items-center space-x-4 p-3 bg-gray-50 rounded-lg"
 												>
 													<div className="flex-shrink-0">
 														<img
-															src={item.image}
-															alt={item.name}
+															src={item.productImage}
+															alt={item.productTitle}
 															className="w-12 h-12 rounded-lg object-cover border border-gray-200"
 														/>
 													</div>
 													<div className="flex-1 min-w-0">
 														<h4 className="text-sm font-semibold text-gray-900 truncate">
-															{item.name}
+															{item.productTitle}
 														</h4>
 														<p className="text-sm text-gray-500">
-															Qty: {item.quantity} × ৳{item.price}
+															Qty: {item.quantity} × ৳{item.price} per{" "}
+															{item.unit || "unit"}
 														</p>
 													</div>
 													<div className="text-sm font-bold text-gray-900">

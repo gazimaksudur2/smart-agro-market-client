@@ -150,7 +150,7 @@ export default function AgentApplication() {
 				status: "pending",
 			};
 
-			await apiCall("/applications", "POST", applicationData);
+			await apiCall("/api/applications", "POST", applicationData);
 
 			toast.success(
 				"Agent application submitted successfully! We'll review your application and get back to you within 5-7 business days."

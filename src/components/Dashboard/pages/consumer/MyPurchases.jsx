@@ -53,18 +53,20 @@ export default function MyPurchases() {
 		isLoading,
 		error,
 	} = useQuery(
-		["userPurchases", currentUser?.FirebaseUser?.uid],
+		["userPurchases", currentUser?.DBUser?._id],
 		async () => {
-			if (!currentUser?.FirebaseUser?.uid) return [];
+			if (!currentUser?.DBUser?._id) return [];
 			try {
-				return await apiCall(`/orders/user/${currentUser.FirebaseUser.uid}`);
+				return await apiCall(
+					`/api/orders/user/${currentUser.DBUser._id}`
+				);
 			} catch (error) {
 				console.error("Error fetching purchases:", error);
 				return [];
-			}
+			}	
 		},
 		{
-			enabled: !!currentUser?.FirebaseUser?.uid,
+			enabled: !!currentUser?.DBUser?._id,
 		}
 	);
 

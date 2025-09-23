@@ -170,7 +170,11 @@ export default function SellerApplication() {
 				status: "pending",
 			};
 
-			const response = await apiCall("/applications", "POST", applicationData);
+			const response = await apiCall(
+				"/api/applications",
+				"POST",
+				applicationData
+			);
 
 			// Check success field in response
 			if (response?.success) {
@@ -365,7 +369,7 @@ export default function SellerApplication() {
 												? "border-red-500"
 												: "border-gray-300"
 										}`}
-										placeholder="Describe your main crops/products and specializations"
+										placeholder="Describe your main crops/api/products and specializations"
 									/>
 									{errors.specialization && (
 										<p className="mt-1 text-sm text-red-600">

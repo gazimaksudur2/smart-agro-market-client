@@ -104,7 +104,7 @@ This document summarizes all the changes made to implement the comprehensive car
 - Comprehensive order summary
 - Delivery information display
 
-### 5. Sample Product Details Page (`src/components/Products/ProductDetailsPage.jsx`)
+### 5. Sample Product Details Page (`src/components/api/products/ProductDetailsPage.jsx`)
 **Purpose:** Demonstrates cart integration with product pages
 
 **Features:**
@@ -159,17 +159,17 @@ A comprehensive backend routes documentation has been created in `BACKEND_ROUTES
 - `DELETE /carts/:email` - Clear cart
 
 ### User Management Routes:
-- `GET /users/:email` - Get user details
-- `PATCH /users/:email` - Update user profile
-- `POST /users/register` - Register user
-- `GET /users/verifyUser` - Verify user exists
+- `GET /api/users/:email` - Get user details
+- `PATCH /api/users/:email` - Update user profile
+- `POST /api/users/register` - Register user
+- `GET /api/users/verifyUser` - Verify user exists
 
 ### Order Management Routes:
 - `POST /create-payment-intent` - Create Stripe payment intent
-- `POST /orders` - Create order
+- `POST /api/orders` - Create order
 
 ### Regional Data Routes:
-- `GET /regions` - Get regions and districts
+- `GET /api/regions` - Get regions and districts
 
 ## 🗄 Database Schema
 

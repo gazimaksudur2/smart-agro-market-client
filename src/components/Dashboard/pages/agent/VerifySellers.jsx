@@ -98,7 +98,7 @@ export default function VerifySellers() {
 		async () => {
 			try {
 				const response = await apiCall(
-					`/applications/agent/applications?${queryParams}`
+					`/api/applications/agent/api/applications?${queryParams}`
 				);
 				// Check if response has success field and return data accordingly
 				if (response?.success) {
@@ -130,7 +130,7 @@ export default function VerifySellers() {
 		["agentStatistics"],
 		async () => {
 			try {
-				const response = await apiCall("/applications/agent/statistics");
+				const response = await apiCall("/api/applications/agent/statistics");
 				// Check if response has success field and return statistics accordingly
 				if (response?.success) {
 					return response.statistics;
@@ -153,7 +153,9 @@ export default function VerifySellers() {
 		["agentOperationalArea"],
 		async () => {
 			try {
-				const response = await apiCall("/applications/agent/operational-area");
+				const response = await apiCall(
+					"/api/applications/agent/operational-area"
+				);
 				// Check if response has success field and return operational area accordingly
 				if (response?.success) {
 					return response.operationalArea;
@@ -175,7 +177,7 @@ export default function VerifySellers() {
 
 	const handleSellerAction = async (applicationId, action, reason = "") => {
 		try {
-			const endpoint = `/applications/${applicationId}/${action}`;
+			const endpoint = `/api/applications/${applicationId}/${action}`;
 			const body = {
 				reviewedBy: currentUser?.DBUser?._id,
 			};

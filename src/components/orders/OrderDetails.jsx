@@ -126,7 +126,7 @@ export default function OrderDetails() {
 		["orderDetails", id],
 		async () => {
 			try {
-				return await apiCall(`/orders/${id}`);
+				return await apiCall(`/api/orders/${id}`);
 			} catch (error) {
 				console.error("Error fetching order details:", error);
 				return null;
@@ -193,7 +193,7 @@ export default function OrderDetails() {
 
 	const handleStatusUpdate = async (newStatus) => {
 		try {
-			await apiCall(`/orders/${id}/status`, "PATCH", { status: newStatus });
+			await apiCall(`/api/orders/${id}/status`, "PATCH", { status: newStatus });
 			refetch();
 			alert(`Order status updated to ${newStatus}`);
 		} catch (error) {

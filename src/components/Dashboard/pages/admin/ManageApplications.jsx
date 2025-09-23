@@ -183,7 +183,7 @@ export default function ManageApplications() {
 		async () => {
 			try {
 				const response = await apiCall(
-					`/applications/all-applications?${queryParams}`
+					`/api/applications/all-applications?${queryParams}`
 				);
 				// Check if response has success field and return data accordingly
 				if (response?.success) {
@@ -215,7 +215,7 @@ export default function ManageApplications() {
 		["adminStatistics"],
 		async () => {
 			try {
-				const response = await apiCall("/applications/statistics");
+				const response = await apiCall("/api/applications/statistics");
 				// Check if response has success field and return statistics accordingly
 				if (response?.success) {
 					return response.statistics;
@@ -242,7 +242,7 @@ export default function ManageApplications() {
 		reason = ""
 	) => {
 		try {
-			const endpoint = `/applications/${applicationId}/${action}`;
+			const endpoint = `/api/applications/${applicationId}/${action}`;
 			const body = {
 				reviewedBy: currentUser?.DBUser?._id,
 			};
@@ -283,7 +283,7 @@ export default function ManageApplications() {
 	// Execute bulk action
 	const executeBulkAction = async (reason) => {
 		try {
-			const response = await apiCall("/applications/bulk-action", "PATCH", {
+			const response = await apiCall("/api/applications/bulk-action", "PATCH", {
 				applicationIds: bulkSelected,
 				action: bulkAction,
 				reason,

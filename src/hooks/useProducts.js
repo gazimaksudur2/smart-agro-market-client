@@ -39,7 +39,7 @@ const useProducts = ({
 			};
 
 			const res = await axios.get(
-				`${import.meta.env.VITE_SERVER_API_URL}/products`,
+				`${import.meta.env.VITE_SERVER_API_URL}/api/products`,
 				{ params }
 			);
 

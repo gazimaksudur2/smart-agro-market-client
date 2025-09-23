@@ -142,7 +142,7 @@ export default function VerifyProducts() {
 
 			try {
 				const response = await apiCall(
-					`/products/agent/regional?${queryParams}`
+					`/api/products/agent/regional?${queryParams}`
 				);
 				// Check if response has success field and return data accordingly
 				if (response?.success) {
@@ -186,7 +186,7 @@ export default function VerifyProducts() {
 			if (!hasOperationalArea) return null;
 
 			try {
-				const response = await apiCall("/products/agent/statistics");
+				const response = await apiCall("/api/products/agent/statistics");
 				// Check if response has success field and return statistics accordingly
 				if (response?.success) {
 					return response.statistics;
@@ -211,7 +211,7 @@ export default function VerifyProducts() {
 			if (!hasOperationalArea) return null;
 
 			try {
-				const response = await apiCall("/products/agent/operational-area");
+				const response = await apiCall("/api/products/agent/operational-area");
 				// Check if response has success field and return operational area accordingly
 				if (response?.success) {
 					return response.operationalArea;
@@ -252,13 +252,13 @@ export default function VerifyProducts() {
 			// Use correct endpoints based on action
 			switch (action) {
 				case "approve":
-					endpoint = `/products/${productId}/approve`;
+					endpoint = `/api/products/${productId}/approve`;
 					break;
 				case "reject":
-					endpoint = `/products/${productId}/reject`;
+					endpoint = `/api/products/${productId}/reject`;
 					break;
 				case "suspend":
-					endpoint = `/products/${productId}/suspend`;
+					endpoint = `/api/products/${productId}/suspend`;
 					break;
 				default:
 					throw new Error(`Invalid action: ${action}`);

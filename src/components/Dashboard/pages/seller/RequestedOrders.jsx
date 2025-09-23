@@ -79,7 +79,9 @@ export default function RequestedOrders() {
 		async () => {
 			if (!currentUser?.FirebaseUser?.uid) return [];
 			try {
-				return await apiCall(`/orders/seller/${currentUser.FirebaseUser.uid}`);
+				return await apiCall(
+					`/api/orders/seller/${currentUser.FirebaseUser.uid}`
+				);
 			} catch (error) {
 				console.error("Error fetching seller orders:", error);
 				return [];
@@ -222,7 +224,7 @@ export default function RequestedOrders() {
 
 	const handleOrderAction = async (orderId, action) => {
 		try {
-			await apiCall(`/orders/${orderId}/${action}`, "PATCH");
+			await apiCall(`/api/orders/${orderId}/${action}`, "PATCH");
 			refetch();
 			alert(`Order ${action} successfully!`);
 		} catch (error) {

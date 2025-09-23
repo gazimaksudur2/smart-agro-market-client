@@ -54,7 +54,7 @@ export default function NotFound() {
 						aria-hidden="true"
 					/>
 					<Link
-						to="/products"
+						to="/api/products"
 						className="text-sm font-medium text-gray-500 hover:text-gray-600"
 					>
 						Products

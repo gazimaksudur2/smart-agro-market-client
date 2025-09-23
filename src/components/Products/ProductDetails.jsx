@@ -60,16 +60,11 @@ export default function ProductDetails() {
 		try {
 			setIsAddingToCart(true);
 
+			// Per API spec, cart only needs: productId, price, quantity
+			// Additional UI fields should be fetched from Product API during cart display
 			const productToAdd = {
-				_id: product?.id || product?._id,
-				name: product?.title,
-				price: product?.price || product?.pricePerUnit,
-				image: product?.images?.[0] || fallbackImage,
-				category: product?.category,
-				sellerId: product?.seller?.id,
-				sellerName: product?.seller?.name,
-				unit: product?.unit,
-				minimumOrderQuantity: product?.minimumOrderQuantity || 1,
+				productId: product?._id,
+				price: product?.pricePerUnit,
 			};
 
 			await addItem(
@@ -101,16 +96,10 @@ export default function ProductDetails() {
 		try {
 			setIsBuyingNow(true);
 
+			// Per API spec, cart only needs: productId, price, quantity
 			const productToAdd = {
-				_id: product?.id || product?._id,
-				name: product?.title,
-				price: product?.price || product?.pricePerUnit,
-				image: product?.images?.[0] || fallbackImage,
-				category: product?.category,
-				sellerId: product?.seller?.id,
-				sellerName: product?.seller?.name,
-				unit: product?.unit,
-				minimumOrderQuantity: product?.minimumOrderQuantity || 1,
+				productId: product?._id,
+				price: product?.pricePerUnit,
 			};
 
 			// Add to cart first
@@ -123,7 +112,7 @@ export default function ProductDetails() {
 			navigate("/checkout", {
 				state: {
 					buyNow: true,
-					productId: product?.id || product?._id,
+					productId: product?._id,
 				},
 			});
 		} catch (error) {
@@ -149,18 +138,11 @@ export default function ProductDetails() {
 		try {
 			setIsAddingToCart(true);
 
-			// Validate and format items
+			// Per API spec: only productId, price, quantity needed for cart
 			const cartItems = items.map((item) => ({
 				productId: item._id || item.id,
-				name: item.title,
 				price: item.price || item.pricePerUnit,
 				quantity: item.quantity || item.minimumOrderQuantity || 1,
-				image: item.images?.[0] || fallbackImage,
-				category: item.category,
-				sellerId: item.seller?.id,
-				sellerName: item.seller?.name,
-				unit: item.unit,
-				minimumOrderQuantity: item.minimumOrderQuantity || 1,
 			}));
 
 			await addMultipleItems(cartItems);
@@ -180,7 +162,7 @@ export default function ProductDetails() {
 
 	useEffect(() => {
 		axios
-			.get(`${import.meta.env.VITE_SERVER_API_URL}/products/${params.id}`)
+			.get(`${import.meta.env.VITE_SERVER_API_URL}/api/products/single-product/${params.id}`)
 			.then((res) => {
 				// Check if response has success field and access product accordingly
 				if (res.data?.success) {
@@ -197,14 +179,14 @@ export default function ProductDetails() {
 	}, [params.id]);
 
 	// Helper function to get the correct field value with fallbacks
-	const getPrice = () => product?.price || product?.pricePerUnit || 0;
+	const getPrice = () => product?.pricePerUnit || 0;
 	const getStock = () => product?.stock || product?.availableStock || 0;
 	const getSeller = () => product?.seller || product?.sellerInfo || {};
 	const getLocation = () =>
 		product?.location || getSeller()?.operationalArea || {};
 	const getHarvestDate = () =>
 		product?.specifications?.harvestDate || product?.harvestedOn;
-	const getProductId = () => product?.id || product?._id;
+	const getProductId = () => product?._id;
 
 	return (
 		<div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -244,7 +226,7 @@ export default function ProductDetails() {
 					{/* Main Image */}
 					<div className="relative rounded-lg overflow-hidden bg-gray-100">
 						<img
-							src={product?.images?.[selectedImage] || fallbackImage}
+							src={product?.images?.[selectedImage]}
 							alt={product?.title}
 							className="w-full h-[400px] object-cover"
 						/>
@@ -270,7 +252,7 @@ export default function ProductDetails() {
 								}`}
 							>
 								<img
-									src={image || fallbackImage}
+									src={image}
 									alt={`${product?.title} - ${index + 1}`}
 									className="w-full h-full object-cover"
 								/>
@@ -581,7 +563,7 @@ export default function ProductDetails() {
 			</div>
 
 			{/* Admin History Section */}
-			{product?.adminHistory && product.adminHistory.length > 0 && (
+			{/* {product?.adminHistory && product.adminHistory.length > 0 && (
 				<div className="mt-8 bg-white shadow rounded-lg">
 					<div className="px-6 py-4 border-b border-gray-200">
 						<h2 className="text-xl font-semibold text-gray-900 flex items-center">
@@ -639,7 +621,7 @@ export default function ProductDetails() {
 						</div>
 					</div>
 				</div>
-			)}
+			)} */}
 		</div>
 	);
 }

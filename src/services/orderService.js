@@ -61,12 +61,12 @@ api.interceptors.response.use(
 
 /**
  * Order Service - Handles all order-related API calls
- * Compatible with backend POST /api/orders specification
+ * Compatible with backend POST /api/api/orders specification
  */
 
 /**
  * Create a new order
- * Matches backend endpoint: POST /api/orders
+ * Matches backend endpoint: POST /api/api/orders
  */
 export const createOrder = async (orderData) => {
 	try {
@@ -90,27 +90,20 @@ export const createOrder = async (orderData) => {
 			throw new Error("User authentication required");
 		}
 
-		// Format request data to match backend expectations
-		console.log(orderData);
+		// Format request data to match backend expectations (API spec format)
 		const requestData = {
 			items: orderData.items.map((item) => ({
-				productId: item.productId,
-				name: item.name,
-				price: item.price,
+				productId: item.productId || item._id,
 				quantity: item.quantity,
-				unit: item.unit,
-				image: item.image || "",
-				sellerId: item.seller?.sellerId || "unknown_seller",
-				sellerName: item.seller?.name || "Unknown Seller",
 			})),
-			shippingAddress: {
+			shippingDetails: {
 				fullName: orderData.shippingAddress.fullName,
 				email: orderData.shippingAddress.email,
 				phone: orderData.shippingAddress.phone,
 				address: orderData.shippingAddress.address,
 				city: orderData.shippingAddress.city,
 				state: orderData.shippingAddress.state,
-				zipCode: orderData.shippingAddress.zipCode,
+				zip: orderData.shippingAddress.zipCode,
 			},
 			paymentMethod: orderData.paymentMethod,
 			paymentDetails: orderData.paymentDetails || {},
@@ -189,7 +182,7 @@ export const getSellerOrders = async (sellerId, params = {}) => {
 export const getAllOrders = async (params = {}) => {
 	try {
 		const queryParams = new URLSearchParams(params).toString();
-		const response = await api.get(`/api/admin/orders?${queryParams}`);
+		const response = await api.get(`/api/orders/api/admin/all?${queryParams}`);
 		return response.data;
 	} catch (error) {
 		throw error;

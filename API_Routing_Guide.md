@@ -1,575 +1,310 @@
-# Smart Agro Connect API Routing Guide
+## Smart Agro Connect – Cart API Documentation
 
-## Base Configuration
+Base path: `/api`
 
-```javascript
-const BASE_URL = 'http://localhost:5000'; // or your production URL
-const API_CONFIG = {
-  baseURL: BASE_URL,
-  timeout: 10000,
-  withCredentials: true, // Important for cookie-based auth
-  headers: {
-    'Content-Type': 'application/json',
-  }
-};
-```
+Authentication
+- All endpoints require a valid session/JWT (sent via cookie or Authorization header).
+- Authorization: Users may only access/modify their own cart unless they have the `admin` role.
 
-## Authentication & Authorization
-
-### Public Routes (No Auth Required)
-
-#### User Registration
-```javascript
-POST /users/register
-Body: {
-  name: string,
-  email: string,
-  password: string,
-  provider?: string, // 'local', 'google', 'facebook'
-  role?: string, // 'consumer' (default)
-  phoneNumber?: string,
-  address?: string,
-  firebaseUID?: string,
-  profilePicture?: string
-}
-Response: {
-  success: boolean,
-  token: string,
-  user: { id, name, email, role }
-}
-```
-
-#### User Login
-```javascript
-POST /users/login
-Body: {
-  email: string,
-  password: string
-}
-Response: {
-  success: boolean,
-  token: string,
-  user: { id, name, email, role }
-}
-```
-
-#### User Logout
-```javascript
-POST /users/logout
-Response: {
-  success: boolean,
-  message: string
-}
-```
-
-#### Verify User Exists
-```javascript
-GET /users/verifyUser?email={email}
-Response: {
-  success: boolean,
-  message: string
-}
-```
-
-#### Get All Agents
-```javascript
-GET /users/agents
-Response: {
-  success: boolean,
-  agents: Array<User>
-}
-```
-
-#### Get Agent by Region
-```javascript
-GET /users/agents/{region}
-Response: {
-  success: boolean,
-  agent: User
-}
-```
-
-### Protected Routes (Auth Required)
-
-#### Get User Profile
-```javascript
-GET /users/profile
-Headers: { Authorization: 'Bearer {token}' } // or use cookies
-Response: {
-  success: boolean,
-  user: User
-}
-```
-
-#### Get User by Email
-```javascript
-GET /users/{email}
-Headers: { Authorization: 'Bearer {token}' }
-Response: {
-  success: boolean,
-  user: User
-}
-```
-
-#### Update User Profile
-```javascript
-PATCH /users/{email}
-Headers: { Authorization: 'Bearer {token}' }
-Body: {
-  name?: string,
-  phoneNumber?: string,
-  address?: string,
-  profilePicture?: string
-  // Note: password, email, firebaseUID, _id cannot be updated via this endpoint
-}
-Response: {
-  success: boolean,
-  message: string,
-  user: User
-}
-```
-
-### Admin Only Routes
-
-#### Update User Role
-```javascript
-PATCH /users/role
-Headers: { Authorization: 'Bearer {token}' }
-Body: {
-  userId: string,
-  role: 'admin' | 'agent' | 'seller' | 'consumer'
-}
-Response: {
-  success: boolean,
-  user: User
-}
-```
-
-## Application Management
-
-### User Routes
-
-#### Submit Application
-```javascript
-POST /applications
-Headers: { Authorization: 'Bearer {token}' }
-Body: {
-  applicantId: string,
-  applicantName: string,
-  applicantEmail: string,
-  applicantImg: string,
-  applicationType: 'seller-application' | 'agent-application' | 'admin-application',
-  formData: {
-    // Flexible object based on application type
-    // For seller: businessName, businessRegistration, etc.
-    // For agent: experience, certifications, etc.
-    // For admin: reason, qualifications, etc.
-  },
-  operationalArea: {
-    region: string,
-    district: string
-  }
-}
-Response: {
-  success: boolean,
-  message: string,
-  application: Application
-}
-```
-
-#### Get My Applications
-```javascript
-GET /applications/my-applications
-Headers: { Authorization: 'Bearer {token}' }
-Response: {
-  success: boolean,
-  applications: Array<Application>
-}
-```
-
-#### Get Application by ID
-```javascript
-GET /applications/{id}
-Headers: { Authorization: 'Bearer {token}' }
-Response: {
-  success: boolean,
-  application: Application
-}
-```
-
-### Admin/Reviewer Routes
-
-#### Get All Applications
-```javascript
-GET /applications?status={status}&type={type}&page={page}&limit={limit}
-Headers: { Authorization: 'Bearer {token}' }
-Query Parameters:
-- status: 'pending' | 'approved' | 'rejected' | 'in-review' (optional)
-- type: 'seller-application' | 'agent-application' | 'admin-application' (optional)
-- page: number (default: 1)
-- limit: number (default: 10)
-Response: {
-  success: boolean,
-  applications: Array<Application>,
-  totalPages: number,
-  currentPage: number,
-  totalApplications: number
-}
-```
-
-#### Update Application Status
-```javascript
-PUT /applications/{id}/status
-Headers: { Authorization: 'Bearer {token}' }
-Body: {
-  status: 'pending' | 'approved' | 'rejected' | 'in-review',
-  reviewNotes?: string
-}
-Response: {
-  success: boolean,
-  message: string,
-  application: Application
-}
-```
-
-#### Add Application Note
-```javascript
-POST /applications/{id}/notes
-Headers: { Authorization: 'Bearer {token}' }
-Body: {
-  noteText: string
-}
-Response: {
-  success: boolean,
-  message: string,
-  application: Application
-}
-```
-
-## Regional Data
-
-#### Get All Regions
-```javascript
-GET /regions
-Response: {
-  success: boolean,
-  regions: Array<{
-    region: string,
-    districts: Array<string>
-  }>
-}
-```
-
-#### Get Districts by Region
-```javascript
-GET /regions/{regionName}
-Response: {
-  success: boolean,
-  districts: Array<string>
-}
-```
-
-## Cart Management
-
-#### Add Item to Cart
-```javascript
-POST /carts/add
-Headers: { Authorization: 'Bearer {token}' }
-Body: {
-  productId: string,
-  quantity: number,
-  price: number
-}
-Response: {
-  success: boolean,
-  message: string,
-  cart: Cart
-}
-```
-
-#### Get User Cart
-```javascript
-GET /carts
-Headers: { Authorization: 'Bearer {token}' }
-Response: {
-  success: boolean,
-  cart: Cart
-}
-```
-
-#### Update Cart Item
-```javascript
-PUT /carts/update
-Headers: { Authorization: 'Bearer {token}' }
-Body: {
-  productId: string,
-  quantity: number
-}
-Response: {
-  success: boolean,
-  message: string,
-  cart: Cart
-}
-```
-
-#### Remove Item from Cart
-```javascript
-DELETE /carts/remove/{productId}
-Headers: { Authorization: 'Bearer {token}' }
-Response: {
-  success: boolean,
-  message: string,
-  cart: Cart
-}
-```
-
-#### Clear Cart
-```javascript
-DELETE /carts/clear
-Headers: { Authorization: 'Bearer {token}' }
-Response: {
-  success: boolean,
-  message: string
-}
-```
-
-## Payment Processing
-
-#### Create Payment Intent
-```javascript
-POST /create-payment-intent
-Headers: { Authorization: 'Bearer {token}' }
-Body: {
-  amount: number, // in cents
-  currency?: string, // default: 'usd'
-  metadata?: object
-}
-Response: {
-  success: boolean,
-  clientSecret: string,
-  paymentIntentId: string
-}
-```
-
-#### Verify Payment
-```javascript
-POST /verify-payment
-Headers: { Authorization: 'Bearer {token}' }
-Body: {
-  paymentIntentId: string
-}
-Response: {
-  success: boolean,
-  message: string,
-  paymentStatus: string
-}
-```
-
-## Orders Management
-
-#### Create Order
-```javascript
-POST /orders
-Headers: { Authorization: 'Bearer {token}' }
-Body: {
-  items: Array<{
-    productId: string,
-    quantity: number,
-    price: number
-  }>,
-  shippingAddress: {
-    street: string,
-    city: string,
-    state: string,
-    zipCode: string,
-    country: string
-  },
-  paymentMethod: string,
-  paymentIntentId?: string
-}
-Response: {
-  success: boolean,
-  message: string,
-  order: Order
-}
-```
-
-#### Get User Orders
-```javascript
-GET /orders
-Headers: { Authorization: 'Bearer {token}' }
-Response: {
-  success: boolean,
-  orders: Array<Order>
-}
-```
-
-#### Get Order by ID
-```javascript
-GET /orders/{id}
-Headers: { Authorization: 'Bearer {token}' }
-Response: {
-  success: boolean,
-  order: Order
-}
-```
-
-## Products Management
-
-#### Get All Products
-```javascript
-GET /products?page={page}&limit={limit}&category={category}&search={search}
-Query Parameters:
-- page: number (default: 1)
-- limit: number (default: 10)
-- category: string (optional)
-- search: string (optional)
-Response: {
-  success: boolean,
-  products: Array<Product>,
-  totalPages: number,
-  currentPage: number,
-  totalProducts: number
-}
-```
-
-#### Get Product by ID
-```javascript
-GET /products/{id}
-Response: {
-  success: boolean,
-  product: Product
-}
-```
-
-#### Create Product (Seller/Admin only)
-```javascript
-POST /products
-Headers: { Authorization: 'Bearer {token}' }
-Body: {
-  name: string,
-  description: string,
-  price: number,
-  category: string,
-  images: Array<string>,
-  inventory: number,
-  unit: string
-}
-Response: {
-  success: boolean,
-  message: string,
-  product: Product
-}
-```
-
-## Error Handling
-
-All API responses follow this error format:
-
-```javascript
+Error format (all endpoints)
+```json
 {
-  success: false,
-  message: string,
-  error?: string // Only in development mode
+  "success": false,
+  "message": "Human-readable error",
+  "error": "Optional technical details"
 }
 ```
 
-Common HTTP Status Codes:
-- `200`: Success
-- `201`: Created
-- `400`: Bad Request
-- `401`: Unauthorized
-- `403`: Forbidden
-- `404`: Not Found
-- `500`: Internal Server Error
+---
 
-## Authentication Implementation
+## Data Models (Effective Shapes)
 
-### Using Axios (Recommended)
-
-```javascript
-import axios from 'axios';
-
-const api = axios.create({
-  baseURL: 'http://localhost:5000',
-  withCredentials: true,
-});
-
-// Add request interceptor for token
-api.interceptors.request.use((config) => {
-  const token = localStorage.getItem('token');
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
-  }
-  return config;
-});
-
-// Add response interceptor for error handling
-api.interceptors.response.use(
-  (response) => response,
-  (error) => {
-    if (error.response?.status === 401) {
-      // Handle unauthorized access
-      localStorage.removeItem('token');
-      window.location.href = '/login';
+Cart (persisted)
+```json
+{
+  "userId": "string",
+  "userEmail": "string",
+  "items": [
+    {
+      "productId": "string",
+      "price": 120,
+      "quantity": 2,
+      "addedAt": "2025-01-01T00:00:00.000Z"
     }
-    return Promise.reject(error);
-  }
-);
-
-export default api;
+  ],
+  "totalItems": 2,
+  "subtotal": 240,
+  "deliveryCharge": 0,
+  "totalAmount": 240,
+  "createdAt": "ISODate",
+  "updatedAt": "ISODate",
+  "lastUpdated": "ISODate"
+}
 ```
 
-### Usage Examples
-
-```javascript
-// Login
-const login = async (email, password) => {
-  try {
-    const response = await api.post('/users/login', { email, password });
-    localStorage.setItem('token', response.data.token);
-    return response.data;
-  } catch (error) {
-    console.error('Login failed:', error.response?.data?.message);
-    throw error;
-  }
-};
-
-// Submit Application
-const submitApplication = async (applicationData) => {
-  try {
-    const response = await api.post('/applications', applicationData);
-    return response.data;
-  } catch (error) {
-    console.error('Application submission failed:', error.response?.data?.message);
-    throw error;
-  }
-};
-
-// Get Products
-const getProducts = async (page = 1, limit = 10) => {
-  try {
-    const response = await api.get(`/products?page=${page}&limit=${limit}`);
-    return response.data;
-  } catch (error) {
-    console.error('Failed to fetch products:', error.response?.data?.message);
-    throw error;
-  }
-};
+Cart item in responses
+```json
+{
+  "productId": "string",
+  "price": 120,
+  "quantity": 2,
+  "addedAt": "ISODate",
+  "totalPrice": 240 // derived = price * quantity
+}
 ```
 
-## Important Notes
+Notes
+- The cart stores `productId`, `price`, and `quantity`. UI-facing fields (title, image, etc.) should be fetched separately from the Product API when rendering.
+- Price sent by the client is accepted into the cart; final pricing for checkout is validated and derived from Product at order creation time.
 
-1. **Authentication**: The API uses JWT tokens stored in HTTP-only cookies for security. Make sure to set `withCredentials: true` in your HTTP client.
+---
 
-2. **CORS**: The server is configured to accept requests from specified origins. Update the CORS configuration if you're running the client on a different port.
+## Endpoints
 
-3. **Rate Limiting**: Consider implementing rate limiting on the client side to avoid overwhelming the server.
+### GET /api/cart/:email
+Retrieve a user's cart. If the cart does not exist, an empty one is created and returned.
 
-4. **Error Handling**: Always implement proper error handling for network requests and API errors.
+Auth: required (user must match `:email` or be `admin`)
 
-5. **Data Validation**: Validate data on the client side before sending to the API, but remember that server-side validation is the source of truth.
+Path params
+- `email` (string) – User's email address
 
-6. **File Uploads**: For file uploads (like profile pictures), use `multipart/form-data` content type.
+Response 200
+```json
+{
+  "success": true,
+  "cart": {
+    "items": [
+      {
+        "productId": "65f...",
+        "price": 120,
+        "quantity": 2,
+        "addedAt": "2025-01-01T00:00:00.000Z",
+        "totalPrice": 240
+      }
+    ],
+    "totalItems": 2,
+    "subtotal": 240,
+    "deliveryCharge": 0,
+    "totalAmount": 240
+  }
+}
+```
 
-7. **Real-time Updates**: Consider implementing WebSocket or Server-Sent Events for real-time application status updates. 
+Possible errors
+- 401 Unauthorized (email mismatch)
+
+---
+
+### POST /api/cart/add
+Add a single item to the cart. If the product already exists in the cart, the quantity is incremented (merge behavior).
+
+Auth: required
+
+Request body
+```json
+{
+  "email": "user@example.com",
+  "productId": "65f...", // or "_id"
+  "price": 120,
+  "quantity": 1
+}
+```
+
+Response 200
+```json
+{
+  "success": true,
+  "message": "Item added to cart successfully",
+  "cart": { /* full cart object as in GET */ }
+}
+```
+
+Validations
+- `email` must match the authenticated user (or requester is admin)
+- `productId` required
+- `price` > 0
+- `quantity` > 0
+
+---
+
+### POST /api/cart/add-multiple
+Add multiple items in one request. Items with the same productId are merged by increasing quantity.
+
+Auth: required
+
+Request body
+```json
+{
+  "email": "user@example.com",
+  "items": [
+    { "productId": "65f...", "price": 120, "quantity": 2 },
+    { "_id": "65a...", "price": 50, "quantity": 3 }
+  ]
+}
+```
+
+Response 200
+```json
+{
+  "success": true,
+  "message": "Items added to cart successfully (X new, Y merged)",
+  "cart": { /* full cart */ }
+}
+```
+
+Validations
+- `email` must match requester
+- `items` must be a non-empty array
+- Each item must include `productId` (or `_id`), `price` > 0, `quantity` > 0
+
+---
+
+### PUT /api/cart/update
+Update the quantity of a single product in the cart.
+
+Auth: required
+
+Request body
+```json
+{
+  "email": "user@example.com",
+  "productId": "65f...",
+  "quantity": 5
+}
+```
+
+Response 200
+```json
+{
+  "success": true,
+  "message": "Cart updated successfully",
+  "cart": { /* full cart */ }
+}
+```
+
+Validations
+- `quantity` must be > 0
+
+---
+
+### DELETE /api/cart/remove
+Remove a single product from the cart.
+
+Auth: required
+
+Request body
+```json
+{
+  "email": "user@example.com",
+  "productId": "65f..."
+}
+```
+
+Response 200
+```json
+{
+  "success": true,
+  "message": "Item \"65f...\" removed from cart",
+  "cart": { /* full cart */ }
+}
+```
+
+---
+
+### DELETE /api/cart/clear/:email
+Remove all items from a user's cart.
+
+Auth: required
+
+Path params
+- `email` (string)
+
+Response 200
+```json
+{
+  "success": true,
+  "message": "Cart cleared successfully (N items removed)",
+  "cart": { /* now-empty cart */ }
+}
+```
+
+---
+
+### POST /api/cart/batch-update
+Perform multiple operations (add, update, remove) atomically. If any validation fails, no changes are applied.
+
+Auth: required
+
+Request body
+```json
+{
+  "email": "user@example.com",
+  "operations": [
+    { "type": "add", "item": { "productId": "65f...", "price": 120, "quantity": 1 } },
+    { "type": "update", "productId": "65f...", "quantity": 3 },
+    { "type": "remove", "productId": "65a..." }
+  ]
+}
+```
+
+Response 200
+```json
+{
+  "success": true,
+  "message": "Batch update completed successfully (3 operations processed)",
+  "cart": { /* full cart */ },
+  "operationResults": [
+    "Added 65f... (qty: 1)",
+    "Updated <productId>: 2 → 3",
+    "Removed 65a..."
+  ]
+}
+```
+
+Validations
+- Each operation is validated before processing; errors returned collectively.
+
+---
+
+### POST /api/cart/preview-merge
+Preview how a set of items would merge into the current cart (no changes applied).
+
+Auth: required
+
+Request body
+```json
+{
+  "email": "user@example.com",
+  "newItems": [ { "productId": "65f...", "quantity": 2 }, { "_id": "65a...", "quantity": 1 } ]
+}
+```
+
+Response 200
+```json
+{
+  "success": true,
+  "preview": {
+    "currentItems": 3,
+    "newItems": 2,
+    "finalItems": 4,
+    "mergedItems": 1,
+    "totalQuantityIncrease": 3,
+    "mergeDetails": [
+      { "productId": "65f...", "action": "merge", "currentQuantity": 1, "addingQuantity": 2, "finalQuantity": 3 },
+      { "productId": "65a...", "action": "add", "quantity": 1 }
+    ]
+  }
+}
+```
+
+---
+
+## Integration Notes (Frontend)
+
+- Always send `email` matching the authenticated user for cart operations.
+- Keep local product metadata (title, image) in the frontend store; the cart API returns just identifiers and numeric quantities.
+- Treat cart prices as provisional; the final price used for payment is validated server-side against the Product when creating an order.
+- Debounce frequent quantity updates to avoid excessive requests.
+
+

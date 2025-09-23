@@ -101,7 +101,7 @@ export default function ManageUsers() {
 		["adminUsers", queryParams],
 		async () => {
 			try {
-				const response = await apiCall(`/admin/users?${queryParams}`);
+				const response = await apiCall(`/api/admin/api/users?${queryParams}`);
 				return response;
 			} catch (error) {
 				console.error("Error fetching users:", error);
@@ -118,7 +118,7 @@ export default function ManageUsers() {
 	// Handle user actions
 	const handleUserAction = async (userId, action, reason = "") => {
 		try {
-			await apiCall(`/admin/users/${userId}/${action}`, "PATCH", {
+			await apiCall(`/api/admin/api/users/${userId}/${action}`, "PATCH", {
 				reason,
 				adminId: currentUser?.DBUser?._id,
 			});
@@ -147,7 +147,7 @@ export default function ManageUsers() {
 		try {
 			await Promise.all(
 				bulkSelected.map((userId) =>
-					apiCall(`/users/${userId}/${bulkAction}`, "PATCH", {
+					apiCall(`/api/users/${userId}/${bulkAction}`, "PATCH", {
 						reason,
 						adminId: currentUser?.DBUser?._id,
 					})

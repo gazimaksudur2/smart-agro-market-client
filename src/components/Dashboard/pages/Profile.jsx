@@ -162,7 +162,7 @@ export default function Profile() {
 
 			// API call to update user data in your backend
 			const response = await axios.patch(
-				`${apiBaseUrl}/users/${user.email}`,
+				`${apiBaseUrl}/api/users/${user.email}`,
 				updateData,
 				{
 					withCredentials: true,
@@ -350,7 +350,7 @@ export default function Profile() {
 
 			// Update profile picture in your backend database first
 			const response = await axios.patch(
-				`${apiBaseUrl}/users/${user.email}`, // Ensure this endpoint exists in your backend
+				`${apiBaseUrl}/api/users/${user.email}`, // Ensure this endpoint exists in your backend
 				{ profilePicture: uploadedImageUrl },
 				{
 					withCredentials: true,

@@ -100,7 +100,9 @@ export default function ManageProducts() {
 		["adminProducts", queryParams],
 		async () => {
 			try {
-				const response = await apiCall(`/products/admin/all?${queryParams}`);
+				const response = await apiCall(
+					`/api/products/api/admin/all?${queryParams}`
+				);
 				// Check if response has success field and return data accordingly
 				if (response?.success) {
 					return {
@@ -129,7 +131,7 @@ export default function ManageProducts() {
 		["adminProductStatistics"],
 		async () => {
 			try {
-				const response = await apiCall("/products/admin/statistics");
+				const response = await apiCall("/api/products/api/admin/statistics");
 				// Check if response has success field and return statistics accordingly
 				if (response?.success) {
 					return response.statistics;
@@ -150,7 +152,7 @@ export default function ManageProducts() {
 	// Handle product actions
 	const handleProductAction = async (productId, action, reason = "") => {
 		try {
-			const endpoint = `/products/admin/${action}/${productId}`;
+			const endpoint = `/api/products/api/admin/${action}/${productId}`;
 			const body = {
 				reviewedBy: currentUser?.DBUser?._id,
 			};
@@ -189,7 +191,7 @@ export default function ManageProducts() {
 	// Execute bulk action
 	const executeBulkAction = async (reason) => {
 		try {
-			const response = await apiCall("/products/bulk-action", "PATCH", {
+			const response = await apiCall("/api/products/bulk-action", "PATCH", {
 				productIds: bulkSelected,
 				action: bulkAction,
 				reason,

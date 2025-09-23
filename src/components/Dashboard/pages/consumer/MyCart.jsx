@@ -18,18 +18,7 @@ import useCart from "../../../../hooks/useCart";
 import toast from "react-hot-toast";
 
 const MyCart = () => {
-	const {
-		items: originalItems,
-		loading,
-		error,
-		totalAmount: originalTotalAmount,
-		totalItems: originalTotalItems,
-		updateItem,
-		removeItem,
-		clearCart,
-		loadCart,
-		batchUpdate,
-	} = useCart();
+	const { items, loading, error, clearCart, loadCart, batchUpdate } = useCart();
 
 	// Draft state for local changes
 	const [draftItems, setDraftItems] = useState([]);
@@ -43,17 +32,17 @@ const MyCart = () => {
 
 	// Initialize draft items when original items change
 	useEffect(() => {
-		setDraftItems([...originalItems]);
+		setDraftItems([...items]);
 		setHasChanges(false);
 
 		// Initialize temp quantities
 		const initialQuantities = {};
-		originalItems.forEach((item) => {
+		items.forEach((item) => {
 			const itemId = item.productId || item._id;
 			initialQuantities[itemId] = item.quantity;
 		});
 		setTempQuantities(initialQuantities);
-	}, [originalItems]);
+	}, [items]);
 
 	useEffect(() => {
 		loadCart();
@@ -74,13 +63,13 @@ const MyCart = () => {
 
 	// Check if there are unsaved changes
 	const checkForChanges = (newDraftItems) => {
-		if (newDraftItems.length !== originalItems.length) {
+		if (newDraftItems.length !== items.length) {
 			setHasChanges(true);
 			return;
 		}
 
 		const hasQuantityChanges = newDraftItems.some((draftItem) => {
-			const originalItem = originalItems.find(
+			const originalItem = items.find(
 				(item) =>
 					(item.productId || item._id) ===
 					(draftItem.productId || draftItem._id)
@@ -93,7 +82,24 @@ const MyCart = () => {
 
 	// Draft quantity change (local only)
 	const handleDraftQuantityChange = (productId, newQuantity) => {
-		if (newQuantity < 1) return;
+		// Find the current item to check minimum order quantity
+		const currentItem = draftItems.find(
+			(item) => (item.productId || item._id) === productId
+		);
+
+		if (!currentItem) return;
+
+		const minQuantity = currentItem.minimumOrderQuantity || 1;
+
+		// Don't allow quantity to go below minimum order quantity
+		if (newQuantity < minQuantity) {
+			toast.error(
+				`Minimum order quantity is ${minQuantity} ${
+					currentItem.unit || "units"
+				}`
+			);
+			return;
+		}
 
 		const updatedDraftItems = draftItems.map((item) => {
 			const itemId = item.productId || item._id;
@@ -149,8 +155,14 @@ const MyCart = () => {
 
 		if (!currentItem) return;
 
-		if (newQuantity < 1) {
-			toast.error("Quantity must be at least 1");
+		const minQuantity = currentItem.minimumOrderQuantity || 1;
+
+		if (newQuantity < minQuantity) {
+			toast.error(
+				`Quantity must be at least ${minQuantity} ${
+					currentItem.unit || "units"
+				} (minimum order quantity)`
+			);
 			setTempQuantities((prev) => ({
 				...prev,
 				[productId]: currentItem.quantity,
@@ -196,7 +208,7 @@ const MyCart = () => {
 			const operations = [];
 
 			// Check for removed items
-			originalItems.forEach((originalItem) => {
+			items.forEach((originalItem) => {
 				const itemId = originalItem.productId || originalItem._id;
 				const draftItem = draftItems.find(
 					(item) => (item.productId || item._id) === itemId
@@ -214,7 +226,7 @@ const MyCart = () => {
 			// Check for quantity updates
 			draftItems.forEach((draftItem) => {
 				const itemId = draftItem.productId || draftItem._id;
-				const originalItem = originalItems.find(
+				const originalItem = items.find(
 					(item) => (item.productId || item._id) === itemId
 				);
 
@@ -247,12 +259,12 @@ const MyCart = () => {
 		if (!hasChanges) return;
 
 		if (window.confirm("Discard all unsaved changes?")) {
-			setDraftItems([...originalItems]);
+			setDraftItems([...items]);
 			setHasChanges(false);
 
 			// Reset temp quantities
 			const resetQuantities = {};
-			originalItems.forEach((item) => {
+			items.forEach((item) => {
 				const itemId = item.productId || item._id;
 				resetQuantities[itemId] = item.quantity;
 			});
@@ -424,9 +436,9 @@ const MyCart = () => {
 							</h2>
 							<div className="space-y-4">
 								{draftItems.map((item) => {
-									const itemId = item.productId || item._id;
+									const itemId = item.productId;
 									const isEditing = editingQuantity[itemId];
-									const originalItem = originalItems.find(
+									const originalItem = items.find(
 										(orig) => (orig.productId || orig._id) === itemId
 									);
 									const hasItemChanged =
@@ -441,20 +453,25 @@ const MyCart = () => {
 										>
 											{/* Product Image */}
 											<div className="flex-shrink-0">
-												<img
+												{/* <img
 													className="h-20 w-20 rounded-lg object-cover"
 													src={item.image || "/placeholder-image.jpg"}
 													alt={item.name}
 													onError={(e) => {
 														e.target.src = "/placeholder-image.jpg";
 													}}
+												/> */}
+												<img
+													className="h-20 w-20 rounded-lg object-cover"
+													src={item.productImage || "/placeholder-image.jpg"}
+													alt={item.productTitle}
 												/>
 											</div>
 
 											{/* Product Details */}
 											<div className="flex-1 min-w-0">
 												<h3 className="text-base font-medium text-gray-900 truncate">
-													{item.name}
+													{item.productTitle}
 													{hasItemChanged && (
 														<span className="ml-2 inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-yellow-100 text-yellow-800">
 															Modified
@@ -464,21 +481,19 @@ const MyCart = () => {
 												<p className="text-sm text-gray-500">
 													৳{item.price} per {item.unit || "unit"}
 												</p>
-												{item.category && (
-													<p className="text-sm text-gray-400">
-														{item.category}
-													</p>
-												)}
-												{item.sellerName && (
-													<p className="text-xs text-gray-400">
-														Seller: {item.sellerName}
-													</p>
-												)}
 												{item.minimumOrderQuantity &&
 													item.minimumOrderQuantity > 1 && (
-														<p className="text-xs text-orange-600">
+														<p
+															className={`text-xs ${
+																item.quantity === item.minimumOrderQuantity
+																	? "text-red-600 font-medium"
+																	: "text-orange-600"
+															}`}
+														>
 															Min order: {item.minimumOrderQuantity}{" "}
 															{item.unit || "units"}
+															{item.quantity === item.minimumOrderQuantity &&
+																" (at minimum)"}
 														</p>
 													)}
 											</div>
@@ -490,7 +505,7 @@ const MyCart = () => {
 													<div className="flex items-center space-x-2">
 														<input
 															type="number"
-															min="1"
+															min={item.minimumOrderQuantity || 1}
 															value={tempQuantities[itemId] || ""}
 															onChange={(e) =>
 																handleQuantityInputChange(
@@ -533,8 +548,19 @@ const MyCart = () => {
 																	item.quantity - 1
 																)
 															}
-															disabled={item.quantity <= 1}
+															disabled={
+																item.quantity <=
+																(item.minimumOrderQuantity || 1)
+															}
 															className="p-2 rounded-full hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
+															title={
+																item.quantity <=
+																(item.minimumOrderQuantity || 1)
+																	? `Minimum order quantity is ${
+																			item.minimumOrderQuantity || 1
+																	  } ${item.unit || "units"}`
+																	: "Decrease quantity"
+															}
 														>
 															<FiMinus className="h-4 w-4" />
 														</button>

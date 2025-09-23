@@ -19,7 +19,7 @@ export default function Home() {
 		"featuredProducts",
 		async () => {
 			try {
-				const { data } = await axios.get(`${apiBaseUrl}/products?limit=4`);
+				const { data } = await axios.get(`${apiBaseUrl}/api/products?limit=4`);
 
 				// Check if response has success field and return products accordingly
 				if (data?.success) {

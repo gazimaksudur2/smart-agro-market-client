@@ -96,7 +96,7 @@ export default function MyProducts() {
 
 			try {
 				const response = await apiCall(
-					`/products/seller/${currentUser.FirebaseUser.email}`
+					`/api/products/seller/${currentUser.FirebaseUser.email}`
 				);
 				// Check if response has success field and return products accordingly
 				if (response?.success) {
@@ -125,7 +125,7 @@ export default function MyProducts() {
 	const handleDeleteProduct = async (productId) => {
 		if (window.confirm("Are you sure you want to delete this product?")) {
 			try {
-				const response = await apiCall(`/products/${productId}`, "DELETE");
+				const response = await apiCall(`/api/products/${productId}`, "DELETE");
 
 				// Check success field in response
 				if (response?.success) {

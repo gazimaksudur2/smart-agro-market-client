@@ -61,6 +61,7 @@ api.interceptors.response.use(
 
 /**
  * Get user's cart from database
+ * Matches API spec: GET /api/cart/:email
  */
 export const getCartFromDB = async (email) => {
 	try {
@@ -73,12 +74,15 @@ export const getCartFromDB = async (email) => {
 
 /**
  * Add single item to cart
+ * Matches API spec: POST /api/cart/add
  */
 export const addItemToDB = async (email, item) => {
 	try {
 		const response = await api.post("/api/cart/add", {
 			email,
-			...item,
+			productId: item._id || item.productId,
+			price: item.price,
+			quantity: item.quantity,
 		});
 		return response.data;
 	} catch (error) {
@@ -88,6 +92,7 @@ export const addItemToDB = async (email, item) => {
 
 /**
  * Add multiple items to cart (merges with existing items)
+ * Matches API spec: POST /api/cart/add-multiple
  */
 export const addMultipleItemsToCart = async (email, items) => {
 	try {
@@ -103,6 +108,7 @@ export const addMultipleItemsToCart = async (email, items) => {
 
 /**
  * Update cart item quantity
+ * Matches API spec: PUT /api/cart/update
  */
 export const updateCartItemInDB = async (email, productId, quantity) => {
 	try {
@@ -119,6 +125,7 @@ export const updateCartItemInDB = async (email, productId, quantity) => {
 
 /**
  * Remove item from cart
+ * Matches API spec: DELETE /api/cart/remove
  */
 export const removeCartItemFromDB = async (email, productId) => {
 	try {
@@ -133,6 +140,7 @@ export const removeCartItemFromDB = async (email, productId) => {
 
 /**
  * Clear entire cart
+ * Matches API spec: DELETE /api/cart/clear/:email
  */
 export const clearCartInDB = async (email) => {
 	try {
@@ -145,6 +153,7 @@ export const clearCartInDB = async (email) => {
 
 /**
  * Batch update multiple cart items
+ * Matches API spec: POST /api/cart/batch-update
  */
 export const batchUpdateCart = async (email, operations) => {
 	try {
@@ -160,12 +169,19 @@ export const batchUpdateCart = async (email, operations) => {
 
 /**
  * Preview cart merge without saving
+ * Matches API spec: POST /api/cart/preview-merge
  */
 export const previewCartMerge = async (email, newItems) => {
 	try {
+		// Transform items to match API specification
+		const transformedItems = newItems.map((item) => ({
+			productId: item._id || item.productId,
+			quantity: item.quantity,
+		}));
+
 		const response = await api.post("/api/cart/preview-merge", {
 			email,
-			items: newItems,
+			newItems: transformedItems,
 		});
 		return response.data;
 	} catch (error) {
@@ -175,6 +191,7 @@ export const previewCartMerge = async (email, newItems) => {
 
 /**
  * Get cart summary (totals, item count, etc.)
+ * Uses same endpoint as getCartFromDB: GET /api/cart/:email
  */
 export const getCartSummary = async (email) => {
 	try {
@@ -187,6 +204,7 @@ export const getCartSummary = async (email) => {
 
 /**
  * Save entire cart to database (replaces existing cart)
+ * Uses add-multiple endpoint: POST /api/cart/add-multiple
  */
 export const saveCartToDB = async (email, cartItems) => {
 	try {

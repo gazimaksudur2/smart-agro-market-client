@@ -105,7 +105,7 @@ export default function Analytics() {
 		refetch,
 	} = useQuery(["analytics", timeRange], async () => {
 		try {
-			return await apiCall(`/admin/analytics?range=${timeRange}`);
+			return await apiCall(`/api/admin/analytics?range=${timeRange}`);
 		} catch (error) {
 			console.error("Error fetching analytics:", error);
 			return null;
