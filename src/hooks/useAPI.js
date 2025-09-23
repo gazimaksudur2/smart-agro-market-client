@@ -3,7 +3,7 @@ import axios from "axios";
 import { useAuth } from "../contexts/AuthContext";
 
 /**
- * Hook for making API calls with automatic handling of authentication
+ * Hook for making API calls with automatic handling of authentication errors.
  */
 export const useAPI = () => {
 	const [loading, setLoading] = useState(false);
