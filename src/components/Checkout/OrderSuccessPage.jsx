@@ -26,7 +26,7 @@ export default function OrderSuccessPage() {
 
 	// If no order details, redirect to products
 	if (!orderDetails) {
-		navigate("/api/products");
+		navigate("/products");
 		return null;
 	}
 
@@ -175,16 +175,17 @@ export default function OrderSuccessPage() {
 												>
 													<div className="flex items-center space-x-3">
 														<img
-															src={item.image}
-															alt={item.name}
+															src={item.productImage}
+															alt={item.productTitle}
 															className="w-12 h-12 rounded-lg object-cover border border-gray-200"
 														/>
 														<div>
 															<p className="font-medium text-gray-900">
-																{item.name}
+																{item.productTitle}
 															</p>
 															<p className="text-sm text-gray-600">
-																Qty: {item.quantity} × ৳{item.price}
+																Qty: {item.quantity} × ৳{item.price} per{" "}
+																{item.unit || "unit"}
 															</p>
 														</div>
 													</div>
@@ -285,7 +286,7 @@ export default function OrderSuccessPage() {
 								<span>View My Orders</span>
 							</Link>
 							<Link
-								to="/api/products"
+								to="/products"
 								className="flex items-center justify-center px-6 py-3 border border-green-300 text-green-700 bg-green-50 rounded-lg hover:bg-green-100 transition-colors"
 							>
 								<FaBox className="mr-2" />

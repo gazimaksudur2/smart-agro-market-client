@@ -32,6 +32,7 @@ export default function ProductDetails() {
 	const [quantity, setQuantity] = useState(1);
 	const [isAddingToCart, setIsAddingToCart] = useState(false);
 	const [isBuyingNow, setIsBuyingNow] = useState(false);
+	const [isLoading, setIsLoading] = useState(false);
 	const { user, currentUser } = useAuth();
 	const { addItem, addMultipleItems } = useCart();
 	const navigate = useNavigate();
@@ -161,21 +162,30 @@ export default function ProductDetails() {
 	}, [product?.minimumOrderQuantity]);
 
 	useEffect(() => {
-		axios
-			.get(`${import.meta.env.VITE_SERVER_API_URL}/api/products/single-product/${params.id}`)
-			.then((res) => {
-				// Check if response has success field and access product accordingly
+		let isMounted = true;
+		const fetchProduct = async () => {
+			try {
+				setIsLoading(true);
+				const res = await axios.get(
+					`${import.meta.env.VITE_SERVER_API_URL}/api/products/${params.id}`
+				);
+				if (!isMounted) return;
 				if (res.data?.success) {
-					setProduct(res.data.product);
+					setProduct(res.data.product || {});
 				} else {
-					// Fallback for backward compatibility
-					setProduct(res.data.product || res.data);
+					setProduct(res.data.product || res.data || {});
 				}
-			})
-			.catch((err) => {
+			} catch (err) {
 				console.error("Error fetching product:", err);
 				toast.error("Failed to load product details");
-			});
+			} finally {
+				if (isMounted) setIsLoading(false);
+			}
+		};
+		fetchProduct();
+		return () => {
+			isMounted = false;
+		};
 	}, [params.id]);
 
 	// Helper function to get the correct field value with fallbacks
@@ -187,6 +197,57 @@ export default function ProductDetails() {
 	const getHarvestDate = () =>
 		product?.specifications?.harvestDate || product?.harvestedOn;
 	const getProductId = () => product?._id;
+	const getApproverId = () =>
+		product?.approvedBy?.approverId || product?.approvedBy?.agentId || "";
+	const getApprovedAt = () => product?.approvedBy?.approvedAt || null;
+
+	if (isLoading) {
+		return (
+			<div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+				<div className="mb-6">
+					<div className="h-4 w-40 bg-gray-200 rounded animate-pulse" />
+				</div>
+				<div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+					<div className="space-y-4">
+						<div className="rounded-lg h-[400px] bg-gray-200 animate-pulse" />
+						<div className="grid grid-cols-4 gap-4">
+							{Array.from({ length: 4 }).map((_, i) => (
+								<div
+									key={i}
+									className="h-24 rounded-lg bg-gray-200 animate-pulse"
+								/>
+							))}
+						</div>
+					</div>
+					<div className="space-y-6">
+						<div className="space-y-2">
+							<div className="h-8 w-2/3 bg-gray-200 rounded animate-pulse" />
+							<div className="h-4 w-40 bg-gray-200 rounded animate-pulse" />
+						</div>
+						<div className="bg-gray-50 p-4 rounded-lg space-y-3">
+							<div className="flex justify-between items-center">
+								<div className="h-8 w-40 bg-gray-200 rounded animate-pulse" />
+								<div className="h-6 w-28 bg-gray-200 rounded animate-pulse" />
+							</div>
+							<div className="h-4 w-48 bg-gray-200 rounded animate-pulse" />
+						</div>
+						<div className="grid grid-cols-2 gap-4">
+							<div className="h-5 w-40 bg-gray-200 rounded animate-pulse" />
+							<div className="h-5 w-40 bg-gray-200 rounded animate-pulse" />
+						</div>
+						<div className="space-y-2">
+							<div className="h-6 w-32 bg-gray-200 rounded animate-pulse" />
+							<div className="h-20 w-full bg-gray-200 rounded animate-pulse" />
+						</div>
+						<div className="grid grid-cols-2 gap-4">
+							<div className="h-10 w-full bg-gray-200 rounded animate-pulse" />
+							<div className="h-10 w-full bg-gray-200 rounded animate-pulse" />
+						</div>
+					</div>
+				</div>
+			</div>
+		);
+	}
 
 	return (
 		<div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -414,16 +475,14 @@ export default function ProductDetails() {
 								<div className="flex justify-between">
 									<span className="text-green-700">Approved by Agent:</span>
 									<span className="text-green-900 font-medium">
-										{product.approvedBy.agentId}
+										{getApproverId()}
 									</span>
 								</div>
 								<div className="flex justify-between">
 									<span className="text-green-700">Approved on:</span>
 									<span className="text-green-900 font-medium">
-										{format(
-											new Date(product.approvedBy.approvedAt),
-											"dd MMM yyyy, hh:mm a"
-										)}
+										{getApprovedAt() &&
+											format(new Date(getApprovedAt()), "dd MMM yyyy, hh:mm a")}
 									</span>
 								</div>
 								{product?.approvalReason && (

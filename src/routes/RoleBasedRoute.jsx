@@ -15,8 +15,16 @@ export default function RoleBasedRoute({
 	redirectTo = "/dashboard/profile",
 	requireAuth = true,
 }) {
-	const { currentUser, loading, isAdmin, isAgent, isSeller, isConsumer } =
-		useAuth();
+	const {
+		currentUser,
+		currentRole,
+		loading,
+		isAdmin,
+		isAgent,
+		isSeller,
+		isConsumer,
+		isAuthenticated,
+	} = useAuth();
 	const location = useLocation();
 
 	// Show loading spinner while authentication state is being determined
@@ -32,7 +40,7 @@ export default function RoleBasedRoute({
 	}
 
 	// Redirect to login if authentication is required but user is not authenticated
-	if (requireAuth && !currentUser) {
+	if (requireAuth && !isAuthenticated()) {
 		return <Navigate to="/login" state={{ from: location }} replace />;
 	}
 
@@ -41,8 +49,20 @@ export default function RoleBasedRoute({
 		return children;
 	}
 
-	// Get current user role
-	const userRole = currentUser?.DBUser?.role;
+	// Get current user role (fallback to currentRole from token)
+	const userRole = currentUser?.DBUser?.role || currentRole;
+
+	// If authenticated but role not yet available, wait briefly to avoid false redirects on reload
+	if (requireAuth && isAuthenticated() && !userRole) {
+		return (
+			<div className="min-h-screen flex items-center justify-center bg-gray-50">
+				<div className="text-center">
+					<div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary-600 mx-auto mb-4"></div>
+					<p className="text-gray-600">Preparing your dashboard...</p>
+				</div>
+			</div>
+		);
+	}
 
 	// Check if user has required role
 	const hasRequiredRole = allowedRoles.includes(userRole);
@@ -71,7 +91,6 @@ export default function RoleBasedRoute({
 		if (userRole) {
 			redirectPath = `/dashboard/profile`;
 		}
-
 
 		return (
 			<Navigate

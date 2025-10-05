@@ -53,20 +53,39 @@ export default function AgentDashboard() {
 
 	// Fetch agent dashboard stats
 	const { data, isLoading, error } = useQuery(
-		["agentDashboardStats", currentUser?.FirebaseUser?.uid],
+		["agentDashboardStats", currentUser?.DBUser?._id],
 		async () => {
-			if (!currentUser?.FirebaseUser?.uid) return null;
+			if (!currentUser?.DBUser?._id) return null;
 			try {
-				return await apiCall(
-					`/agent/dashboard-stats/${currentUser.FirebaseUser.uid}`
-				);
+				const region = currentUser?.DBUser?.operationalArea?.region || "";
+				const district = currentUser?.DBUser?.operationalArea?.district || "";
+				const params = new URLSearchParams({ period: "month" });
+				if (region) params.append("region", region);
+				if (district) params.append("district", district);
+				const res = await apiCall(`/api/stats/dashboard?${params.toString()}`);
+				// Normalize to component shape
+				if (res?.success && res?.data?.summary) {
+					const s = res.data.summary;
+					return {
+						verifiedSellers: 0,
+						pendingSellerApplications: 0,
+						pendingProducts: s.pendingProducts || 0,
+						approvedProducts: s.approvedProducts || 0,
+						activeDeliveries: 0,
+						completedDeliveries: 0,
+						warehouseCapacity: 0,
+						monthlyCommission: s.revenueThisPeriod || 0,
+						recentActivity: res.data.recentActivity || [],
+					};
+				}
+				return res;
 			} catch (error) {
 				console.error("Error fetching agent stats:", error);
 				return null;
 			}
 		},
 		{
-			enabled: !!currentUser?.FirebaseUser?.uid,
+			enabled: !!currentUser?.DBUser?._id,
 		}
 	);
 

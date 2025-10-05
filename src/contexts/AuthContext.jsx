@@ -35,7 +35,7 @@ export default function AuthProvider({ children }) {
 	const apiBaseUrl =
 		import.meta.env.VITE_SERVER_API_URL || "http://localhost:5000";
 
-	// Check if cookies are enabled
+	// Check if cookies are enabled and warm up auth state from stored JWT on hard reload
 	useEffect(() => {
 		const cookiesEnabled = areCookiesEnabled();
 		setUsingCookies(cookiesEnabled);
@@ -59,10 +59,28 @@ export default function AuthProvider({ children }) {
 		}
 	}, []);
 
+	// On first mount, if we have a valid JWT but Firebase hasn't restored yet,
+	// attempt to hydrate DB user so role-restricted routes don't kick us out on reload
+	useEffect(() => {
+		const bootstrapFromToken = async () => {
+			try {
+				const token = authService.getCurrentToken();
+				if (token && authService.isTokenValid(token)) {
+					// Hydrate DB user from backend
+					const role = await getDBUser(null);
+					if (role) setCurrentRole(role);
+				}
+			} catch (e) {
+				// ignore
+			}
+		};
+		bootstrapFromToken();
+	}, []);
+
 	// Get user role from API
 	const getDBUser = async (email) => {
 		try {
-			const { data } = await axios.get(`${apiBaseUrl}/api/users/${email}`, {
+			const { data } = await axios.get(`${apiBaseUrl}/api/auth/me`, {
 				withCredentials: true,
 			});
 
@@ -144,7 +162,7 @@ export default function AuthProvider({ children }) {
 			);
 			const user = userCredential.user;
 
-			// Then get token from backend
+			// Then get token from backend (basic-auth: /auth/login)
 			const { token, user: userFromToken } = await authService.getToken(
 				user,
 				password
@@ -166,33 +184,37 @@ export default function AuthProvider({ children }) {
 		}
 	};
 
-	// Login with Google
+	// Login with Google (OAuth exchange)
 	const loginWithGoogle = async () => {
 		try {
 			const provider = new GoogleAuthProvider();
 			const result = await signInWithPopup(auth, provider);
 			const user = result.user;
 
-			// Set current user immediately with Firebase user
-			setCurrentUser({ FirebaseUser: user, DBUser: null });
+			// Attempt to extract provider access token
+			const googleCredential = GoogleAuthProvider.credentialFromResult(result);
+			const oauthToken = googleCredential?.accessToken || null;
 
-			// Check if user exists in database
-			const { data: userInDatabase } = await axios.get(
-				`${apiBaseUrl}/api/users/verifyUser?email=${user?.email}`
+			// Exchange OAuth token with backend
+			const { data } = await axios.post(
+				`${apiBaseUrl}/api/auth/oauth/google`,
+				{
+					oauthToken,
+					email: user?.email,
+					name: user?.displayName,
+				},
+				{ withCredentials: true }
 			);
 
-			// If user doesn't exist in the database, create a new user
-			if (!userInDatabase?.success) {
-				await createUserInDatabase(user, null, "google");
+			if (data?.token) {
+				await handleToken(data.token);
+				setCurrentRole(data?.user?.role || null);
+				setCurrentUser({ FirebaseUser: user, DBUser: data?.user || null });
 			} else {
-				// If user exists, get their DB info
-				await getDBUser(user.email);
+				// Fallback: set Firebase user and fetch DB profile
+				setCurrentUser({ FirebaseUser: user, DBUser: null });
+				await getDBUser(user?.email);
 			}
-
-			// Get JWT token (will use existing valid token if available)
-			const { token, user: userFromToken } = await authService.getToken(user);
-			await handleToken(token);
-			setCurrentRole(userFromToken.role);
 
 			return user;
 		} catch (error) {
@@ -201,33 +223,37 @@ export default function AuthProvider({ children }) {
 		}
 	};
 
-	// Login with Facebook
+	// Login with Facebook (OAuth exchange)
 	const loginWithFacebook = async () => {
 		try {
 			const provider = new FacebookAuthProvider();
 			const result = await signInWithPopup(auth, provider);
 			const user = result.user;
 
-			// Set current user immediately with Firebase user
-			setCurrentUser({ FirebaseUser: user, DBUser: null });
+			// Attempt to extract provider access token
+			const fbCredential = FacebookAuthProvider.credentialFromResult(result);
+			const oauthToken = fbCredential?.accessToken || null;
 
-			// Check if user exists in database
-			const { data: userInDatabase } = await axios.get(
-				`${apiBaseUrl}/api/users/verifyUser?email=${user?.email}`
+			// Exchange OAuth token with backend
+			const { data } = await axios.post(
+				`${apiBaseUrl}/api/auth/oauth/facebook`,
+				{
+					oauthToken,
+					email: user?.email,
+					name: user?.displayName,
+				},
+				{ withCredentials: true }
 			);
 
-			// If user doesn't exist in the database, create a new user
-			if (!userInDatabase?.success) {
-				await createUserInDatabase(user, null, "facebook");
+			if (data?.token) {
+				await handleToken(data.token);
+				setCurrentRole(data?.user?.role || null);
+				setCurrentUser({ FirebaseUser: user, DBUser: data?.user || null });
 			} else {
-				// If user exists, get their DB info
-				await getDBUser(user.email);
+				// Fallback: set Firebase user and fetch DB profile
+				setCurrentUser({ FirebaseUser: user, DBUser: null });
+				await getDBUser(user?.email);
 			}
-
-			// Get JWT token (will use existing valid token if available)
-			const { token, user: userFromToken } = await authService.getToken(user);
-			await handleToken(token);
-			setCurrentRole(userFromToken.role);
 
 			return user;
 		} catch (error) {
@@ -239,16 +265,23 @@ export default function AuthProvider({ children }) {
 	// Logout
 	const logout = async () => {
 		try {
-			await signOut(auth);
-
-			// Clear auth data
+			// Clear local JWT and axios header first to immediately deauth client-side
 			await authService.clearToken();
 			setAccessToken("");
 			setCurrentRole(null);
+			setCurrentUser(null);
+
+			// Best-effort Firebase sign-out (don't block on failures)
+			try {
+				await signOut(auth);
+			} catch (_) {}
 
 			toast.success("User logged out successfully");
 		} catch (error) {
-			toast.error(error.message);
+			// Ensure local state is cleared even if server call fails
+			setAccessToken("");
+			setCurrentRole(null);
+			setCurrentUser(null);
 			throw error;
 		}
 	};
@@ -264,7 +297,7 @@ export default function AuthProvider({ children }) {
 	) => {
 		try {
 			const { data } = await axios.post(
-				`${apiBaseUrl}/api/users/register`,
+				`${apiBaseUrl}/api/auth/register`,
 				{
 					name: user.displayName,
 					email: user.email,
@@ -306,7 +339,9 @@ export default function AuthProvider({ children }) {
 
 	// Check if user is authenticated with valid token
 	const isAuthenticated = () => {
-		return currentUser?.FirebaseUser && authService.hasValidToken();
+		// Consider user authenticated if we have a valid JWT (server session) even
+		// before Firebase observer repopulates on hard reload
+		return authService.hasValidToken();
 	};
 
 	// Change password

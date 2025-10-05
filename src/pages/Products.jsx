@@ -56,6 +56,7 @@ export default function Products() {
 
 	// Fetch all available crop types
 	const { cropTypes } = useCropTypes();
+	console.log(cropTypes);
 
 	// Filter options for select components
 	const regionOptions =

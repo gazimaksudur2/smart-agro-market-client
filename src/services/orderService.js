@@ -75,10 +75,28 @@ export const createOrder = async (orderData) => {
 			throw new Error("No items in order");
 		}
 
+		// Validate each item has required fields
+		orderData.items.forEach((item, index) => {
+			if (!item.productId) {
+				throw new Error(`Item ${index + 1}: Product ID is required`);
+			}
+			if (!item.quantity || item.quantity < 1) {
+				throw new Error(`Item ${index + 1}: Quantity must be at least 1`);
+			}
+			if (!item.price || item.price < 0) {
+				throw new Error(`Item ${index + 1}: Valid price is required`);
+			}
+		});
+
+		// Validate shipping details (required fields according to schema)
 		if (!orderData.shippingAddress || !orderData.shippingAddress.fullName) {
-			throw new Error("Shipping address is required");
+			throw new Error("Shipping address with full name is required");
+		}
+		if (!orderData.shippingAddress.email) {
+			throw new Error("Shipping email is required");
 		}
 
+		// Validate payment method
 		if (
 			!orderData.paymentMethod ||
 			!["cod", "online"].includes(orderData.paymentMethod)
@@ -86,30 +104,49 @@ export const createOrder = async (orderData) => {
 			throw new Error("Valid payment method is required (cod or online)");
 		}
 
-		if (!orderData.userId || !orderData.userEmail) {
+		if (!orderData.userEmail) {
 			throw new Error("User authentication required");
 		}
+
+		// Calculate totals
+		const subtotal = orderData.items.reduce(
+			(sum, item) => sum + item.price * item.quantity,
+			0
+		);
+		const shippingCost = orderData.shippingCost || 0;
+		const totalAmount = subtotal + shippingCost;
 
 		// Format request data to match backend expectations (API spec format)
 		const requestData = {
 			items: orderData.items.map((item) => ({
-				productId: item.productId || item._id,
-				quantity: item.quantity,
+				productId: item.productId,
+				quantity: Number(item.quantity),
+				price: Number(item.price),
+				sellerId: item.sellerId || null, // Optional field
+				totalPrice: Number(item.price) * Number(item.quantity),
 			})),
+			subtotal: Number(subtotal),
+			shippingCost: Number(shippingCost),
+			totalAmount: Number(totalAmount),
 			shippingDetails: {
 				fullName: orderData.shippingAddress.fullName,
 				email: orderData.shippingAddress.email,
-				phone: orderData.shippingAddress.phone,
-				address: orderData.shippingAddress.address,
-				city: orderData.shippingAddress.city,
-				state: orderData.shippingAddress.state,
-				zip: orderData.shippingAddress.zipCode,
+				address: orderData.shippingAddress.address || "",
+				city: orderData.shippingAddress.city || "",
+				state: orderData.shippingAddress.state || "",
+				zip: orderData.shippingAddress.zipCode || "",
+				phone: orderData.shippingAddress.phone || "",
 			},
 			paymentMethod: orderData.paymentMethod,
-			paymentDetails: orderData.paymentDetails || {},
+			paymentDetails: {
+				transactionId: orderData.paymentDetails?.transactionId || null,
+				cardType: orderData.paymentDetails?.cardType || null,
+				last4: orderData.paymentDetails?.last4 || null,
+				paymentDate: orderData.paymentDetails?.paymentDate || null,
+			},
 			notes: orderData.notes || "",
+			userEmail: orderData.userEmail,
 		};
-
 		const response = await api.post("/api/orders", requestData);
 		return response.data;
 	} catch (error) {
@@ -164,11 +201,13 @@ export const updateOrderStatus = async (orderId, status, notes = null) => {
 /**
  * Get seller orders
  */
-export const getSellerOrders = async (sellerId, params = {}) => {
+export const getSellerOrders = async (sellerEmailOrId, params = {}) => {
 	try {
 		const queryParams = new URLSearchParams(params).toString();
+		// v2.0 docs use seller email as path param; still works with legacy id
+		const identifier = encodeURIComponent(sellerEmailOrId);
 		const response = await api.get(
-			`/api/orders/seller/${sellerId}?${queryParams}`
+			`/api/orders/seller/${identifier}?${queryParams}`
 		);
 		return response.data;
 	} catch (error) {
@@ -182,7 +221,7 @@ export const getSellerOrders = async (sellerId, params = {}) => {
 export const getAllOrders = async (params = {}) => {
 	try {
 		const queryParams = new URLSearchParams(params).toString();
-		const response = await api.get(`/api/orders/api/admin/all?${queryParams}`);
+		const response = await api.get(`/api/orders/admin/all?${queryParams}`);
 		return response.data;
 	} catch (error) {
 		throw error;

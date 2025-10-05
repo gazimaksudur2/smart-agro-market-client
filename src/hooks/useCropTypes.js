@@ -9,10 +9,10 @@ const useCropTypes = () => {
 
 		// Check if response has success field and return data accordingly
 		if (data?.success) {
-			return data.data || [];
+			return data.cropTypes || [];
 		}
 		// Fallback for backward compatibility
-		return data || [];
+		return data.cropTypes || data || [];
 	};
 
 	const {

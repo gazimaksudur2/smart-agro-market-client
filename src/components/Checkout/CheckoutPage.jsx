@@ -66,6 +66,22 @@ const CheckoutPage = () => {
 		const firebaseUser = currentUser?.FirebaseUser;
 		const addressData = parseAddress(dbUser?.fullAddress || dbUser?.address);
 
+		if(dbUser?.shippingDetails){
+			return {
+				shippingAddress: {
+					fullName: dbUser?.name || firebaseUser?.displayName || "",
+					email: dbUser?.email || firebaseUser?.email || "",
+					address: dbUser?.shippingDetails?.address || addressData.address,
+					city: dbUser?.shippingDetails?.city || addressData.city,
+					state: dbUser?.shippingDetails?.state || addressData.state,
+					zipCode: dbUser?.shippingDetails?.zipCode || addressData.zipCode,
+					phone: dbUser?.shippingDetails?.phone || dbUser?.phoneNumber || "",
+				},
+				paymentMethod: "cod",
+				notes: "",
+			};
+		}
+
 		return {
 			shippingAddress: {
 				fullName: dbUser?.name || firebaseUser?.displayName || "",
@@ -167,16 +183,17 @@ const CheckoutPage = () => {
 	const handleStripePayment = async (paymentData) => {
 		try {
 			setIsSubmitting(true);
-
 			// Validate items before processing (API spec: only productId and quantity needed)
 			const validatedItems = items.map((item, index) => {
 				if (!item.productId || !item.quantity) {
 					throw new Error(`Invalid item data: ${item.name || "Unknown item"}`);
 				}
-
 				return {
 					productId: item.productId,
 					quantity: item.quantity,
+					price: item.price,
+					sellerId: item.product?.sellerId,
+					totalPrice: item.price * item.quantity,
 				};
 			});
 
@@ -220,6 +237,9 @@ const CheckoutPage = () => {
 				return {
 					productId: item.productId,
 					quantity: item.quantity,
+					price: item.price,
+					sellerId: item.sellerId,
+					totalPrice: item.price * item.quantity,
 				};
 			});
 
@@ -235,11 +255,11 @@ const CheckoutPage = () => {
 				// Save default address if requested
 				await saveDefaultAddressIfRequested();
 
-				// Clear cart after successful order
-				await clearCart();
-
 				// Navigate to success page
 				navigateToSuccess(null, orderResult.order);
+
+				// Clear cart after successful order
+				await clearCart();
 			} else {
 				throw new Error(orderResult.error || "Failed to place order");
 			}
@@ -635,7 +655,7 @@ const CheckoutPage = () => {
 														</div>
 													</label>
 												</div>
-												<div
+												{/* <div
 													className={`relative border-2 rounded-xl p-4 cursor-pointer transition-all duration-200 ${
 														orderData.paymentMethod === "online"
 															? "border-blue-500 bg-blue-50"
@@ -690,7 +710,7 @@ const CheckoutPage = () => {
 															</div>
 														</div>
 													</label>
-												</div>
+												</div> */}
 											</div>
 
 											{/* Stripe Payment Form */}

@@ -69,9 +69,7 @@ export const updateUserProfile = async (
 	updateShippingAddress = false
 ) => {
 	try {
-		const endpoint = updateShippingAddress
-			? `/api/users/${email}/profile-and-shipping`
-			: `/api/users/${email}/profile`;
+		const endpoint = updateShippingAddress ? `/api/users/me` : `/api/users/me`;
 
 		const response = await api.patch(endpoint, updateData);
 		return response.data;
@@ -87,7 +85,7 @@ export const updateUserProfile = async (
  */
 export const updateDefaultShippingAddress = async (email, shippingAddress) => {
 	try {
-		const response = await api.patch(`/api/users/${email}/shipping-address`, {
+		const response = await api.patch(`/api/users/me`, {
 			shippingAddress,
 		});
 		return response.data;
@@ -102,7 +100,7 @@ export const updateDefaultShippingAddress = async (email, shippingAddress) => {
  */
 export const getUserProfile = async (email) => {
 	try {
-		const response = await api.get(`/api/users/${email}`);
+		const response = await api.get(`/api/users/me`);
 		return response.data;
 	} catch (error) {
 		throw error;

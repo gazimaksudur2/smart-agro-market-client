@@ -13,155 +13,70 @@ import {
 	FaStar,
 } from "react-icons/fa";
 import DashboardTitle from "../../DashboardTitle";
-import useAPI from "../../../../hooks/useAPI";
+import useOrders from "../../../../hooks/useOrders";
+import OrderStatusBadge from "../../../common/OrderStatusBadge";
 import useScrollToTop from "../../../../hooks/useScrollToTop";
-
-const StatusBadge = ({ status }) => {
-	const statusConfig = {
-		pending: { color: "yellow", text: "Pending" },
-		confirmed: { color: "blue", text: "Confirmed" },
-		processing: { color: "purple", text: "Processing" },
-		shipped: { color: "indigo", text: "Shipped" },
-		delivered: { color: "green", text: "Delivered" },
-		cancelled: { color: "red", text: "Cancelled" },
-		refunded: { color: "gray", text: "Refunded" },
-	};
-
-	const config = statusConfig[status] || statusConfig.pending;
-
-	return (
-		<span
-			className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-${config.color}-100 text-${config.color}-800`}
-		>
-			{config.text}
-		</span>
-	);
-};
 
 export default function MyPurchases() {
 	useScrollToTop();
 	const { currentUser } = useAuth();
-	const { apiCall } = useAPI();
+	const { fetchUserOrders } = useOrders();
 	const [searchTerm, setSearchTerm] = useState("");
-	const [statusFilter, setStatusFilter] = useState("all");
+	const [statusFilter, setStatusFilter] = useState("shipped");
 	const [dateFilter, setDateFilter] = useState("all");
 	const [filteredPurchases, setFilteredPurchases] = useState([]);
+	const [purchases, setPurchases] = useState([]);
+	const [isLoading, setIsLoading] = useState(false);
+	const [pagination, setPagination] = useState(null);
+	const [currentPage, setCurrentPage] = useState(1);
 
-	// Fetch purchases
-	const {
-		data: purchases,
-		isLoading,
-		error,
-	} = useQuery(
-		["userPurchases", currentUser?.DBUser?._id],
-		async () => {
-			if (!currentUser?.DBUser?._id) return [];
+	// Reset page to 1 when status filter changes
+	useEffect(() => {
+		setCurrentPage(1);
+	}, [statusFilter]);
+
+	// Fetch shipped orders (purchases)
+	useEffect(() => {
+		const loadPurchases = async () => {
+			if (!currentUser?.DBUser?._id) return;
+
+			setIsLoading(true);
 			try {
-				return await apiCall(
-					`/api/orders/user/${currentUser.DBUser._id}`
-				);
+				const response = await fetchUserOrders({
+					page: currentPage,
+					limit: 20,
+					status: statusFilter === "all" ? undefined : statusFilter,
+				});
+
+				if (response.success) {
+					setPurchases(response.orders || []);
+					setPagination(response.pagination);
+				}
 			} catch (error) {
 				console.error("Error fetching purchases:", error);
-				return [];
-			}	
-		},
-		{
-			enabled: !!currentUser?.DBUser?._id,
-		}
-	);
+			} finally {
+				setIsLoading(false);
+			}
+		};
 
-	// Mock data for demo
-	const mockPurchases = [
-		{
-			id: "PUR-2024-001",
-			orderDate: "2024-01-15",
-			items: [
-				{
-					productName: "Organic Basmati Rice",
-					quantity: 5,
-					unit: "kg",
-					price: 120,
-					seller: "Green Valley Farms",
-				},
-				{
-					productName: "Fresh Tomatoes",
-					quantity: 2,
-					unit: "kg",
-					price: 80,
-					seller: "Sunny Gardens",
-				},
-			],
-			totalAmount: 760,
-			status: "delivered",
-			deliveryDate: "2024-01-18",
-			paymentMethod: "bKash",
-		},
-		{
-			id: "PUR-2024-002",
-			orderDate: "2024-01-20",
-			items: [
-				{
-					productName: "Premium Potatoes",
-					quantity: 10,
-					unit: "kg",
-					price: 45,
-					seller: "Farm Fresh Co.",
-				},
-			],
-			totalAmount: 450,
-			status: "shipped",
-			estimatedDelivery: "2024-01-23",
-			paymentMethod: "Nagad",
-		},
-		{
-			id: "PUR-2024-003",
-			orderDate: "2024-01-22",
-			items: [
-				{
-					productName: "Organic Spinach",
-					quantity: 1,
-					unit: "bundle",
-					price: 25,
-					seller: "Green Leaf Farms",
-				},
-				{
-					productName: "Fresh Carrots",
-					quantity: 3,
-					unit: "kg",
-					price: 60,
-					seller: "Harvest Time",
-				},
-			],
-			totalAmount: 205,
-			status: "processing",
-			paymentMethod: "Cash on Delivery",
-		},
-	];
-
-	const displayPurchases = purchases || mockPurchases;
+		loadPurchases();
+	}, [currentUser?.DBUser?._id, fetchUserOrders, statusFilter, currentPage]);
 
 	// Filter purchases
 	useEffect(() => {
-		let filtered = displayPurchases;
+		let filtered = purchases;
 
 		// Search filter
 		if (searchTerm) {
 			filtered = filtered.filter(
 				(purchase) =>
-					purchase.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-					purchase.items.some((item) =>
-						item.productName.toLowerCase().includes(searchTerm.toLowerCase())
-					) ||
-					purchase.items.some((item) =>
-						item.seller.toLowerCase().includes(searchTerm.toLowerCase())
+					purchase.orderNumber
+						?.toLowerCase()
+						.includes(searchTerm.toLowerCase()) ||
+					purchase._id?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+					purchase.items?.some((item) =>
+						item.productId?.toLowerCase().includes(searchTerm.toLowerCase())
 					)
-			);
-		}
-
-		// Status filter
-		if (statusFilter !== "all") {
-			filtered = filtered.filter(
-				(purchase) => purchase.status === statusFilter
 			);
 		}
 
@@ -186,17 +101,17 @@ export default function MyPurchases() {
 
 			if (filterDate) {
 				filtered = filtered.filter(
-					(purchase) => new Date(purchase.orderDate) >= filterDate
+					(purchase) => new Date(purchase.createdAt) >= filterDate
 				);
 			}
 		}
 
 		setFilteredPurchases(filtered);
-	}, [displayPurchases, searchTerm, statusFilter, dateFilter]);
+	}, [purchases, searchTerm, dateFilter]);
 
 	const calculateTotalSpent = () => {
 		return filteredPurchases.reduce(
-			(total, purchase) => total + purchase.totalAmount,
+			(total, purchase) => total + (purchase.totalAmount || 0),
 			0
 		);
 	};
@@ -204,7 +119,8 @@ export default function MyPurchases() {
 	const getItemCount = () => {
 		return filteredPurchases.reduce(
 			(total, purchase) =>
-				total + purchase.items.reduce((sum, item) => sum + item.quantity, 0),
+				total +
+				(purchase.items?.reduce((sum, item) => sum + item.quantity, 0) || 0),
 			0
 		);
 	};
@@ -314,13 +230,11 @@ export default function MyPurchases() {
 							onChange={(e) => setStatusFilter(e.target.value)}
 							className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
 						>
-							<option value="all">All Status</option>
-							<option value="pending">Pending</option>
-							<option value="confirmed">Confirmed</option>
-							<option value="processing">Processing</option>
+							<option value="all">All Purchases</option>
 							<option value="shipped">Shipped</option>
-							<option value="delivered">Delivered</option>
-							<option value="cancelled">Cancelled</option>
+							<option value="pending">Pending</option>
+							<option value="processing">Processing</option>
+							<option value="confirmed">Confirmed</option>
 						</select>
 					</div>
 
@@ -355,6 +269,11 @@ export default function MyPurchases() {
 				<div className="px-6 py-4 border-b border-gray-200">
 					<h3 className="text-lg font-medium text-gray-900">
 						Purchase History
+						{pagination && (
+							<span className="ml-2 text-sm text-gray-500">
+								({pagination.totalItems} total purchases)
+							</span>
+						)}
 					</h3>
 				</div>
 
@@ -362,107 +281,146 @@ export default function MyPurchases() {
 					<div className="p-6 text-center text-gray-500">
 						<FaShoppingBag className="mx-auto h-12 w-12 text-gray-400 mb-4" />
 						<p>No purchases found matching your criteria.</p>
+						{statusFilter === "shipped" && (
+							<p className="mt-2 text-sm">
+								Your shipped orders will appear here once your orders are
+								shipped.
+							</p>
+						)}
 					</div>
 				) : (
 					<div className="divide-y divide-gray-200">
 						{filteredPurchases.map((purchase) => (
-							<div key={purchase.id} className="p-6 hover:bg-gray-50">
+							<div key={purchase._id} className="p-6 hover:bg-gray-50">
+								{/* Purchase Header */}
 								<div className="flex items-center justify-between mb-4">
 									<div>
 										<h4 className="text-lg font-medium text-gray-900">
-											Order #{purchase.id}
+											Order #{purchase.orderNumber}
 										</h4>
 										<p className="text-sm text-gray-500">
-											<FaCalendarAlt className="inline mr-1" />
 											Ordered on{" "}
-											{new Date(purchase.orderDate).toLocaleDateString()}
+											{new Date(purchase.createdAt).toLocaleDateString(
+												"en-US",
+												{
+													year: "numeric",
+													month: "long",
+													day: "numeric",
+												}
+											)}
 										</p>
 									</div>
-									<div className="text-right">
-										<StatusBadge status={purchase.status} />
-										<p className="text-lg font-bold text-gray-900 mt-1">
-											৳{purchase.totalAmount.toLocaleString()}
-										</p>
+									<div className="flex items-center space-x-4">
+										<OrderStatusBadge status={purchase.status} />
+										<span className="text-lg font-semibold text-gray-900">
+											৳{purchase.totalAmount?.toLocaleString()}
+										</span>
 									</div>
 								</div>
 
-								{/* Order Items */}
-								<div className="space-y-3">
-									{purchase.items.map((item, index) => (
-										<div
-											key={index}
-											className="flex items-center justify-between bg-gray-50 p-3 rounded-lg"
-										>
-											<div className="flex-1">
-												<h5 className="font-medium text-gray-900">
-													{item.productName}
-												</h5>
-												<p className="text-sm text-gray-500">
-													Seller: {item.seller}
-												</p>
+								{/* Purchase Items */}
+								<div className="mb-4">
+									<h5 className="font-medium text-gray-900 mb-3">
+										Items ({purchase.items?.length || 0})
+									</h5>
+									<div className="space-y-3">
+										{purchase.items?.map((item, index) => (
+											<div
+												key={index}
+												className="flex items-center justify-between bg-gray-50 p-3 rounded-lg"
+											>
+												<div className="flex-1">
+													<p className="font-medium text-gray-900">
+														Product ID: {item.productId}
+													</p>
+													<p className="text-sm text-gray-600">
+														Quantity: {item.quantity} units × ৳{item.price}
+													</p>
+													{item.sellerId && (
+														<p className="text-xs text-gray-500">
+															Seller: {item.sellerId.slice(-8)}
+														</p>
+													)}
+												</div>
+												<div className="text-right">
+													<p className="font-semibold text-gray-900">
+														৳{item.totalPrice?.toLocaleString()}
+													</p>
+												</div>
 											</div>
-											<div className="text-right">
-												<p className="font-medium text-gray-900">
-													{item.quantity} {item.unit} × ৳{item.price}
-												</p>
-												<p className="text-sm text-gray-500">
-													৳{(item.quantity * item.price).toLocaleString()}
-												</p>
-											</div>
-										</div>
-									))}
-								</div>
-
-								{/* Order Details */}
-								<div className="mt-4 flex items-center justify-between text-sm text-gray-500">
-									<div>
-										<span className="font-medium">Payment:</span>{" "}
-										{purchase.paymentMethod}
-									</div>
-									<div>
-										{purchase.status === "delivered" &&
-											purchase.deliveryDate && (
-												<span>
-													<span className="font-medium">Delivered:</span>{" "}
-													{new Date(purchase.deliveryDate).toLocaleDateString()}
-												</span>
-											)}
-										{purchase.status === "shipped" &&
-											purchase.estimatedDelivery && (
-												<span>
-													<span className="font-medium">Est. Delivery:</span>{" "}
-													{new Date(
-														purchase.estimatedDelivery
-													).toLocaleDateString()}
-												</span>
-											)}
+										))}
 									</div>
 								</div>
 
-								{/* Action Buttons */}
-								<div className="mt-4 flex items-center space-x-3">
-									<Link
-										to={`/dashboard/order/${purchase.id}`}
-										className="btn btn-outline-primary btn-sm"
-									>
-										<FaEye className="mr-1 h-4 w-4" />
-										View Details
-									</Link>
-									{purchase.status === "delivered" && (
+								{/* Purchase Actions */}
+								<div className="flex items-center justify-between pt-4 border-t border-gray-200">
+									<div className="flex items-center space-x-4">
+										{purchase.paymentMethod && (
+											<span className="text-sm text-gray-600">
+												Payment:{" "}
+												<span className="font-medium">
+													{purchase.paymentMethod.toUpperCase()}
+												</span>
+											</span>
+										)}
+										{purchase.notes && (
+											<span className="text-sm text-gray-600">
+												Note: {purchase.notes}
+											</span>
+										)}
+									</div>
+									<div className="flex items-center space-x-3">
+										{purchase.status === "delivered" && (
+											<button className="btn btn-outline-primary btn-sm">
+												<FaStar className="mr-1 h-3 w-3" />
+												Rate Items
+											</button>
+										)}
 										<button className="btn btn-outline-secondary btn-sm">
-											<FaStar className="mr-1 h-4 w-4" />
-											Rate & Review
+											<FaEye className="mr-1 h-3 w-3" />
+											View Details
 										</button>
-									)}
-									{(purchase.status === "pending" ||
-										purchase.status === "confirmed") && (
-										<button className="btn btn-outline-red btn-sm">
-											Cancel Order
+										<button className="btn btn-outline-secondary btn-sm">
+											<FaDownload className="mr-1 h-3 w-3" />
+											Invoice
 										</button>
-									)}
+									</div>
 								</div>
 							</div>
 						))}
+					</div>
+				)}
+
+				{/* Pagination Info */}
+				{pagination && pagination.totalPages > 1 && (
+					<div className="px-6 py-4 border-t border-gray-200 bg-gray-50">
+						<div className="flex items-center justify-between">
+							<p className="text-sm text-gray-700">
+								Showing page {pagination.currentPage} of {pagination.totalPages}
+							</p>
+							<div className="flex items-center space-x-2">
+								<button
+									className="btn btn-outline btn-sm"
+									disabled={pagination.currentPage === 1}
+									onClick={() =>
+										setCurrentPage((prev) => Math.max(1, prev - 1))
+									}
+								>
+									Previous
+								</button>
+								<button
+									className="btn btn-outline btn-sm"
+									disabled={pagination.currentPage === pagination.totalPages}
+									onClick={() =>
+										setCurrentPage((prev) =>
+											Math.min(pagination.totalPages, prev + 1)
+										)
+									}
+								>
+									Next
+								</button>
+							</div>
+						</div>
 					</div>
 				)}
 			</div>

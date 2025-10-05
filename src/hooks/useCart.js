@@ -18,8 +18,11 @@ import {
  * Minimal client-side state for performance
  */
 const useCart = () => {
-	const { currentUser } = useAuth();
+	const { currentUser, currentRole } = useAuth();
 	const user = currentUser?.FirebaseUser;
+	const role = currentRole || currentUser?.DBUser?.role || null;
+
+	const isConsumerRole = role === "consumer" || !role; // allow guests to use public cart
 
 	// Minimal client state - only for UI performance
 	const [cartItems, setCartItems] = useState([]);
@@ -44,6 +47,14 @@ const useCart = () => {
 
 	// Load cart from backend (single source of truth)
 	const loadCart = useCallback(async () => {
+		// Block for non-consumer authenticated roles (seller/agent/admin)
+		if (role && !isConsumerRole) {
+			setCartItems([]);
+			setTotalItems(0);
+			setTotalAmount(0);
+			return;
+		}
+
 		if (!user?.email) {
 			setCartItems([]);
 			setTotalItems(0);
@@ -74,6 +85,7 @@ const useCart = () => {
 				availableStock: item.product.availableStock,
 				unit: item.product.unit,
 				addedAt: item.addedAt,
+				sellerId: item.product.sellerId,
 			}));
 
 			setCartItems(items);
@@ -97,11 +109,15 @@ const useCart = () => {
 		} finally {
 			setLoading(false);
 		}
-	}, [user?.email, calculateTotals]);
+	}, [user?.email, calculateTotals, role, isConsumerRole]);
 
 	// Add single item to cart
 	const addItem = useCallback(
 		async (product, quantity = 1) => {
+			if (role && !isConsumerRole) {
+				toast.error("Cart is only available for consumers");
+				return false;
+			}
 			if (!user?.email) {
 				toast.error("Please login to add items to cart");
 				return false;
@@ -145,12 +161,16 @@ const useCart = () => {
 				setLoading(false);
 			}
 		},
-		[user?.email, loadCart]
+		[user?.email, loadCart, role, isConsumerRole]
 	);
 
 	// Add multiple items to cart
 	const addMultipleItems = useCallback(
 		async (items) => {
+			if (role && !isConsumerRole) {
+				toast.error("Cart is only available for consumers");
+				return false;
+			}
 			if (!user?.email) {
 				toast.error("Please login to add items to cart");
 				return false;
@@ -195,12 +215,16 @@ const useCart = () => {
 				setLoading(false);
 			}
 		},
-		[user?.email, loadCart]
+		[user?.email, loadCart, role, isConsumerRole]
 	);
 
 	// Update item quantity
 	const updateItem = useCallback(
 		async (productId, quantity) => {
+			if (role && !isConsumerRole) {
+				toast.error("Cart is only available for consumers");
+				return false;
+			}
 			if (!user?.email) {
 				toast.error("Please login to update cart");
 				return false;
@@ -232,12 +256,16 @@ const useCart = () => {
 				setLoading(false);
 			}
 		},
-		[user?.email, loadCart]
+		[user?.email, loadCart, role, isConsumerRole]
 	);
 
 	// Remove item from cart
 	const removeItem = useCallback(
 		async (productId) => {
+			if (role && !isConsumerRole) {
+				toast.error("Cart is only available for consumers");
+				return false;
+			}
 			if (!user?.email) {
 				toast.error("Please login to remove items");
 				return false;
@@ -264,11 +292,15 @@ const useCart = () => {
 				setLoading(false);
 			}
 		},
-		[user?.email, loadCart]
+		[user?.email, loadCart, role, isConsumerRole]
 	);
 
 	// Clear entire cart
 	const clearCart = useCallback(async () => {
+		if (role && !isConsumerRole) {
+			toast.error("Cart is only available for consumers");
+			return false;
+		}
 		if (!user?.email) {
 			toast.error("Please login to clear cart");
 			return false;
@@ -295,11 +327,14 @@ const useCart = () => {
 		} finally {
 			setLoading(false);
 		}
-	}, [user?.email]);
+	}, [user?.email, role, isConsumerRole]);
 
 	// Batch update operations
 	const batchUpdate = useCallback(
 		async (operations) => {
+			if (role && !isConsumerRole) {
+				throw new Error("Cart is only available for consumers");
+			}
 			if (!user?.email) {
 				throw new Error("User not authenticated");
 			}
@@ -322,12 +357,18 @@ const useCart = () => {
 				setLoading(false);
 			}
 		},
-		[user?.email, loadCart]
+		[user?.email, loadCart, role, isConsumerRole]
 	);
 
 	// Preview merge items with cart (for UI preview)
 	const previewMergeItems = useCallback(
 		async (newItems) => {
+			if (role && !isConsumerRole) {
+				return {
+					success: false,
+					error: "Cart is only available for consumers",
+				};
+			}
 			if (!user?.email) {
 				return { success: false, error: "Please login first" };
 			}
@@ -349,7 +390,7 @@ const useCart = () => {
 				};
 			}
 		},
-		[user?.email]
+		[user?.email, role, isConsumerRole]
 	);
 
 	// Get item quantity by product ID

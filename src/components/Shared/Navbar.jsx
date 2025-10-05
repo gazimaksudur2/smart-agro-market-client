@@ -5,12 +5,17 @@ import { IoLogOutOutline } from "react-icons/io5";
 import { FaShoppingCart } from "react-icons/fa";
 import { useAuth } from "../../contexts/AuthContext";
 import useCart from "../../hooks/useCart";
+import WeatherButton from "./WeatherButton";
+import WeatherModal from "./WeatherModal";
+import useWeather from "../../hooks/useWeather";
 
 export default function Navbar() {
 	const [isOpen, setIsOpen] = useState(false);
+	const [weatherOpen, setWeatherOpen] = useState(false);
 	const { currentUser, logout } = useAuth();
 	const navigate = useNavigate();
 	const { totalItems } = useCart();
+	const { loading, error, data, refresh } = useWeather();
 
 	// Handle user logout
 	const handleLogout = async () => {
@@ -27,6 +32,13 @@ export default function Navbar() {
 		if (!currentUser) return "/dashboard";
 
 		return "/dashboard/profile";
+	};
+
+	const openWeather = () => {
+		setWeatherOpen(true);
+		if (!data && !loading) {
+			refresh();
+		}
 	};
 
 	return (
@@ -111,6 +123,14 @@ export default function Navbar() {
 
 					{/* Right side menu (desktop) */}
 					<div className="hidden md:flex md:items-center md:space-x-4">
+						{/* Weather */}
+						<WeatherButton
+							loading={loading}
+							error={error}
+							current={data?.current}
+							onClick={openWeather}
+						/>
+
 						{/* Shopping Cart */}
 						<Link
 							to={currentUser ? "/dashboard/my-cart" : "/cart"}
@@ -161,6 +181,16 @@ export default function Navbar() {
 
 					{/* Mobile menu button */}
 					<div className="flex items-center md:hidden">
+						{/* Mobile Weather */}
+						<div className="mr-2">
+							<WeatherButton
+								loading={loading}
+								error={error}
+								current={data?.current}
+								onClick={openWeather}
+							/>
+						</div>
+
 						{/* Mobile Shopping Cart */}
 						<Link
 							to={currentUser ? "/dashboard/my-cart" : "/cart"}
@@ -291,6 +321,13 @@ export default function Navbar() {
 					</div>
 				</div>
 			)}
+
+			{/* Weather modal */}
+			<WeatherModal
+				open={weatherOpen}
+				onClose={() => setWeatherOpen(false)}
+				data={data}
+			/>
 		</nav>
 	);
 }

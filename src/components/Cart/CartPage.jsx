@@ -120,7 +120,7 @@ const CartPage = () => {
 
 						<div className="mt-8">
 							<Link
-								to="/api/products"
+								to="/products"
 								className="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
 							>
 								<FiShoppingCart className="-ml-1 mr-2 h-5 w-5" />
@@ -304,7 +304,7 @@ const CartPage = () => {
 										<p>
 											or{" "}
 											<Link
-												to="/api/products"
+												to="/products"
 												className="text-primary-600 font-medium hover:text-primary-500"
 											>
 												Continue Shopping

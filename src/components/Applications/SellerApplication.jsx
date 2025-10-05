@@ -369,7 +369,7 @@ export default function SellerApplication() {
 												? "border-red-500"
 												: "border-gray-300"
 										}`}
-										placeholder="Describe your main crops/api/products and specializations"
+										placeholder="Describe your main crops/products and specializations"
 									/>
 									{errors.specialization && (
 										<p className="mt-1 text-sm text-red-600">

@@ -45,7 +45,7 @@ export default function Footer() {
 						<ul className="mt-4 space-y-2">
 							<li>
 								<Link
-									to="/api/products"
+									to="/products"
 									className="text-gray-300 hover:text-primary-400"
 								>
 									Products

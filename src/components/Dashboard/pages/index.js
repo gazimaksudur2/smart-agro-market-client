@@ -25,3 +25,6 @@ export { default as AdminManageProducts } from "./admin/ManageProducts";
 export { default as AdminManageOrders } from "./admin/ManageOrders";
 export { default as AdminManageUsers } from "./admin/ManageUsers";
 export { default as AdminManageApplications } from "./admin/ManageApplications";
+
+// Consumer & Seller shared
+export { default as AiLab } from "./consumer_seller/AiLab";

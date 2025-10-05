@@ -232,11 +232,7 @@ export default function AddProduct() {
 				status: "pending",
 			};
 
-			const response = await apiCall(
-				"/api/products/add-product",
-				"POST",
-				productData
-			);
+			const response = await apiCall("/api/products", "POST", productData);
 
 			// Check success field in response
 			if (response?.success) {

@@ -12,47 +12,74 @@ import {
 	FaUser,
 	FaCalendarAlt,
 	FaMoneyBillWave,
+	FaClock,
+	FaCheckCircle,
+	FaTimesCircle,
 } from "react-icons/fa";
 import DashboardTitle from "../../DashboardTitle";
-import useAPI from "../../../../hooks/useAPI";
+import useOrders from "../../../../hooks/useOrders";
 import { toast } from "react-hot-toast";
 import useScrollToTop from "../../../../hooks/useScrollToTop";
 
 const StatusBadge = ({ status }) => {
 	const statusConfig = {
-		pending: { color: "yellow", text: "Pending" },
-		confirmed: { color: "blue", text: "Confirmed" },
-		processing: { color: "purple", text: "Processing" },
-		shipped: { color: "orange", text: "Shipped" },
-		delivered: { color: "green", text: "Delivered" },
-		cancelled: { color: "red", text: "Cancelled" },
-		refunded: { color: "gray", text: "Refunded" },
+		pending: {
+			color: "bg-yellow-100 text-yellow-800",
+			icon: <FaClock className="h-3 w-3" />,
+			label: "Pending",
+		},
+		confirmed: {
+			color: "bg-blue-100 text-blue-800",
+			icon: <FaCheckCircle className="h-3 w-3" />,
+			label: "Confirmed",
+		},
+		processing: {
+			color: "bg-orange-100 text-orange-800",
+			icon: <FaClock className="h-3 w-3" />,
+			label: "Processing",
+		},
+		shipped: {
+			color: "bg-purple-100 text-purple-800",
+			icon: <FaTruck className="h-3 w-3" />,
+			label: "Shipped",
+		},
+		delivered: {
+			color: "bg-green-100 text-green-800",
+			icon: <FaCheckCircle className="h-3 w-3" />,
+			label: "Delivered",
+		},
+		cancelled: {
+			color: "bg-red-100 text-red-800",
+			icon: <FaTimesCircle className="h-3 w-3" />,
+			label: "Cancelled",
+		},
 	};
 
 	const config = statusConfig[status] || statusConfig.pending;
 
 	return (
 		<span
-			className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-${config.color}-100 text-${config.color}-800`}
+			className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${config.color}`}
 		>
-			{config.text}
+			{config.icon}
+			<span className="ml-1">{config.label}</span>
 		</span>
 	);
 };
 
 const PaymentBadge = ({ status }) => {
 	const statusConfig = {
-		pending: { color: "yellow", text: "Pending" },
-		paid: { color: "green", text: "Paid" },
-		failed: { color: "red", text: "Failed" },
-		refunded: { color: "gray", text: "Refunded" },
+		pending: { color: "bg-yellow-100 text-yellow-800", text: "Pending" },
+		paid: { color: "bg-green-100 text-green-800", text: "Paid" },
+		failed: { color: "bg-red-100 text-red-800", text: "Failed" },
+		refunded: { color: "bg-gray-100 text-gray-800", text: "Refunded" },
 	};
 
 	const config = statusConfig[status] || statusConfig.pending;
 
 	return (
 		<span
-			className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-${config.color}-100 text-${config.color}-800`}
+			className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${config.color}`}
 		>
 			{config.text}
 		</span>
@@ -62,27 +89,42 @@ const PaymentBadge = ({ status }) => {
 export default function ManageOrders() {
 	useScrollToTop();
 	const { currentUser } = useAuth();
-	const { apiCall, loading: apiLoading } = useAPI();
+	const { fetchAllOrders, updateStatus, loading } = useOrders();
 	const [searchTerm, setSearchTerm] = useState("");
 	const [statusFilter, setStatusFilter] = useState("all");
+	const [userFilter, setUserFilter] = useState("");
 	const [filteredOrders, setFilteredOrders] = useState([]);
 	const [selectedOrder, setSelectedOrder] = useState(null);
 	const [showOrderModal, setShowOrderModal] = useState(false);
+	const [orders, setOrders] = useState([]);
+	const [isLoading, setIsLoading] = useState(false);
+	const [pagination, setPagination] = useState(null);
 
-	// Fetch all orders
-	const {
-		data: orders,
-		isLoading,
-		error,
-		refetch,
-	} = useQuery(["allOrders"], async () => {
-		try {
-			return await apiCall("/api/admin/api/orders");
-		} catch (error) {
-			console.error("Error fetching orders:", error);
-			return [];
-		}
-	});
+	// Fetch all orders using admin API
+	useEffect(() => {
+		const loadAllOrders = async () => {
+			setIsLoading(true);
+			try {
+				const response = await fetchAllOrders({
+					page: 1,
+					limit: 20,
+					...(statusFilter !== "all" && { status: statusFilter }),
+					...(userFilter && { userId: userFilter }),
+				});
+
+				if (response.success) {
+					setOrders(response.orders || []);
+					setPagination(response.pagination);
+				}
+			} catch (error) {
+				console.error("Error fetching all orders:", error);
+			} finally {
+				setIsLoading(false);
+			}
+		};
+
+		loadAllOrders();
+	}, [statusFilter, userFilter, fetchAllOrders]);
 
 	// Mock data for demo
 	const mockOrders = [
@@ -213,9 +255,10 @@ export default function ManageOrders() {
 		},
 	];
 
-	const displayOrders = mockOrders;
+	// Use real orders if available, otherwise show mock data
+	const displayOrders = orders.length > 0 ? orders : mockOrders;
 
-	// Filter orders
+	// Filter orders based on search term (API already filters by status and user)
 	useEffect(() => {
 		let filtered = displayOrders;
 
@@ -223,33 +266,35 @@ export default function ManageOrders() {
 		if (searchTerm) {
 			filtered = filtered.filter(
 				(order) =>
-					order.orderNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
-					order.customer.name
-						.toLowerCase()
-						.includes(searchTerm.toLowerCase()) ||
-					order.customer.email
-						.toLowerCase()
-						.includes(searchTerm.toLowerCase()) ||
-					order.seller.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-					order.id.toLowerCase().includes(searchTerm.toLowerCase())
+					order.orderNumber?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+					order._id?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+					order.userEmail?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+					order.userId?.toLowerCase().includes(searchTerm.toLowerCase())
 			);
 		}
 
-		// Status filter
-		if (statusFilter !== "all") {
-			filtered = filtered.filter((order) => order.status === statusFilter);
-		}
-
 		setFilteredOrders(filtered);
-	}, [displayOrders, searchTerm, statusFilter]);
+	}, [displayOrders, searchTerm]);
 
-	const handleOrderAction = async (orderId, action) => {
+	const handleOrderAction = async (orderId, newStatus) => {
 		try {
-			await apiCall(`/api/admin/api/orders/${orderId}/${action}`, "PATCH");
-			toast.success(`Order ${action}d successfully`);
-			refetch();
+			const response = await updateStatus(orderId, newStatus);
+			if (response.success) {
+				toast.success(`Order ${newStatus} successfully`);
+				// Refresh orders after status update
+				const refreshResponse = await fetchAllOrders({
+					page: 1,
+					limit: 20,
+					...(statusFilter !== "all" && { status: statusFilter }),
+					...(userFilter && { userId: userFilter }),
+				});
+
+				if (refreshResponse.success) {
+					setOrders(refreshResponse.orders || []);
+				}
+			}
 		} catch (error) {
-			toast.error(`Failed to ${action} order`);
+			toast.error(`Failed to update order status`);
 		}
 	};
 
@@ -461,7 +506,7 @@ export default function ManageOrders() {
 			{/* Filters */}
 			<div className="mt-6 bg-white shadow rounded-lg">
 				<div className="px-4 py-5 sm:p-6">
-					<div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+					<div className="grid grid-cols-1 gap-4 sm:grid-cols-4">
 						{/* Search */}
 						<div className="relative">
 							<FaSearch className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
@@ -489,17 +534,35 @@ export default function ManageOrders() {
 							<option value="cancelled">Cancelled</option>
 						</select>
 
+						{/* User Filter */}
+						<input
+							type="text"
+							placeholder="Filter by User ID..."
+							className="block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500"
+							value={userFilter}
+							onChange={(e) => setUserFilter(e.target.value)}
+						/>
+
 						{/* Clear Filters */}
 						<button
 							onClick={() => {
 								setSearchTerm("");
 								setStatusFilter("all");
+								setUserFilter("");
 							}}
 							className="btn btn-outline"
 						>
 							Clear Filters
 						</button>
 					</div>
+
+					{/* Pagination Info */}
+					{pagination && (
+						<div className="mt-4 text-sm text-gray-600">
+							Showing {pagination.currentPage} of {pagination.totalPages} pages
+							({pagination.totalItems} total orders)
+						</div>
+					)}
 				</div>
 			</div>
 
@@ -507,7 +570,7 @@ export default function ManageOrders() {
 			<div className="mt-6 bg-white shadow overflow-hidden sm:rounded-md">
 				<ul className="divide-y divide-gray-200">
 					{filteredOrders.map((order) => (
-						<li key={order.id}>
+						<li key={order._id || order.id}>
 							<div className="px-4 py-4 flex items-center justify-between">
 								<div className="flex items-center min-w-0 flex-1">
 									<div className="ml-4 flex-1 min-w-0">
@@ -517,31 +580,52 @@ export default function ManageOrders() {
 													{order.orderNumber}
 												</p>
 												<p className="text-sm text-gray-500 truncate">
-													Customer: {order.customer.name}
+													{order.userEmail
+														? `Customer: ${order.userEmail}`
+														: order.customer
+														? `Customer: ${order.customer.name}`
+														: `User ID: ${order.userId}`}
 												</p>
 												<div className="mt-1 flex items-center space-x-2">
 													<StatusBadge status={order.status} />
-													<PaymentBadge status={order.paymentStatus} />
+													{order.paymentStatus && (
+														<PaymentBadge status={order.paymentStatus} />
+													)}
 												</div>
 											</div>
 											<div className="ml-4 text-right">
 												<p className="text-lg font-bold text-gray-900">
-													৳{order.grandTotal?.toLocaleString()}
+													৳
+													{(
+														order.totalAmount || order.grandTotal
+													)?.toLocaleString()}
 												</p>
 												<p className="text-sm text-gray-500">
-													{new Date(order.orderDate).toLocaleDateString()}
+													{new Date(
+														order.createdAt || order.orderDate
+													).toLocaleDateString()}
 												</p>
 											</div>
 										</div>
 
-										{/* Seller Info */}
+										{/* Additional Info */}
 										<div className="mt-2 flex items-center text-sm text-gray-500">
 											<FaUser className="mr-1 h-3 w-3" />
-											<span>Seller: {order.seller.name}</span>
+											{order.seller ? (
+												<span>Seller: {order.seller.name}</span>
+											) : (
+												<span>Items: {order.items?.length || 0}</span>
+											)}
 											{order.agent && (
 												<>
 													<span className="mx-2">•</span>
 													<span>Agent: {order.agent.name}</span>
+												</>
+											)}
+											{order.paymentMethod && (
+												<>
+													<span className="mx-2">•</span>
+													<span>Payment: {order.paymentMethod}</span>
 												</>
 											)}
 										</div>
@@ -563,9 +647,12 @@ export default function ManageOrders() {
 
 									{order.status === "pending" && (
 										<button
-											onClick={() => handleOrderAction(order.id, "confirm")}
+											onClick={() =>
+												handleOrderAction(order._id || order.id, "confirmed")
+											}
 											className="text-green-600 hover:text-green-900"
 											title="Confirm Order"
+											disabled={loading}
 										>
 											<FaCheck className="h-5 w-5" />
 										</button>
@@ -573,11 +660,53 @@ export default function ManageOrders() {
 
 									{order.status === "confirmed" && (
 										<button
-											onClick={() => handleOrderAction(order.id, "process")}
+											onClick={() =>
+												handleOrderAction(order._id || order.id, "processing")
+											}
 											className="text-blue-600 hover:text-blue-900"
 											title="Process Order"
+											disabled={loading}
 										>
 											<FaTruck className="h-5 w-5" />
+										</button>
+									)}
+
+									{order.status === "processing" && (
+										<button
+											onClick={() =>
+												handleOrderAction(order._id || order.id, "shipped")
+											}
+											className="text-purple-600 hover:text-purple-900"
+											title="Mark as Shipped"
+											disabled={loading}
+										>
+											<FaTruck className="h-5 w-5" />
+										</button>
+									)}
+
+									{order.status === "shipped" && (
+										<button
+											onClick={() =>
+												handleOrderAction(order._id || order.id, "delivered")
+											}
+											className="text-green-600 hover:text-green-900"
+											title="Mark as Delivered"
+											disabled={loading}
+										>
+											<FaCheckCircle className="h-5 w-5" />
+										</button>
+									)}
+
+									{["pending", "confirmed"].includes(order.status) && (
+										<button
+											onClick={() =>
+												handleOrderAction(order._id || order.id, "cancelled")
+											}
+											className="text-red-600 hover:text-red-900"
+											title="Cancel Order"
+											disabled={loading}
+										>
+											<FaTimes className="h-5 w-5" />
 										</button>
 									)}
 								</div>

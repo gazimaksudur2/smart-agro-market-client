@@ -26,16 +26,18 @@ const useProducts = ({
 			sortBy,
 		],
 		queryFn: async () => {
+			// Map UI params to API docs: q, priceMin, priceMax, sortBy supports -createdAt etc
+			const apiSortBy = sortBy === "latest" ? "-createdAt" : sortBy;
 			const params = {
 				page,
 				limit,
 				...(cropType && { cropType }),
 				...(region && { region }),
 				...(district && { district }),
-				...(search && { search }),
-				...(sortBy && { sortBy }),
-				minPrice,
-				maxPrice,
+				...(search && { q: search }),
+				...(apiSortBy && { sortBy: apiSortBy }),
+				priceMin: minPrice,
+				priceMax: maxPrice,
 			};
 
 			const res = await axios.get(
@@ -45,11 +47,12 @@ const useProducts = ({
 
 			// Check if response has success field and return data accordingly
 			if (res.data?.success) {
+				const pagination = res.data.pagination || {};
 				return {
 					products: res.data.products || [],
-					totalProducts: res.data.totalProducts || 0,
-					totalPages: res.data.totalPages || 1,
-					currentPage: res.data.currentPage || 1,
+					totalProducts: pagination.total || 0,
+					totalPages: pagination.totalPages || 1,
+					currentPage: pagination.page || 1,
 					maxPrice: res.data.maxPrice || 1000000,
 				};
 			}

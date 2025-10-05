@@ -17,7 +17,7 @@ import {
  */
 const useOrders = () => {
 	const { currentUser } = useAuth();
-	const user = currentUser?.FirebaseUser;
+	const user = currentUser?.DBUser;
 
 	const [loading, setLoading] = useState(false);
 	const [error, setError] = useState(null);
@@ -25,7 +25,7 @@ const useOrders = () => {
 	// Create new order
 	const placeOrder = useCallback(
 		async (orderData) => {
-			if (!user?.uid) {
+			if (!user?._id) {
 				toast.error("Please login to place an order");
 				return { success: false, error: "User not authenticated" };
 			}
@@ -37,7 +37,6 @@ const useOrders = () => {
 				// Add user information to order data
 				const orderPayload = {
 					...orderData,
-					userId: user.uid,
 					userEmail: user.email,
 				};
 
@@ -63,13 +62,13 @@ const useOrders = () => {
 				setLoading(false);
 			}
 		},
-		[user?.uid, user?.email]
+		[user?._id, user?.email]
 	);
 
 	// Get user's orders
 	const fetchUserOrders = useCallback(
 		async (params = {}) => {
-			if (!user?.uid) {
+			if (!user?._id) {
 				return { success: false, error: "User not authenticated" };
 			}
 
@@ -77,7 +76,7 @@ const useOrders = () => {
 			setError(null);
 
 			try {
-				const response = await getUserOrders(user.uid, params);
+				const response = await getUserOrders(user._id, params);
 				return {
 					success: true,
 					orders: response.orders || [],
@@ -94,7 +93,7 @@ const useOrders = () => {
 				setLoading(false);
 			}
 		},
-		[user?.uid]
+		[user?._id]
 	);
 
 	// Get specific order
@@ -145,28 +144,32 @@ const useOrders = () => {
 	}, []);
 
 	// Get seller orders
-	const fetchSellerOrders = useCallback(async (sellerId, params = {}) => {
-		setLoading(true);
-		setError(null);
+	// sellerIdOrEmail: per seller-api v2.0, this should be seller email
+	const fetchSellerOrders = useCallback(
+		async (sellerIdOrEmail, params = {}) => {
+			setLoading(true);
+			setError(null);
 
-		try {
-			const response = await getSellerOrders(sellerId, params);
-			return {
-				success: true,
-				orders: response.orders || [],
-				pagination: response.pagination,
-			};
-		} catch (err) {
-			const errorMessage =
-				err.response?.data?.message ||
-				err.message ||
-				"Failed to fetch seller orders";
-			setError(errorMessage);
-			return { success: false, error: errorMessage };
-		} finally {
-			setLoading(false);
-		}
-	}, []);
+			try {
+				const response = await getSellerOrders(sellerIdOrEmail, params);
+				return {
+					success: true,
+					orders: response.orders || [],
+					pagination: response.pagination,
+				};
+			} catch (err) {
+				const errorMessage =
+					err.response?.data?.message ||
+					err.message ||
+					"Failed to fetch seller orders";
+				setError(errorMessage);
+				return { success: false, error: errorMessage };
+			} finally {
+				setLoading(false);
+			}
+		},
+		[]
+	);
 
 	// Get all orders (admin)
 	const fetchAllOrders = useCallback(async (params = {}) => {
@@ -223,7 +226,7 @@ const useOrders = () => {
 			setError(null);
 
 			try {
-				const response = await getOrderStats(user?.uid, sellerId);
+				const response = await getOrderStats(user?._id, sellerId);
 				return {
 					success: true,
 					stats: response.stats,
@@ -239,7 +242,7 @@ const useOrders = () => {
 				setLoading(false);
 			}
 		},
-		[user?.uid]
+		[user?._id]
 	);
 
 	return {

@@ -183,7 +183,7 @@ export default function About() {
 								Create an Account
 							</Link>
 							<Link
-								to="/api/products"
+								to="/products"
 								className="btn bg-secondary-600 text-white hover:bg-secondary-700 py-3 px-8 text-lg font-medium"
 							>
 								Browse Products

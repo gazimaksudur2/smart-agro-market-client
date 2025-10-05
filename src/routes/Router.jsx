@@ -31,6 +31,7 @@ import {
 	AdminManageUsers,
 	AdminManageApplications,
 	SellerSalesAnalytics,
+	AiLab,
 } from "../components/Dashboard/pages";
 
 // Route Protection Components
@@ -40,6 +41,7 @@ import {
 	AgentRoute,
 	SellerRoute,
 	ConsumerRoute,
+	ConsumerOrSellerRoute,
 } from "./RoleBasedRoute";
 
 import NotFound from "../pages/NotFound";
@@ -188,14 +190,14 @@ const Router = createBrowserRouter([
 					</ConsumerRoute>
 				),
 			},
-			{
-				path: "wishlist",
-				element: (
-					<ConsumerRoute>
-						<ConsumerMyCart /> // Here need changes
-					</ConsumerRoute>
-				),
-			},
+			// {
+			// 	path: "wishlist",
+			// 	element: (
+			// 		<ConsumerRoute>
+			// 			<ConsumerMyCart /> // Here need changes
+			// 		</ConsumerRoute>
+			// 	),
+			// },
 
 			// Seller Routes
 			{
@@ -236,6 +238,16 @@ const Router = createBrowserRouter([
 					<SellerRoute>
 						<SellerSalesAnalytics />
 					</SellerRoute>
+				),
+			},
+
+			// Shared Consumer or Seller
+			{
+				path: "ai-lab",
+				element: (
+					<ConsumerOrSellerRoute>
+						<AiLab />
+					</ConsumerOrSellerRoute>
 				),
 			},
 

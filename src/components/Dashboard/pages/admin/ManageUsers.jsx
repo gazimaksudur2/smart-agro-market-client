@@ -68,7 +68,7 @@ export default function ManageUsers() {
 		if (statusFilter === "active") params.append("isActive", "true");
 		if (statusFilter === "inactive") params.append("isActive", "false");
 		if (debouncedSearchTerm.trim())
-			params.append("search", debouncedSearchTerm.trim());
+			params.append("q", debouncedSearchTerm.trim());
 		if (sortBy) params.append("sortBy", sortBy);
 		if (sortOrder) params.append("sortOrder", sortOrder);
 
@@ -101,7 +101,15 @@ export default function ManageUsers() {
 		["adminUsers", queryParams],
 		async () => {
 			try {
-				const response = await apiCall(`/api/admin/api/users?${queryParams}`);
+				const response = await apiCall(`/api/users?${queryParams}`);
+				if (response?.success) {
+					return {
+						users: response.users || [],
+						totalUsers: response.pagination?.total || 0,
+						totalPages: response.pagination?.totalPages || 1,
+						currentPage: response.pagination?.page || 1,
+					};
+				}
 				return response;
 			} catch (error) {
 				console.error("Error fetching users:", error);
@@ -118,7 +126,7 @@ export default function ManageUsers() {
 	// Handle user actions
 	const handleUserAction = async (userId, action, reason = "") => {
 		try {
-			await apiCall(`/api/admin/api/users/${userId}/${action}`, "PATCH", {
+			await apiCall(`/api/users/${userId}/${action}`, "PATCH", {
 				reason,
 				adminId: currentUser?.DBUser?._id,
 			});

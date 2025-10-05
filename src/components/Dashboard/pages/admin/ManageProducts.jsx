@@ -66,7 +66,7 @@ export default function ManageProducts() {
 		if (statusFilter !== "all") params.append("status", statusFilter);
 		if (qualityFilter !== "all") params.append("quality", qualityFilter);
 		if (debouncedSearchTerm.trim())
-			params.append("search", debouncedSearchTerm.trim());
+			params.append("q", debouncedSearchTerm.trim());
 		if (sortBy) params.append("sortBy", sortBy);
 		if (sortOrder) params.append("sortOrder", sortOrder);
 
@@ -101,15 +101,16 @@ export default function ManageProducts() {
 		async () => {
 			try {
 				const response = await apiCall(
-					`/api/products/api/admin/all?${queryParams}`
+					`/api/products/admin/products?${queryParams}`
 				);
 				// Check if response has success field and return data accordingly
 				if (response?.success) {
+					const pagination = response.pagination || {};
 					return {
 						products: response.products || [],
-						totalProducts: response.totalProducts || 0,
-						totalPages: response.totalPages || 1,
-						currentPage: response.currentPage || 1,
+						totalProducts: pagination.total || 0,
+						totalPages: pagination.totalPages || 1,
+						currentPage: pagination.page || 1,
 					};
 				}
 				// Fallback for backward compatibility
@@ -131,7 +132,7 @@ export default function ManageProducts() {
 		["adminProductStatistics"],
 		async () => {
 			try {
-				const response = await apiCall("/api/products/api/admin/statistics");
+				const response = await apiCall("/api/products/admin/statistics");
 				// Check if response has success field and return statistics accordingly
 				if (response?.success) {
 					return response.statistics;
@@ -152,7 +153,7 @@ export default function ManageProducts() {
 	// Handle product actions
 	const handleProductAction = async (productId, action, reason = "") => {
 		try {
-			const endpoint = `/api/products/api/admin/${action}/${productId}`;
+			const endpoint = `/api/products/admin/${productId}/${action}`;
 			const body = {
 				reviewedBy: currentUser?.DBUser?._id,
 			};

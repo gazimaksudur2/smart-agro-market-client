@@ -90,27 +90,27 @@ export default function MyProducts() {
 		error,
 		refetch,
 	} = useQuery(
-		["sellerProducts", currentUser?.FirebaseUser?.uid],
+		["sellerProducts", currentUser?.DBUser?._id],
 		async () => {
-			if (!currentUser?.FirebaseUser?.uid) return [];
+			if (!currentUser?.DBUser?._id) return [];
 
 			try {
-				const response = await apiCall(
-					`/api/products/seller/${currentUser.FirebaseUser.email}`
-				);
-				// Check if response has success field and return products accordingly
+				const sellerEmail = encodeURIComponent(currentUser.DBUser.email);
+				const response = await apiCall(`/api/products/seller/${sellerEmail}`);
+				// Normalize response shapes: {success, products}, {products}, {data:{products}}, or raw array
 				if (response?.success) {
-					return response.products || [];
+					return response.products || response.data?.products || [];
 				}
-				// Fallback for backward compatibility
-				return response.products || response || [];
+				if (Array.isArray(response)) return response;
+				return response?.products || response?.data?.products || [];
 			} catch (error) {
 				console.error("Error fetching products:", error);
 				return [];
 			}
 		},
 		{
-			enabled: !!currentUser?.FirebaseUser?.uid,
+			enabled: !!currentUser?.DBUser?._id,
+			keepPreviousData: true,
 		}
 	);
 
@@ -233,8 +233,10 @@ export default function MyProducts() {
 									<p className="text-lg font-semibold text-primary-600">
 										৳{product.pricePerUnit?.toLocaleString()} per {product.unit}
 									</p>
-									{product.quality && (
-										<QualityBadge quality={product.quality} />
+									{(product.specifications?.grade || product.quality) && (
+										<QualityBadge
+											quality={product.specifications?.grade || product.quality}
+										/>
 									)}
 								</div>
 								<div className="grid grid-cols-2 gap-2 text-sm">
@@ -339,10 +341,16 @@ export default function MyProducts() {
 											Approval Details
 										</p>
 										<p className="text-gray-600">
-											Approved on: {formatDate(product.approvedBy.approvedAt)}
+											Approved on:{" "}
+											{product?.approvedBy?.approvedAt
+												? formatDate(product.approvedBy.approvedAt)
+												: "N/A"}
 										</p>
 										<p className="text-gray-600">
-											Agent ID: {product.approvedBy.agentId}
+											Agent ID:{" "}
+											{product.approvedBy?.approverId ||
+												product.approvedBy?.agentId ||
+												"N/A"}
 										</p>
 										{product.approvalReason && (
 											<p className="text-gray-600">

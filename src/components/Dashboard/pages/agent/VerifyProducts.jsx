@@ -118,7 +118,7 @@ export default function VerifyProducts() {
 
 	if (statusFilter !== "all") queryParams.append("status", statusFilter);
 	if (categoryFilter !== "all") queryParams.append("cropType", categoryFilter);
-	if (searchTerm.trim()) queryParams.append("search", searchTerm.trim());
+	if (searchTerm.trim()) queryParams.append("q", searchTerm.trim());
 
 	// Fetch agent's regional products (all products in their operational area)
 	const {
@@ -142,15 +142,42 @@ export default function VerifyProducts() {
 
 			try {
 				const response = await apiCall(
-					`/api/products/agent/regional?${queryParams}`
+					`/api/products/admin/products?${queryParams}`
 				);
 				// Check if response has success field and return data accordingly
 				if (response?.success) {
+					const pagination = response.pagination || {};
+					const normalized = (response.products || []).map((p) => ({
+						id: p._id,
+						title: p.title,
+						description: p.description,
+						status: p.status,
+						category: p.cropType,
+						image: p.images?.[0] || null,
+						price: p.pricePerUnit,
+						unit: p.unit,
+						minimumOrderQuantity: p.minimumOrderQuantity,
+						stock: p.availableStock,
+						qualityScore: p.qualityScore,
+						submittedAt: p.timeline?.submittedAt,
+						approvedAt: p.approvedBy?.approvedAt,
+						approvedBy:
+							p.approvedBy?.approverId || p.approvedBy?.agentId || null,
+						seller: p.sellerInfo
+							? {
+									name: p.sellerInfo.name,
+									farmName: p.sellerInfo.farmName,
+									email: p.sellerInfo.email,
+							  }
+							: null,
+						location: p.sellerInfo?.operationalArea || null,
+					}));
+
 					return {
-						products: response.products || [],
-						totalProducts: response.totalProducts || 0,
-						totalPages: response.totalPages || 1,
-						currentPage: response.currentPage || 1,
+						products: normalized,
+						totalProducts: pagination.total || normalized.length || 0,
+						totalPages: pagination.totalPages || 1,
+						currentPage: pagination.page || 1,
 					};
 				}
 				// Fallback for backward compatibility
@@ -186,10 +213,25 @@ export default function VerifyProducts() {
 			if (!hasOperationalArea) return null;
 
 			try {
-				const response = await apiCall("/api/products/agent/statistics");
+				const statsParams = new URLSearchParams();
+				if (hasOperationalArea) {
+					statsParams.append("region", agentOperationalArea.region);
+					statsParams.append("district", agentOperationalArea.district);
+				}
+				const response = await apiCall(`/api/stats/products?${statsParams}`);
 				// Check if response has success field and return statistics accordingly
 				if (response?.success) {
-					return response.statistics;
+					const totals = response.totals || {};
+					const byStatus = response.byStatus || [];
+					const getCount = (s) => byStatus.find((x) => x._id === s)?.count || 0;
+					return {
+						total: totals.total || 0,
+						approved: getCount("approved"),
+						pending: getCount("pending"),
+						rejected: getCount("rejected"),
+						suspended: getCount("suspended"),
+						live: getCount("live"),
+					};
 				}
 				// Fallback for backward compatibility
 				return response;
@@ -252,13 +294,13 @@ export default function VerifyProducts() {
 			// Use correct endpoints based on action
 			switch (action) {
 				case "approve":
-					endpoint = `/api/products/${productId}/approve`;
+					endpoint = `/api/products/admin/${productId}/approve`;
 					break;
 				case "reject":
-					endpoint = `/api/products/${productId}/reject`;
+					endpoint = `/api/products/admin/${productId}/reject`;
 					break;
 				case "suspend":
-					endpoint = `/api/products/${productId}/suspend`;
+					endpoint = `/api/products/admin/${productId}/suspend`;
 					break;
 				default:
 					throw new Error(`Invalid action: ${action}`);

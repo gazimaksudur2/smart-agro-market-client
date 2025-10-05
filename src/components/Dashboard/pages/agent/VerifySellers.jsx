@@ -85,7 +85,7 @@ export default function VerifySellers() {
 	});
 
 	if (statusFilter !== "all") queryParams.append("status", statusFilter);
-	if (searchTerm.trim()) queryParams.append("search", searchTerm.trim());
+	if (searchTerm.trim()) queryParams.append("q", searchTerm.trim());
 
 	// Fetch agent's seller applications using agent-specific endpoint
 	const {
@@ -98,16 +98,20 @@ export default function VerifySellers() {
 		async () => {
 			try {
 				const response = await apiCall(
-					`/api/applications/agent/api/applications?${queryParams}`
+					`/api/applications/agent/applications?${queryParams}`
 				);
 				// Check if response has success field and return data accordingly
 				if (response?.success) {
+					const pagination = response.pagination || {};
 					return {
 						applications: response.applications || [],
-						totalApplications: response.totalApplications || 0,
-						totalPages: response.totalPages || 1,
-						currentPage: response.currentPage || 1,
-						pageSize: response.pageSize || 10,
+						totalApplications:
+							pagination.total ??
+							response.totalApplications ??
+							(response.applications?.length || 0),
+						totalPages: pagination.totalPages ?? response.totalPages ?? 1,
+						currentPage: pagination.page ?? response.currentPage ?? 1,
+						pageSize: pagination.limit ?? response.pageSize ?? 10,
 					};
 				}
 				// Fallback for backward compatibility

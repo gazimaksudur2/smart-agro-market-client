@@ -26,3 +26,4 @@ dist-ssr
 *.sw?
 *.txt
 *.json
+/docs/*.md

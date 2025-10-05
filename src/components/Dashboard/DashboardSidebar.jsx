@@ -17,6 +17,7 @@ import {
 	FaHeart,
 	FaCubes,
 	FaReceipt,
+	FaRobot,
 } from "react-icons/fa";
 import { useAuth } from "../../contexts/AuthContext";
 import { AvatarWithInitials } from "../UI/Avatar";
@@ -140,6 +141,11 @@ export default function DashboardSidebar({ sidebarOpen, setSidebarOpen }) {
 				icon: <FaChartBar className="mr-3 h-6 w-6" />,
 				label: "Sales Analytics",
 			},
+			{
+				to: "/dashboard/ai-lab",
+				icon: <FaRobot className="mr-3 h-6 w-6" />,
+				label: "AI Lab",
+			},
 		],
 		consumer: [
 			{
@@ -158,10 +164,15 @@ export default function DashboardSidebar({ sidebarOpen, setSidebarOpen }) {
 				label: "Purchase History",
 			},
 			{
-				to: "/dashboard/wishlist",
-				icon: <FaHeart className="mr-3 h-6 w-6" />,
-				label: "Wishlist",
+				to: "/dashboard/ai-lab",
+				icon: <FaRobot className="mr-3 h-6 w-6" />,
+				label: "AI Lab",
 			},
+			// {
+			// 	to: "/dashboard/wishlist",
+			// 	icon: <FaHeart className="mr-3 h-6 w-6" />,
+			// 	label: "Wishlist",
+			// },
 		],
 	};
 

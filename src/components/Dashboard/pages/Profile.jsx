@@ -31,9 +31,11 @@ import { toast } from "react-hot-toast";
 import { uploadImageToCloudinary } from "../../../services/imageUploadService";
 import useRegions from "../../../hooks/useRegions";
 import useScrollToTop from "../../../hooks/useScrollToTop";
+import { useNavigate } from "react-router-dom";
 
 export default function Profile() {
 	useScrollToTop();
+	const navigate = useNavigate();
 	const {
 		currentUser,
 		changePassword,
@@ -138,9 +140,14 @@ export default function Profile() {
 		});
 	};
 
-	const handleLogout = () => {
-		logout();
-		// navigate("/login"); // Consider if navigate is available or needed here
+	const handleLogout = async () => {
+		try {
+			await logout();
+			navigate("/login", { replace: true });
+		} catch (e) {
+			// Even if logout API fails, force redirect to login
+			navigate("/login", { replace: true });
+		}
 	};
 
 	const handleSave = async () => {
@@ -162,7 +169,7 @@ export default function Profile() {
 
 			// API call to update user data in your backend
 			const response = await axios.patch(
-				`${apiBaseUrl}/api/users/${user.email}`,
+				`${apiBaseUrl}/api/users/me`,
 				updateData,
 				{
 					withCredentials: true,
@@ -350,7 +357,7 @@ export default function Profile() {
 
 			// Update profile picture in your backend database first
 			const response = await axios.patch(
-				`${apiBaseUrl}/api/users/${user.email}`, // Ensure this endpoint exists in your backend
+				`${apiBaseUrl}/api/users/me`,
 				{ profilePicture: uploadedImageUrl },
 				{
 					withCredentials: true,

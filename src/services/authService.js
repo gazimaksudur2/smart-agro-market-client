@@ -38,8 +38,8 @@ const authService = {
 		if (!userInfo || !userInfo.exp) return false;
 
 		const currentTime = Date.now() / 1000;
-		// Check if token is expired (with 5 minute buffer)
-		return userInfo.exp > currentTime + 300;
+		// Check if token is expired (with small safety buffer of 10s)
+		return userInfo.exp > currentTime + 10;
 	},
 
 	/**
@@ -91,12 +91,12 @@ const authService = {
 			}
 
 			console.log("Fetching new token from server");
+			// Per backend basic-auth.md: email/pass login
 			const response = await axios.post(
-				`${API_BASE_URL}/api/users/login`,
+				`${API_BASE_URL}/api/auth/login`,
 				{
-					uid: user.uid,
 					email: user.email,
-					...(password && { password }),
+					password: password,
 				},
 				{ withCredentials: true }
 			);
@@ -143,7 +143,7 @@ const authService = {
 		try {
 			// Clear from server
 			await axios.post(
-				`${API_BASE_URL}/api/users/logout`,
+				`${API_BASE_URL}/api/auth/logout`,
 				{},
 				{ withCredentials: true }
 			);
@@ -191,8 +191,14 @@ const authService = {
 			axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
 			return true;
 		} else if (token) {
-			// Remove invalid token from both storages
-			authService.clearToken();
+			// Remove invalid token locally without logging out server session
+			try {
+				localStorage.removeItem(JWT_TOKEN_KEY);
+				removeCookie(JWT_TOKEN_KEY);
+				delete axios.defaults.headers.common["Authorization"];
+			} catch (e) {
+				// noop
+			}
 		}
 		return false;
 	},
