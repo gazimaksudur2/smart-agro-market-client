@@ -95,15 +95,31 @@ export default function Register() {
 				}
 			}
 
-			// Format address
+			// Format address according to schema
 			const address = {
-				street: data.street,
-				city: data.city,
-				state: data.state,
-				zip: data.zip,
+				street: data.street || "",
+				city: data.city || "",
+				state: data.state || "",
+				zip: data.zip || "",
 				country: data.country || "Bangladesh",
 			};
-			const fullAddress = `${data.street}, ${data.city}, ${data.state}, ${data.zip}, ${data.country}`
+
+			// Create full address string
+			const fullAddress = [
+				data.street,
+				data.city,
+				data.state,
+				data.zip,
+				data.country,
+			]
+				.filter(Boolean)
+				.join(", ");
+
+			// Format operational area (if provided in form)
+			const operationalArea = {
+				region: data.region || "",
+				district: data.district || "",
+			};
 
 			await registerWithEmail(
 				data.email,
@@ -114,7 +130,8 @@ export default function Register() {
 				},
 				profileImageUrl,
 				address,
-				fullAddress
+				fullAddress,
+				operationalArea
 			);
 			toast.success("Registration successful! Please complete your profile.");
 			navigate("/dashboard/profile", {

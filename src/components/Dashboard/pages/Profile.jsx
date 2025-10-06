@@ -32,6 +32,11 @@ import { uploadImageToCloudinary } from "../../../services/imageUploadService";
 import useRegions from "../../../hooks/useRegions";
 import useScrollToTop from "../../../hooks/useScrollToTop";
 import { useNavigate } from "react-router-dom";
+import {
+	updatePassword,
+	EmailAuthProvider,
+	reauthenticateWithCredential,
+} from "firebase/auth";
 
 export default function Profile() {
 	useScrollToTop();
@@ -218,11 +223,65 @@ export default function Profile() {
 		}));
 	};
 
+	// Real-time password validation feedback
+	const getPasswordStrength = (password) => {
+		if (!password) return { score: 0, feedback: [] };
+
+		const checks = [
+			{ test: password.length >= 8, message: "At least 8 characters" },
+			{ test: /[A-Z]/.test(password), message: "One uppercase letter" },
+			{ test: /[a-z]/.test(password), message: "One lowercase letter" },
+			{ test: /\d/.test(password), message: "One number" },
+			{
+				test: /[!@#$%^&*(),.?":{}|<>]/.test(password),
+				message: "One special character",
+			},
+		];
+
+		const passed = checks.filter((check) => check.test);
+		const failed = checks.filter((check) => !check.test);
+
+		return {
+			score: passed.length,
+			total: checks.length,
+			passed: passed.map((c) => c.message),
+			failed: failed.map((c) => c.message),
+		};
+	};
+
+	const passwordStrength = getPasswordStrength(passwordData.newPassword);
+
 	const togglePasswordVisibility = (field) => {
 		setShowPasswords((prev) => ({
 			...prev,
 			[field]: !prev[field],
 		}));
+	};
+
+	// Password validation helper
+	const validatePassword = (password) => {
+		const minLength = 8;
+		const hasUpperCase = /[A-Z]/.test(password);
+		const hasLowerCase = /[a-z]/.test(password);
+		const hasNumbers = /\d/.test(password);
+		const hasSpecialChar = /[!@#$%^&*(),.?":{}|<>]/.test(password);
+
+		if (password.length < minLength) {
+			return "Password must be at least 8 characters long";
+		}
+		if (!hasUpperCase) {
+			return "Password must contain at least one uppercase letter";
+		}
+		if (!hasLowerCase) {
+			return "Password must contain at least one lowercase letter";
+		}
+		if (!hasNumbers) {
+			return "Password must contain at least one number";
+		}
+		if (!hasSpecialChar) {
+			return "Password must contain at least one special character";
+		}
+		return null;
 	};
 
 	const handlePasswordSubmit = async (e) => {
@@ -239,8 +298,10 @@ export default function Profile() {
 			return;
 		}
 
-		if (passwordData.newPassword.length < 6) {
-			toast.error("New password must be at least 6 characters long");
+		// Enhanced password validation based on API requirements
+		const passwordError = validatePassword(passwordData.newPassword);
+		if (passwordError) {
+			toast.error(passwordError);
 			return;
 		}
 
@@ -256,20 +317,104 @@ export default function Profile() {
 
 		setPasswordLoading(true);
 		try {
-			await changePassword(
-				passwordData.currentPassword,
-				passwordData.newPassword
+			// Get Firebase user
+			const user = currentUser?.FirebaseUser;
+			if (!user?.email) {
+				throw new Error("User email not found");
+			}
+
+			// Step 1: Update password in backend API first
+			const response = await axios.patch(
+				`${apiBaseUrl}/api/auth/updatePassword/${user.email}`,
+				{
+					currentPassword: passwordData.currentPassword,
+					newPassword: passwordData.newPassword,
+				},
+				{
+					withCredentials: true,
+					headers: {
+						Authorization: `Bearer ${
+							localStorage.getItem("JWT_TOKEN_KEY") ||
+							sessionStorage.getItem("JWT_TOKEN_KEY")
+						}`,
+					},
+				}
 			);
 
-			// Reset form
-			setPasswordData({
-				currentPassword: "",
-				newPassword: "",
-				confirmPassword: "",
-			});
-			setShowPasswordForm(false);
+			if (response.data.success) {
+				// Step 2: Update Firebase authentication password
+				try {
+					// Re-authenticate user with current password before updating
+					const credential = EmailAuthProvider.credential(
+						user.email,
+						passwordData.currentPassword
+					);
+
+					await reauthenticateWithCredential(user, credential);
+
+					// Update Firebase password
+					await updatePassword(user, passwordData.newPassword);
+
+					toast.success("Password updated successfully in both systems!");
+				} catch (firebaseError) {
+					console.error("Firebase password update error:", firebaseError);
+
+					// Backend was successful but Firebase failed
+					toast.warning(
+						"Password updated in database, but Firebase sync failed. You may need to re-login."
+					);
+				}
+
+				// Reset form
+				setPasswordData({
+					currentPassword: "",
+					newPassword: "",
+					confirmPassword: "",
+				});
+				setShowPasswordForm(false);
+			} else {
+				throw new Error(response.data.message || "Failed to update password");
+			}
 		} catch (error) {
-			// Error handling is done in the changePassword function
+			console.error("Password update error:", error);
+
+			// Handle Firebase authentication errors
+			if (error.code) {
+				switch (error.code) {
+					case "auth/wrong-password":
+						toast.error("Invalid current password");
+						break;
+					case "auth/weak-password":
+						toast.error("Password is too weak");
+						break;
+					case "auth/requires-recent-login":
+						toast.error(
+							"Please log out and log back in before changing password"
+						);
+						break;
+					case "auth/user-not-found":
+						toast.error("User not found");
+						break;
+					default:
+						toast.error("Firebase authentication error: " + error.message);
+				}
+			}
+			// Handle API response errors
+			else if (error.response?.status === 401) {
+				toast.error("Invalid current password");
+			} else if (error.response?.status === 403) {
+				toast.error("Password update not allowed for OAuth users");
+			} else if (error.response?.status === 400) {
+				toast.error(error.response.data?.message || "Invalid password format");
+			} else if (error.response?.status === 404) {
+				toast.error("User not found");
+			} else if (error.response?.status === 429) {
+				toast.error("Too many attempts. Please try again later");
+			} else {
+				toast.error(
+					error.message || "Failed to update password. Please try again."
+				);
+			}
 		} finally {
 			setPasswordLoading(false);
 		}
@@ -777,7 +922,7 @@ export default function Profile() {
 						<div>
 							<label className="flex items-center text-sm font-medium text-gray-700 mb-2">
 								<FaMapMarkerAlt className="mr-2 h-4 w-4 text-gray-500" />
-								Region
+								Operational Region
 							</label>
 							{isEditing ? (
 								<select
@@ -805,7 +950,7 @@ export default function Profile() {
 						<div>
 							<label className="flex items-center text-sm font-medium text-gray-700 mb-2">
 								<FaMapPin className="mr-2 h-4 w-4 text-gray-500" />
-								District
+								Operational District
 							</label>
 							{isEditing ? (
 								<select
@@ -817,7 +962,7 @@ export default function Profile() {
 								>
 									<option value="">
 										{formData.region
-											? "Select District"
+											? "Select Operational District"
 											: "Select Region First"}
 									</option>
 									{districts?.map((district) => (
@@ -943,7 +1088,7 @@ export default function Profile() {
 													className="w-full px-3 py-2 pr-10 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
 													placeholder="Enter new password"
 													required
-													minLength={6}
+													minLength={8}
 												/>
 												<button
 													type="button"
@@ -957,6 +1102,54 @@ export default function Profile() {
 													)}
 												</button>
 											</div>
+											{/* Password Strength Indicator */}
+											{passwordData.newPassword && (
+												<div className="mt-2">
+													<div className="flex items-center justify-between mb-1">
+														<span className="text-xs text-gray-600">
+															Password Strength
+														</span>
+														<span className="text-xs text-gray-600">
+															{passwordStrength.score}/{passwordStrength.total}
+														</span>
+													</div>
+													<div className="w-full bg-gray-200 rounded-full h-2">
+														<div
+															className={`h-2 rounded-full transition-all duration-300 ${
+																passwordStrength.score <= 2
+																	? "bg-red-500"
+																	: passwordStrength.score <= 3
+																	? "bg-yellow-500"
+																	: passwordStrength.score <= 4
+																	? "bg-blue-500"
+																	: "bg-green-500"
+															}`}
+															style={{
+																width: `${
+																	(passwordStrength.score /
+																		passwordStrength.total) *
+																	100
+																}%`,
+															}}
+														></div>
+													</div>
+													{passwordStrength.failed.length > 0 && (
+														<div className="mt-2 text-xs">
+															<p className="text-red-600 font-medium mb-1">
+																Missing requirements:
+															</p>
+															<ul className="text-red-600 space-y-1">
+																{passwordStrength.failed.map((req, index) => (
+																	<li key={index} className="flex items-center">
+																		<span className="w-1 h-1 bg-red-600 rounded-full mr-2"></span>
+																		{req}
+																	</li>
+																))}
+															</ul>
+														</div>
+													)}
+												</div>
+											)}
 										</div>
 
 										{/* Confirm New Password */}
@@ -992,9 +1185,19 @@ export default function Profile() {
 										<div className="text-xs text-gray-500 bg-blue-50 p-3 rounded-lg">
 											<p className="font-medium mb-1">Password requirements:</p>
 											<ul className="list-disc list-inside ml-2 space-y-1">
-												<li>At least 6 characters long</li>
+												<li>At least 8 characters long</li>
+												<li>At least one uppercase letter (A-Z)</li>
+												<li>At least one lowercase letter (a-z)</li>
+												<li>At least one number (0-9)</li>
+												<li>At least one special character (!@#$%^&*)</li>
 												<li>Different from current password</li>
 											</ul>
+											<div className="mt-2 pt-2 border-t border-blue-200">
+												<p className="text-blue-700 font-medium text-xs">
+													📝 Note: Password will be updated in both your account
+													database and Firebase authentication system.
+												</p>
+											</div>
 										</div>
 
 										{/* Action Buttons */}

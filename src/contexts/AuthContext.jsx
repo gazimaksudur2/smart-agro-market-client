@@ -114,7 +114,8 @@ export default function AuthProvider({ children }) {
 		name,
 		profileImage,
 		address,
-		fullAddress
+		fullAddress,
+		operationalArea = null
 	) => {
 		try {
 			const userCredential = await createUserWithEmailAndPassword(
@@ -133,14 +134,15 @@ export default function AuthProvider({ children }) {
 				photoURL,
 			});
 
-			// Create user in the backend with address
+			// Create user in the backend with address and operational area
 			await createUserInDatabase(
 				user,
 				password,
 				"email-pass",
 				"consumer",
 				address,
-				fullAddress
+				fullAddress,
+				operationalArea
 			);
 
 			// Return user info
@@ -154,7 +156,13 @@ export default function AuthProvider({ children }) {
 	// Login with email and password
 	const loginWithEmail = async (email, password) => {
 		try {
-			// First authenticate with Firebase
+			// First authenticate with backend API
+			const { token, user: userFromToken } = await authService.getToken(
+				{ email }, // Pass email for backend authentication
+				password
+			);
+
+			// If backend authentication successful, proceed with Firebase
 			const userCredential = await signInWithEmailAndPassword(
 				auth,
 				email,
@@ -162,11 +170,7 @@ export default function AuthProvider({ children }) {
 			);
 			const user = userCredential.user;
 
-			// Then get token from backend (basic-auth: /auth/login)
-			const { token, user: userFromToken } = await authService.getToken(
-				user,
-				password
-			);
+			// Set token and role from backend
 			await handleToken(token);
 			setCurrentRole(userFromToken.role);
 
@@ -179,7 +183,20 @@ export default function AuthProvider({ children }) {
 			return user;
 		} catch (error) {
 			await authService.clearToken();
-			toast.error(error.message || "Login failed");
+
+			// Handle specific error cases
+			if (error.response?.status === 401) {
+				toast.error("Invalid email or password");
+			} else if (error.response?.status === 403) {
+				toast.error("Account is disabled. Please contact support.");
+			} else if (error.response?.status === 404) {
+				toast.error("User not found");
+			} else if (error.code) {
+				// Firebase error (if backend succeeded but Firebase failed)
+				toast.error("Authentication error: " + error.message);
+			} else {
+				toast.error(error.message || "Login failed");
+			}
 			throw error;
 		}
 	};
@@ -293,26 +310,62 @@ export default function AuthProvider({ children }) {
 		provider,
 		role = "consumer",
 		address = null,
-		fullAddress = null
+		fullAddress = null,
+		operationalArea = null
 	) => {
 		try {
+			// Prepare user data according to the schema
+			const userData = {
+				name: user.displayName,
+				email: user.email,
+				password: password || undefined, // Only include if provided (OAuth users won't have password)
+				provider: provider || "email-pass",
+				role: role || "consumer",
+				phoneNumber: "", // Will be updated in profile
+				address: address || {
+					street: "",
+					city: "",
+					state: "",
+					zip: "",
+					country: "Bangladesh",
+				},
+				fullAddress: fullAddress || "",
+				profilePicture:
+					user.photoURL || "https://i.ibb.co/MBtjqXQ/no-avatar.gif",
+				operationalArea: operationalArea || {
+					region: "",
+					district: "",
+				},
+				verified: false, // Default to false, will be verified later
+				isActive: true, // Default to active
+				firebaseUID: user.uid,
+				// Initialize shipping details as empty (will be filled during checkout)
+				shippingDetails: {
+					address: "",
+					city: "",
+					state: "",
+					zip: "",
+					phone: "",
+				},
+				// Admin tracking fields
+				lastModified: new Date(),
+				lastModifiedBy: null, // Self-registration
+				adminHistory: [], // Empty array for new users
+			};
+
+			// Remove undefined fields to avoid sending them to backend
+			Object.keys(userData).forEach((key) => {
+				if (userData[key] === undefined) {
+					delete userData[key];
+				}
+			});
+
 			const { data } = await axios.post(
 				`${apiBaseUrl}/api/auth/register`,
-				{
-					name: user.displayName,
-					email: user.email,
-					password,
-					provider,
-					role,
-					phoneNumber: "",
-					address: address,
-					fullAddress: fullAddress,
-					firebaseUID: user.uid,
-					profilePicture:
-						user.photoURL || "https://i.ibb.co/MBtjqXQ/no-avatar.gif",
-				},
+				userData,
 				{ withCredentials: true }
 			);
+
 			setCurrentRole(role);
 			setCurrentUser((prevUser) => ({
 				...prevUser,
