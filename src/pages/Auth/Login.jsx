@@ -1,21 +1,100 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useForm } from "react-hook-form";
-import { FaFacebook, FaLock, FaEye, FaEyeSlash } from "react-icons/fa";
+import {
+	FaFacebook,
+	FaEye,
+	FaEyeSlash,
+	FaShoppingCart,
+	FaStore,
+	FaHandshake,
+	FaUserShield,
+	FaArrowRight,
+} from "react-icons/fa";
 import { FcGoogle } from "react-icons/fc";
 import { useAuth } from "../../contexts/AuthContext";
 import toast from "react-hot-toast";
 import useScrollToTop from "../../hooks/useScrollToTop";
+
+// Showcase accounts for one-click demo login (portfolio project).
+const DEMO_ACCOUNTS = [
+	{
+		role: "customer",
+		label: "Customer",
+		email: "abir@gmail.com",
+		password: "Abir123?",
+		description: "Browse products, place orders, and manage your profile",
+		icon: FaShoppingCart,
+		accent: "blue",
+	},
+	{
+		role: "seller",
+		label: "Seller",
+		email: "chapainawabganj-01@smartagroconnect.com",
+		password: "Mithun01",
+		description: "List crops, manage inventory, and track sales",
+		icon: FaStore,
+		accent: "green",
+	},
+	{
+		role: "agent",
+		label: "Agent",
+		email: "agent-chapainawabganj@smartagroconnect.com",
+		password: "Chapai12",
+		description: "Verify sellers and support farmers in your area",
+		icon: FaHandshake,
+		accent: "amber",
+	},
+	{
+		role: "admin",
+		label: "Admin",
+		email: "admin@smartagroconnect.com",
+		password: "ADMpass01.",
+		description: "Platform analytics, user management, and settings",
+		icon: FaUserShield,
+		accent: "violet",
+	},
+];
+
+// Static class maps so Tailwind's JIT can detect every accent variant.
+const ACCENT_STYLES = {
+	blue: {
+		iconWrap: "bg-blue-100",
+		icon: "text-blue-600",
+		hoverBorder: "hover:border-blue-300",
+		hint: "text-blue-600",
+	},
+	green: {
+		iconWrap: "bg-green-100",
+		icon: "text-green-600",
+		hoverBorder: "hover:border-green-300",
+		hint: "text-green-600",
+	},
+	amber: {
+		iconWrap: "bg-amber-100",
+		icon: "text-amber-600",
+		hoverBorder: "hover:border-amber-300",
+		hint: "text-amber-600",
+	},
+	violet: {
+		iconWrap: "bg-violet-100",
+		icon: "text-violet-600",
+		hoverBorder: "hover:border-violet-300",
+		hint: "text-violet-600",
+	},
+};
 
 export default function Login() {
 	useScrollToTop();
 	const {
 		register,
 		handleSubmit,
+		setValue,
 		formState: { errors },
 	} = useForm();
 	const [loading, setLoading] = useState(false);
 	const [showPassword, setShowPassword] = useState(false);
+	const [activeDemoRole, setActiveDemoRole] = useState(null);
 	const { loginWithEmail, loginWithGoogle, loginWithFacebook } = useAuth();
 
 	const navigate = useNavigate();
@@ -25,28 +104,56 @@ export default function Login() {
 	// Redirect to the page the user was trying to access, or to dashboard
 	const from = location.state?.from || "/dashboard/profile";
 
-	// Handle email/password login
-	const onSubmit = async (data) => {
+	// Send the user to the stored redirect path (set during application flows)
+	// or to the default landing page after a successful login.
+	const completeLoginRedirect = () => {
+		const redirectPath = localStorage.getItem("redirectAfterLogin");
+		if (redirectPath) {
+			localStorage.removeItem("redirectAfterLogin");
+			navigate(redirectPath, { replace: true });
+		} else {
+			navigate(from, { replace: true });
+		}
+	};
+
+	// Shared email/password login used by both the form and the demo cards.
+	const performEmailLogin = async (email, password) => {
 		setLoading(true);
 		try {
-			await loginWithEmail(data.email, data.password);
+			await loginWithEmail(email, password);
 			toast.success("Login successful!");
-
-			// Check for stored redirect path from application flow
-			const redirectPath = localStorage.getItem("redirectAfterLogin");
-			if (redirectPath) {
-				localStorage.removeItem("redirectAfterLogin");
-				navigate(redirectPath, { replace: true });
-			} else {
-				navigate(from, { replace: true });
-			}
+			completeLoginRedirect();
 		} catch (error) {
-			// Clear form if authentication failed
 			toast.error(
 				error.message || "Login failed. Please check your credentials."
 			);
+			throw error;
 		} finally {
 			setLoading(false);
+		}
+	};
+
+	// Handle email/password login
+	const onSubmit = async (data) => {
+		try {
+			await performEmailLogin(data.email, data.password);
+		} catch {
+			// Error already surfaced via toast in performEmailLogin.
+		}
+	};
+
+	// Fill credentials from a demo card and sign in immediately.
+	const handleDemoLogin = async (account) => {
+		if (loading) return;
+		setActiveDemoRole(account.role);
+		setValue("email", account.email, { shouldValidate: true });
+		setValue("password", account.password, { shouldValidate: true });
+		try {
+			await performEmailLogin(account.email, account.password);
+		} catch {
+			// Keep credentials in the form so the user can retry manually.
+		} finally {
+			setActiveDemoRole(null);
 		}
 	};
 
@@ -56,15 +163,7 @@ export default function Login() {
 		try {
 			await loginWithGoogle();
 			toast.success("Login successful!");
-
-			// Check for stored redirect path from application flow
-			const redirectPath = localStorage.getItem("redirectAfterLogin");
-			if (redirectPath) {
-				localStorage.removeItem("redirectAfterLogin");
-				navigate(redirectPath, { replace: true });
-			} else {
-				navigate(from, { replace: true });
-			}
+			completeLoginRedirect();
 		} catch (error) {
 			toast.error(error.message || "Google login failed");
 		} finally {
@@ -78,15 +177,7 @@ export default function Login() {
 		try {
 			await loginWithFacebook();
 			toast.success("Login successful!");
-
-			// Check for stored redirect path from application flow
-			const redirectPath = localStorage.getItem("redirectAfterLogin");
-			if (redirectPath) {
-				localStorage.removeItem("redirectAfterLogin");
-				navigate(redirectPath, { replace: true });
-			} else {
-				navigate(from, { replace: true });
-			}
+			completeLoginRedirect();
 		} catch (error) {
 			toast.error(error.message || "Facebook login failed");
 		} finally {
@@ -158,7 +249,7 @@ export default function Login() {
 				</div>
 			</div>
 
-			<div className="px-4 mt-8 sm:mx-auto sm:w-full sm:max-w-md md:max-w-lg">
+			<div className="px-4 mt-8 sm:mx-auto sm:w-full sm:max-w-md md:max-w-xl">
 				<div className="bg-white py-8 px-4 shadow-lg sm:rounded-lg sm:px-10 border border-gray-200 daisy-card rounded-lg">
 					<div className="pb-10 flex justify-center">
 						<Link to="/" className="flex items-center text-xl sm:text-3xl">
@@ -297,8 +388,91 @@ export default function Login() {
 						</div>
 					</form>
 
+					{/* Demo role quick-access */}
+					<div className="mt-8">
+						<div className="relative">
+							<div className="absolute inset-0 flex items-center">
+								<div className="w-full border-t border-gray-300"></div>
+							</div>
+							<div className="relative flex justify-center text-sm">
+								<span className="px-2 bg-white text-gray-500">
+									Or explore with a demo role
+								</span>
+							</div>
+						</div>
+
+						<p className="mt-4 text-center text-xs text-gray-500">
+							Click a role to sign in instantly &mdash; no signup required
+						</p>
+
+						<div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
+							{DEMO_ACCOUNTS.map((account) => {
+								const Icon = account.icon;
+								const styles = ACCENT_STYLES[account.accent];
+								const isActive = activeDemoRole === account.role;
+								return (
+									<button
+										key={account.role}
+										type="button"
+										onClick={() => handleDemoLogin(account)}
+										disabled={loading}
+										aria-label={`Sign in as ${account.label}`}
+										className={`group relative flex items-start gap-3 rounded-lg border border-gray-200 bg-white p-4 text-left transition-all duration-200 hover:shadow-md hover:scale-[1.02] focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:scale-100 disabled:hover:shadow-none ${styles.hoverBorder}`}
+									>
+										<span
+											className={`flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full ${styles.iconWrap}`}
+										>
+											{isActive ? (
+												<svg
+													className={`animate-spin h-5 w-5 ${styles.icon}`}
+													xmlns="http://www.w3.org/2000/svg"
+													fill="none"
+													viewBox="0 0 24 24"
+												>
+													<circle
+														className="opacity-25"
+														cx="12"
+														cy="12"
+														r="10"
+														stroke="currentColor"
+														strokeWidth="4"
+													></circle>
+													<path
+														className="opacity-75"
+														fill="currentColor"
+														d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+													></path>
+												</svg>
+											) : (
+												<Icon className={`h-5 w-5 ${styles.icon}`} />
+											)}
+										</span>
+										<span className="min-w-0 flex-1">
+											<span className="block font-semibold text-gray-900">
+												{account.label}
+											</span>
+											<span className="mt-0.5 block text-xs text-gray-500">
+												{account.description}
+											</span>
+											<span
+												className={`mt-2 flex items-center gap-1 text-xs font-medium ${styles.hint}`}
+											>
+												{isActive
+													? "Signing in..."
+													: `Sign in as ${account.label}`}
+												{!isActive && (
+													<FaArrowRight className="h-3 w-3 transition-transform duration-200 group-hover:translate-x-0.5" />
+												)}
+											</span>
+										</span>
+									</button>
+								);
+							})}
+						</div>
+					</div>
+
 					{/* Social login divider */}
-					<div className="mt-6">
+					<div className="mt-8">
 						<div className="relative">
 							<div className="absolute inset-0 flex items-center">
 								<div className="w-full border-t border-gray-300"></div>
